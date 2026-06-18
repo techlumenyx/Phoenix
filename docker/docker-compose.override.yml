@@ -1,0 +1,62 @@
+version: "3.9"
+
+# Dev overrides: hot reload via volume mounts + tsx watch
+# Docker Compose merges this automatically when running `docker compose up`
+
+services:
+  identity:
+    build:
+      target: base
+    volumes:
+      - ../apps/subgraph-identity:/app/apps/subgraph-identity
+      - ../libs:/app/libs
+      - /app/node_modules
+    command: npx tsx watch apps/subgraph-identity/src/main.ts
+    environment:
+      - NODE_ENV=development
+
+  events:
+    build:
+      target: base
+    volumes:
+      - ../apps/subgraph-events:/app/apps/subgraph-events
+      - ../libs:/app/libs
+      - /app/node_modules
+    command: npx tsx watch apps/subgraph-events/src/main.ts
+    environment:
+      - NODE_ENV=development
+
+  classifieds:
+    build:
+      target: base
+    volumes:
+      - ../apps/subgraph-classifieds:/app/apps/subgraph-classifieds
+      - ../libs:/app/libs
+      - /app/node_modules
+    command: npx tsx watch apps/subgraph-classifieds/src/main.ts
+    environment:
+      - NODE_ENV=development
+
+  admin:
+    build:
+      target: base
+    volumes:
+      - ../apps/subgraph-admin:/app/apps/subgraph-admin
+      - ../libs:/app/libs
+      - /app/node_modules
+    command: npx tsx watch apps/subgraph-admin/src/main.ts
+    environment:
+      - NODE_ENV=development
+
+  web:
+    build:
+      target: base
+    volumes:
+      - ../apps/web:/app/apps/web
+      - ../libs:/app/libs
+      - /app/node_modules
+    command: npx vite apps/web --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development

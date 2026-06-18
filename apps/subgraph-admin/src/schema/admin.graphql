@@ -1,0 +1,143 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.6", import: ["@key", "@external", "@extends", "@shareable"])
+
+# ─── Scalars & Enums ──────────────────────────────────────────────────────────
+
+scalar DateTime
+
+enum ModerationAction {
+  APPROVE
+  WARN
+  REMOVE
+  SUSPEND
+  BAN
+}
+
+enum ContentType {
+  EVENT
+  JOB_LISTING
+  MARKETPLACE_ITEM
+  USER
+  ORGANISATION
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+}
+
+# ─── Federation Entity Stubs ──────────────────────────────────────────────────
+
+type User @key(fields: "id") @extends {
+  id: ID! @external
+}
+
+type Organisation @key(fields: "id") @extends {
+  id: ID! @external
+  verificationRequests: [VerificationQueueItem!]!
+}
+
+# ─── Entities ─────────────────────────────────────────────────────────────────
+
+type ModerationReport @key(fields: "id") {
+  id: ID!
+  contentId: String!
+  contentType: ContentType!
+  reportedByUser: User!
+  reason: String!
+  status: ReportStatus!
+  createdAt: DateTime!
+}
+
+type AuditLog @key(fields: "id") {
+  id: ID!
+  admin: User!
+  action: ModerationAction!
+  contentId: String!
+  contentType: ContentType!
+  reason: String!
+  createdAt: DateTime!
+}
+
+type SystemFlagRule @key(fields: "id") {
+  id: ID!
+  name: String!
+  description: String!
+  condition: String!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type VerificationQueueItem @key(fields: "id") {
+  id: ID!
+  organisation: Organisation!
+  status: VerificationStatus!
+  documentUrls: [String!]!
+  submittedAt: DateTime!
+  reviewedAt: DateTime
+  reviewedBy: User
+  rejectionReason: String
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+type PlatformStats @shareable {
+  totalUsers: Int!
+  activeEvents: Int!
+  activeJobListings: Int!
+  activeMarketplaceItems: Int!
+  pendingModerationReports: Int!
+  pendingVerifications: Int!
+}
+
+# ─── Queries ──────────────────────────────────────────────────────────────────
+
+type Query {
+  moderationQueue(status: ReportStatus, limit: Int, after: String): ModerationReportConnection!
+  auditLogs(adminId: ID, limit: Int, after: String): AuditLogConnection!
+  verificationQueue(status: VerificationStatus, limit: Int): [VerificationQueueItem!]!
+  platformStats: PlatformStats!
+  flagRules: [SystemFlagRule!]!
+}
+
+type ModerationReportConnection {
+  edges: [ModerationReport!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type AuditLogConnection {
+  edges: [AuditLog!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+# ─── Mutations ────────────────────────────────────────────────────────────────
+
+type Mutation {
+  flagContent(contentId: String!, contentType: ContentType!, reason: String!): ModerationReport!
+  resolveReport(reportId: ID!, action: ModerationAction!, reason: String!): AuditLog!
+  reviewVerification(requestId: ID!, approved: Boolean!, rejectionReason: String): VerificationQueueItem!
+  createFlagRule(input: CreateFlagRuleInput!): SystemFlagRule!
+  updateFlagRule(id: ID!, input: UpdateFlagRuleInput!): SystemFlagRule!
+}
+
+# ─── Inputs ───────────────────────────────────────────────────────────────────
+
+input CreateFlagRuleInput {
+  name: String!
+  description: String!
+  condition: String!
+}
+
+input UpdateFlagRuleInput {
+  name: String
+  description: String
+  condition: String
+  isActive: Boolean
+}

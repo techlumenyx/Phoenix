@@ -1,0 +1,161 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.6", import: ["@key", "@external", "@extends", "@provides", "@shareable"])
+
+# ─── Scalars & Enums ──────────────────────────────────────────────────────────
+
+scalar DateTime
+
+enum EventCategory {
+  WORSHIP
+  WELFARE
+  CHARITY
+  COMMUNITY
+  CONFERENCE
+  CULTURAL
+  YOUTH
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  PAST
+}
+
+enum RsvpStage {
+  INTERESTED
+  SAVED
+  CONFIRMED
+}
+
+enum LocationType {
+  PHYSICAL
+  VIRTUAL
+  HYBRID
+}
+
+# ─── Federation Entity Stubs ──────────────────────────────────────────────────
+
+type Organisation @key(fields: "id") @extends {
+  id: ID! @external
+  events(limit: Int, after: String): EventConnection!
+}
+
+type User @key(fields: "id") @extends {
+  id: ID! @external
+}
+
+# ─── Entities ─────────────────────────────────────────────────────────────────
+
+type Event @key(fields: "id") {
+  id: ID!
+  title: String!
+  description: String!
+  category: EventCategory!
+  date: DateTime!
+  endDate: DateTime
+  location: EventLocation!
+  hosts: [Organisation!]!
+  region: String!
+  rsvpCount: Int!
+  interestedCount: Int!
+  savedCount: Int!
+  confirmedCount: Int!
+  capacityLimit: Int
+  waitlistCount: Int!
+  status: EventStatus!
+  imageUrl: String
+  isPromoted: Boolean!
+  isRecurring: Boolean!
+  seriesId: String
+  externalTicketUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EventLocation @shareable {
+  type: LocationType!
+  address: String
+  city: String
+  country: String
+  virtualLink: String
+}
+
+type RSVP @key(fields: "id") {
+  id: ID!
+  event: Event!
+  user: User!
+  stage: RsvpStage!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EventConnection {
+  edges: [Event!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+# ─── Queries ──────────────────────────────────────────────────────────────────
+
+type Query {
+  event(id: ID!): Event
+  events(
+    region: String
+    category: EventCategory
+    organisationId: ID
+    status: EventStatus
+    limit: Int
+    after: String
+  ): EventConnection!
+  featuredEvents(region: String): [Event!]!
+  myRsvps(stage: RsvpStage): [RSVP!]!
+}
+
+# ─── Mutations ────────────────────────────────────────────────────────────────
+
+type Mutation {
+  createEvent(input: CreateEventInput!): Event!
+  updateEvent(id: ID!, input: UpdateEventInput!): Event!
+  deleteEvent(id: ID!): Boolean!
+  rsvpToEvent(eventId: ID!, stage: RsvpStage!): RSVP!
+  cancelRsvp(eventId: ID!): Boolean!
+}
+
+# ─── Inputs ───────────────────────────────────────────────────────────────────
+
+input CreateEventInput {
+  title: String!
+  description: String!
+  category: EventCategory!
+  date: DateTime!
+  endDate: DateTime
+  location: EventLocationInput!
+  hostOrganisationIds: [ID!]!
+  region: String!
+  capacityLimit: Int
+  imageUrl: String
+  isRecurring: Boolean
+  externalTicketUrl: String
+}
+
+input UpdateEventInput {
+  title: String
+  description: String
+  category: EventCategory
+  date: DateTime
+  endDate: DateTime
+  location: EventLocationInput
+  capacityLimit: Int
+  imageUrl: String
+  status: EventStatus
+  externalTicketUrl: String
+}
+
+input EventLocationInput {
+  type: LocationType!
+  address: String
+  city: String
+  country: String
+  virtualLink: String
+}

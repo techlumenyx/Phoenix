@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        APP_NAME: gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - SUBGRAPH_IDENTITY_URL=http://identity:4001/graphql
+      - SUBGRAPH_EVENTS_URL=http://events:4002/graphql
+      - SUBGRAPH_CLASSIFIEDS_URL=http://classifieds:4003/graphql
+      - SUBGRAPH_ADMIN_URL=http://admin:4004/graphql
+    depends_on:
+      identity:
+        condition: service_healthy
+      events:
+        condition: service_healthy
+      classifieds:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+
+  identity:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        APP_NAME: subgraph-identity
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - MONGO_URI=${MONGO_URI}
+      - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  events:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        APP_NAME: subgraph-events
+    ports:
+      - "4002:4002"
+    environment:
+      - NODE_ENV=production
+      - PORT=4002
+      - MONGO_URI=${MONGO_URI}
+      - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  classifieds:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        APP_NAME: subgraph-classifieds
+    ports:
+      - "4003:4003"
+    environment:
+      - NODE_ENV=production
+      - PORT=4003
+      - MONGO_URI=${MONGO_URI}
+      - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  admin:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        APP_NAME: subgraph-admin
+    ports:
+      - "4004:4004"
+    environment:
+      - NODE_ENV=production
+      - PORT=4004
+      - MONGO_URI=${MONGO_URI}
+      - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway

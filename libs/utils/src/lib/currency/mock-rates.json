@@ -1,0 +1,20 @@
+{
+  "_comment": "Exchange rates relative to USD. Updated manually for Phase 1 (stub). Replace with live API in Phase 2.",
+  "_updated": "2026-06-01",
+  "USD": 1.0,
+  "GBP": 0.79,
+  "EUR": 0.92,
+  "NGN": 1580.0,
+  "GHS": 15.2,
+  "KES": 129.5,
+  "ZAR": 18.1,
+  "CAD": 1.36,
+  "AUD": 1.52,
+  "XOF": 600.0,
+  "UGX": 3720.0,
+  "TZS": 2680.0,
+  "ETB": 57.5,
+  "RWF": 1310.0,
+  "SLL": 22500.0,
+  "GMD": 68.0
+}

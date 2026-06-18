@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+  NX_CLOUD_NO_TIMEOUTS: true
+
+jobs:
+  main:
+    name: Nx Affected
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint affected
+        run: npx nx affected --target=lint --base=origin/main --head=HEAD --parallel=3
+
+      - name: Type-check affected
+        run: npx nx affected --target=typecheck --base=origin/main --head=HEAD --parallel=3
+
+      - name: Test affected
+        run: npx nx affected --target=test --base=origin/main --head=HEAD --parallel=3 --ci
+
+  schema-composition:
+    name: Validate Supergraph
+    runs-on: ubuntu-latest
+    # Only run when .graphql files changed
+    if: contains(github.event.pull_request.changed_files, '.graphql') || github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rover
+        run: npm install -g @apollo/rover
+
+      - name: Compose supergraph
+        run: rover supergraph compose --config rover.yaml --output apps/gateway/supergraph.graphql
+
+      - name: Verify supergraph was produced
+        run: |
+          if [ ! -f apps/gateway/supergraph.graphql ]; then
+            echo "ERROR: supergraph.graphql was not produced"
+            exit 1
+          fi
+          echo "Supergraph composition successful"
+          head -5 apps/gateway/supergraph.graphql

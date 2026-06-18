@@ -1,0 +1,22 @@
+federation_version: =2.6.0
+
+subgraphs:
+  identity:
+    routing_url: http://identity:4001/graphql
+    schema:
+      file: ./apps/subgraph-identity/src/schema/identity.graphql
+
+  events:
+    routing_url: http://events:4002/graphql
+    schema:
+      file: ./apps/subgraph-events/src/schema/events.graphql
+
+  classifieds:
+    routing_url: http://classifieds:4003/graphql
+    schema:
+      file: ./apps/subgraph-classifieds/src/schema/classifieds.graphql
+
+  admin:
+    routing_url: http://admin:4004/graphql
+    schema:
+      file: ./apps/subgraph-admin/src/schema/admin.graphql

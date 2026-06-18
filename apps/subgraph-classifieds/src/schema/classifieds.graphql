@@ -1,0 +1,251 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.6", import: ["@key", "@external", "@extends", "@provides", "@shareable"])
+
+# ─── Scalars & Enums ──────────────────────────────────────────────────────────
+
+scalar DateTime
+
+enum RoleType {
+  PAID
+  VOLUNTEER
+  INTERNSHIP
+}
+
+enum WorkLocation {
+  PHYSICAL
+  REMOTE
+  HYBRID
+}
+
+enum JobStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+}
+
+enum ListingStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  PENDING_REVIEW
+}
+
+# ─── Federation Entity Stubs ──────────────────────────────────────────────────
+
+type User @key(fields: "id") @extends {
+  id: ID! @external
+  jobApplications: [JobApplication!]!
+  marketplaceListings: [MarketplaceItem!]!
+  savedJobs: [JobListing!]!
+}
+
+type Organisation @key(fields: "id") @extends {
+  id: ID! @external
+  name: String! @external
+  isVerified: Boolean! @external
+  jobListings: [JobListing!]!
+}
+
+# ─── Entities ─────────────────────────────────────────────────────────────────
+
+type JobListing @key(fields: "id") {
+  id: ID!
+  title: String!
+  description: String!
+  organisation: Organisation! @provides(fields: "name isVerified")
+  roleType: RoleType!
+  workLocation: WorkLocation!
+  skillsRequired: [String!]!
+  region: String!
+  salaryRange: SalaryRange
+  applicationDeadline: DateTime!
+  externalApplyUrl: String
+  status: JobStatus!
+  isPromoted: Boolean!
+  faithAlignmentTag: FaithAlignmentTag
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SalaryRange @shareable {
+  min: Float!
+  max: Float!
+  currency: String!
+}
+
+enum FaithAlignmentTag {
+  OPEN_TO_ALL
+  FAITH_BACKGROUND_PREFERRED
+}
+
+type JobApplication @key(fields: "id") {
+  id: ID!
+  listing: JobListing!
+  applicant: User!
+  status: ApplicationStatus!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  REJECTED
+  WITHDRAWN
+}
+
+type MarketplaceItem @key(fields: "id") {
+  id: ID!
+  title: String!
+  description: String!
+  seller: User!
+  price: Float!
+  currency: String!
+  condition: ItemCondition!
+  category: MarketplaceCategory!
+  region: String!
+  imageUrls: [String!]!
+  status: ListingStatus!
+  isDonation: Boolean!
+  isPromoted: Boolean!
+  flagCount: Int!
+  convertedPrice: ConvertedPrice
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum MarketplaceCategory {
+  ELECTRONICS
+  CLOTHING
+  BOOKS
+  FURNITURE
+  FOOD
+  BABY_AND_KIDS
+  CHARITY_ITEMS
+  OTHER
+}
+
+type ConvertedPrice @shareable {
+  original: Float!
+  originalCurrency: String!
+  converted: Float!
+  toCurrency: String!
+  isEstimate: Boolean!
+}
+
+# ─── Queries ──────────────────────────────────────────────────────────────────
+
+type Query {
+  jobListing(id: ID!): JobListing
+  jobListings(
+    region: String
+    roleType: RoleType
+    workLocation: WorkLocation
+    skillTags: [String!]
+    status: JobStatus
+    limit: Int
+    after: String
+  ): JobListingConnection!
+
+  marketplaceItem(id: ID!): MarketplaceItem
+  marketplaceItems(
+    region: String
+    category: MarketplaceCategory
+    condition: ItemCondition
+    isDonation: Boolean
+    status: ListingStatus
+    limit: Int
+    after: String
+  ): MarketplaceItemConnection!
+
+  communityGives(region: String, limit: Int): [MarketplaceItem!]!
+}
+
+type JobListingConnection {
+  edges: [JobListing!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type MarketplaceItemConnection {
+  edges: [MarketplaceItem!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+# ─── Mutations ────────────────────────────────────────────────────────────────
+
+type Mutation {
+  createJobListing(input: CreateJobListingInput!): JobListing!
+  updateJobListing(id: ID!, input: UpdateJobListingInput!): JobListing!
+  archiveJobListing(id: ID!): JobListing!
+
+  createMarketplaceItem(input: CreateMarketplaceItemInput!): MarketplaceItem!
+  updateMarketplaceItem(id: ID!, input: UpdateMarketplaceItemInput!): MarketplaceItem!
+  deleteMarketplaceItem(id: ID!): Boolean!
+  updateMarketplaceItemStatus(id: ID!, status: ListingStatus!): MarketplaceItem!
+
+  reportListing(itemId: ID!, reason: String!): Boolean!
+}
+
+# ─── Inputs ───────────────────────────────────────────────────────────────────
+
+input CreateJobListingInput {
+  title: String!
+  description: String!
+  organisationId: ID!
+  roleType: RoleType!
+  workLocation: WorkLocation!
+  skillsRequired: [String!]!
+  region: String!
+  salaryRange: SalaryRangeInput
+  applicationDeadline: DateTime!
+  externalApplyUrl: String
+  faithAlignmentTag: FaithAlignmentTag
+}
+
+input UpdateJobListingInput {
+  title: String
+  description: String
+  roleType: RoleType
+  workLocation: WorkLocation
+  skillsRequired: [String!]
+  salaryRange: SalaryRangeInput
+  applicationDeadline: DateTime
+  externalApplyUrl: String
+}
+
+input SalaryRangeInput {
+  min: Float!
+  max: Float!
+  currency: String!
+}
+
+input CreateMarketplaceItemInput {
+  title: String!
+  description: String!
+  price: Float!
+  currency: String!
+  condition: ItemCondition!
+  category: MarketplaceCategory!
+  region: String!
+  imageUrls: [String!]!
+  isDonation: Boolean!
+}
+
+input UpdateMarketplaceItemInput {
+  title: String
+  description: String
+  price: Float
+  condition: ItemCondition
+  imageUrls: [String!]
+  isDonation: Boolean
+}

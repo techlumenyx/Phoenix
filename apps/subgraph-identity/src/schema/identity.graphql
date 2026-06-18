@@ -1,0 +1,141 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.6", import: ["@key", "@shareable"])
+
+# ─── Scalars & Enums ──────────────────────────────────────────────────────────
+
+scalar DateTime
+
+enum VerificationTier {
+  NONE
+  STANDARD
+  CHARITY
+  NGO
+}
+
+# ─── Entities ─────────────────────────────────────────────────────────────────
+
+type User @key(fields: "id") {
+  id: ID!
+  firebaseUid: String!
+  email: String!
+  name: String!
+  region: String!
+  isVerified: Boolean!
+  avatarUrl: String
+  bio: String
+  socialLinks: SocialLinks
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Organisation @key(fields: "id") {
+  id: ID!
+  name: String!
+  description: String
+  logoUrl: String
+  region: String!
+  isVerified: Boolean!
+  verificationTier: VerificationTier!
+  followerCount: Int!
+  websiteUrl: String
+  socialLinks: SocialLinks
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SocialLinks @shareable {
+  whatsapp: String
+  instagram: String
+  facebook: String
+  twitter: String
+  website: String
+}
+
+type FollowRelationship @key(fields: "id") {
+  id: ID!
+  follower: User!
+  organisation: Organisation!
+  createdAt: DateTime!
+}
+
+type VerificationRequest @key(fields: "id") {
+  id: ID!
+  organisation: Organisation!
+  status: VerificationStatus!
+  documentsUrls: [String!]!
+  submittedAt: DateTime!
+  reviewedAt: DateTime
+  rejectionReason: String
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+# ─── Queries ──────────────────────────────────────────────────────────────────
+
+type Query {
+  me: User
+  user(id: ID!): User
+  organisation(id: ID!): Organisation
+  organisations(region: String, limit: Int, after: String): OrganisationConnection!
+  myOrganisations: [Organisation!]!
+}
+
+type UserConnection {
+  edges: [User!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type OrganisationConnection {
+  edges: [Organisation!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+# ─── Mutations ────────────────────────────────────────────────────────────────
+
+type Mutation {
+  updateProfile(input: UpdateProfileInput!): User!
+  createOrganisation(input: CreateOrganisationInput!): Organisation!
+  updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
+  submitVerification(organisationId: ID!, documentUrls: [String!]!): VerificationRequest!
+}
+
+# ─── Inputs ───────────────────────────────────────────────────────────────────
+
+input UpdateProfileInput {
+  name: String
+  region: String
+  bio: String
+  avatarUrl: String
+  socialLinks: SocialLinksInput
+}
+
+input SocialLinksInput {
+  whatsapp: String
+  instagram: String
+  facebook: String
+  twitter: String
+  website: String
+}
+
+input CreateOrganisationInput {
+  name: String!
+  description: String
+  logoUrl: String
+  region: String!
+  websiteUrl: String
+}
+
+input UpdateOrganisationInput {
+  name: String
+  description: String
+  logoUrl: String
+  region: String
+  websiteUrl: String
+  socialLinks: SocialLinksInput
+}
