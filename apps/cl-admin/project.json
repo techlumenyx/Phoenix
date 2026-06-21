@@ -49,7 +49,10 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/cl-admin"]
+      }
     },
     "test": {
       "executor": "@nx/jest:jest",

@@ -1,10 +1,10 @@
 {
   "root": true,
-  "ignorePatterns": ["**/*"],
+  "ignorePatterns": [],
   "plugins": ["@nx"],
   "overrides": [
     {
-      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx", "apps/**/*.ts", "apps/**/*.tsx", "apps/**/*.js", "apps/**/*.jsx", "libs/**/*.ts", "libs/**/*.tsx", "libs/**/*.js", "libs/**/*.jsx"],
       "rules": {
         "@nx/enforce-module-boundaries": [
           "error",
@@ -42,6 +42,10 @@
               },
               {
                 "sourceTag": "scope:admin",
+                "onlyDependOnLibsWithTags": ["scope:shared"]
+              },
+              {
+                "sourceTag": "scope:admin-ui",
                 "onlyDependOnLibsWithTags": ["scope:shared"]
               }
             ]
