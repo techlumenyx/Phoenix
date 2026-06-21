@@ -9,7 +9,15 @@
     "test": "nx run-many --target=test --all",
     "typecheck": "nx run-many --target=typecheck --all",
     "codegen": "nx run-many --target=codegen --all",
-    "dev": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up"
+    "dev": "docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml up",
+    "identity": "node --env-file=.env dist/apps/subgraph-identity/main.js",
+    "events": "node --env-file=.env dist/apps/subgraph-events/main.js",
+    "classifieds": "node --env-file=.env dist/apps/subgraph-classifieds/main.js",
+    "admin": "node --env-file=.env dist/apps/subgraph-admin/main.js",
+    "backend": "concurrently -n identity,events,classifieds,admin -c cyan,green,yellow,magenta \"npm run identity\" \"npm run events\" \"npm run classifieds\" \"npm run admin\"",
+    "cl":       "nx serve christian-listing",
+    "cl-admin": "nx serve cl-admin",
+    "frontend": "concurrently -n cl,cl-admin -c blue,red \"npm run cl\" \"npm run cl-admin\""
   },
   "dependencies": {
     "@apollo/client": "^3.14.1",
@@ -59,6 +67,7 @@
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.0",
     "babel-jest": "^29.7.0",
+    "concurrently": "^10.0.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.0",
     "jest": "^29.7.0",
@@ -80,6 +89,7 @@
     "vite": "^5.4.0",
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
-    "webpack-dev-server": "^5.2.1"
+    "webpack-dev-server": "^5.2.1",
+    "webpack-bundle-analyzer": "^4.10.2"
   }
 }
