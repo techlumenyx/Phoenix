@@ -1,10 +1,10 @@
 {
   "root": true,
-  "ignorePatterns": [],
+  "ignorePatterns": ["**/*"],
   "plugins": ["@nx"],
   "overrides": [
     {
-      "files": ["*.ts", "*.tsx", "*.js", "*.jsx", "apps/**/*.ts", "apps/**/*.tsx", "apps/**/*.js", "apps/**/*.jsx", "libs/**/*.ts", "libs/**/*.tsx", "libs/**/*.js", "libs/**/*.jsx"],
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
         "@nx/enforce-module-boundaries": [
           "error",
