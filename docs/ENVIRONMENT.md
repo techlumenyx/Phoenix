@@ -40,17 +40,19 @@ These are hardcoded in `docker-compose.yml` using Docker's internal DNS. Only ne
 | `SUBGRAPH_CLASSIFIEDS_URL` | `http://classifieds:4003/graphql` | Internal URL of classifieds subgraph |
 | `SUBGRAPH_ADMIN_URL` | `http://admin:4004/graphql` | Internal URL of admin subgraph |
 
-## apps/web (Browser — Vite)
+## apps/christian-listing and apps/cl-admin (Browser — Webpack)
 
-**Must be prefixed `VITE_`** to be included in the browser bundle. Do not put secrets here.
+**Must be prefixed `CL_`** to be included in the browser bundle via webpack `DefinePlugin`. Do not put secrets here.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `VITE_GRAPHQL_URL` | Yes | Gateway URL the browser sends GraphQL requests to. `http://localhost:4000/graphql` for local dev. |
-| `VITE_FIREBASE_API_KEY` | Yes | Firebase client API key. Found in Firebase Console → Project Settings → Your apps → Web app |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | Firebase Auth domain. Format: `<project-id>.firebaseapp.com` |
-| `VITE_FIREBASE_PROJECT_ID` | Yes | Firebase project ID |
-| `VITE_FIREBASE_APP_ID` | Yes | Firebase web app ID. Format: `1:<project-number>:web:<hash>` |
+| `CL_GRAPHQL_URL` | Yes | Gateway URL the browser sends GraphQL requests to. `http://localhost:4000/graphql` for local dev. |
+| `CL_FIREBASE_API_KEY` | Yes | Firebase client API key. Found in Firebase Console → Project Settings → Your apps → Web app |
+| `CL_FIREBASE_AUTH_DOMAIN` | Yes | Firebase Auth domain. Format: `<project-id>.firebaseapp.com` |
+| `CL_FIREBASE_PROJECT_ID` | Yes | Firebase project ID |
+| `CL_FIREBASE_APP_ID` | Yes | Firebase web app ID. Format: `1:<project-number>:web:<hash>` |
+
+**Note:** Unlike Vite (which auto-includes `VITE_*` vars), webpack requires explicit injection. The `webpack.config.js` in each app reads all `CL_*` keys from `process.env` at build time and injects them via `DefinePlugin`. No other env vars are exposed to the browser.
 
 ## How Docker Compose Handles Secrets
 

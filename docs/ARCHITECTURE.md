@@ -3,7 +3,8 @@
 ## System Diagram
 
 ```
-                  [ Vite + React SPA — port 5173 ]
+        [ Webpack React SPA (christian-listing) — port 3000 ]
+        [ Webpack React SPA (cl-admin) — port 3001 ]
                               │
                     HTTPS / GraphQL / WebSockets
                               │
@@ -164,7 +165,8 @@ When a user reports content:
 
 | Service | Local Port | Docker Internal |
 |---------|-----------|-----------------|
-| web (Vite dev) | 5173 | web:5173 |
+| christian-listing (webpack dev) | 3000 | — (runs locally, not in Docker) |
+| cl-admin (webpack dev) | 3001 | — (runs locally, not in Docker) |
 | gateway (Apollo Router) | 4000 | gateway:4000 |
 | subgraph-identity | 4001 | identity:4001 |
 | subgraph-events | 4002 | events:4002 |
@@ -175,7 +177,10 @@ When a user reports content:
 ## Service Dependency Graph
 
 ```
-apps/web
+apps/christian-listing
+  └─ @christian-listings/types (codegen hooks)
+
+apps/cl-admin
   └─ @christian-listings/types (codegen hooks)
 
 apps/gateway

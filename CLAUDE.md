@@ -6,7 +6,7 @@ Faith-community platform (Events, Jobs, Marketplace) for diaspora audiences. Nx 
 
 ## Tech Stack
 
-- **Frontend**: `apps/web` — Vite + React 18 + TypeScript + Tailwind CSS + Apollo Client + Zustand
+- **Frontend**: `apps/christian-listing` (port 3000) and `apps/cl-admin` (port 3001) — Webpack 5 + React 18 + TypeScript + Tailwind CSS + Apollo Client + Zustand
 - **Gateway**: `apps/gateway` — Apollo Router (Rust binary) federating 4 subgraphs
 - **Backend**: 4 Fastify + Apollo Server 4 subgraphs (see service map below)
 - **Database**: MongoDB Atlas — Mongoose, one named DB per subgraph
@@ -17,7 +17,8 @@ Faith-community platform (Events, Jobs, Marketplace) for diaspora audiences. Nx 
 
 | App | Port | Database | Tags |
 |-----|------|----------|------|
-| `apps/web` | 5173 | — | `scope:web, type:app` |
+| `apps/christian-listing` | 3000 | — | `scope:web, type:app` |
+| `apps/cl-admin` | 3001 | — | `scope:admin-ui, type:app` |
 | `apps/gateway` | 4000 | — | `scope:gateway, type:app` |
 | `apps/subgraph-identity` | 4001 | `cl_identity` | `scope:identity, type:app` |
 | `apps/subgraph-events` | 4002 | `cl_events` | `scope:events, type:app` |
@@ -47,7 +48,7 @@ Faith-community platform (Events, Jobs, Marketplace) for diaspora audiences. Nx 
 ### Authentication
 - **Always** call `buildAuthContext(request)` from `@christian-listings/auth` in every subgraph's Apollo context function.
 - Use `buildAuthPlugin({ optional: true })` for public routes (browse without login).
-- The web app reads `VITE_FIREBASE_*` env vars for the client SDK.
+- The browser apps read `CL_FIREBASE_*` env vars for the client SDK.
 - The backend reads `FIREBASE_SERVICE_ACCOUNT_JSON` (base64 JSON) for the Admin SDK.
 
 ### Schema Changes
