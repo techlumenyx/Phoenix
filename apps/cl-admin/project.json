@@ -1,0 +1,63 @@
+{
+  "name": "cl-admin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/cl-admin/src",
+  "projectType": "application",
+  "tags": ["scope:admin-ui", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/cl-admin",
+        "index": "apps/cl-admin/index.html",
+        "main": "apps/cl-admin/src/main.tsx",
+        "tsConfig": "apps/cl-admin/tsconfig.app.json",
+        "assets": ["apps/cl-admin/src/assets"],
+        "webpackConfig": "apps/cl-admin/webpack.config.js"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development",
+          "sourceMap": true,
+          "extractLicenses": false,
+          "optimization": false
+        },
+        "production": {
+          "mode": "production",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "optimization": true
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/webpack:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "cl-admin:build",
+        "port": 3001
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "cl-admin:build:development"
+        },
+        "production": {
+          "buildTarget": "cl-admin:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/cl-admin/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
