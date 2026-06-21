@@ -50,6 +50,8 @@ These are hardcoded in `docker-compose.yml` using Docker's internal DNS. Only ne
 | `CL_FIREBASE_API_KEY` | Yes | Firebase client API key. Found in Firebase Console → Project Settings → Your apps → Web app |
 | `CL_FIREBASE_AUTH_DOMAIN` | Yes | Firebase Auth domain. Format: `<project-id>.firebaseapp.com` |
 | `CL_FIREBASE_PROJECT_ID` | Yes | Firebase project ID |
+| `CL_FIREBASE_STORAGE_BUCKET` | No | Firebase Storage bucket. Format: `<project-id>.appspot.com` |
+| `CL_FIREBASE_MESSAGING_SENDER_ID` | No | Firebase messaging sender ID |
 | `CL_FIREBASE_APP_ID` | Yes | Firebase web app ID. Format: `1:<project-number>:web:<hash>` |
 
 **Note:** Unlike Vite (which auto-includes `VITE_*` vars), webpack requires explicit injection. The `webpack.config.js` in each app reads all `CL_*` keys from `process.env` at build time and injects them via `DefinePlugin`. No other env vars are exposed to the browser.

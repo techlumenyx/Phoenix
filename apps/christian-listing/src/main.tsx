@@ -3,18 +3,8 @@ import { BrowserRouter } from 'react-router-dom';
 import * as ReactDOM from 'react-dom/client';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { firebaseAuth } from './firebase';
 import App from './app/app';
-
-const firebaseApp = initializeApp({
-  apiKey: process.env['CL_FIREBASE_API_KEY'],
-  authDomain: process.env['CL_FIREBASE_AUTH_DOMAIN'],
-  projectId: process.env['CL_FIREBASE_PROJECT_ID'],
-  appId: process.env['CL_FIREBASE_APP_ID'],
-});
-
-export const firebaseAuth = getAuth(firebaseApp);
 
 const httpLink = createHttpLink({
   uri: process.env['CL_GRAPHQL_URL'] ?? 'http://localhost:4000/graphql',
