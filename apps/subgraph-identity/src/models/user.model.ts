@@ -13,6 +13,29 @@ export const USER_PREFERENCES = [
 
 export type UserPreference = (typeof USER_PREFERENCES)[number];
 
+// All roles across the platform
+export const ROLES = [
+  'super_admin',        // platform — full admin dashboard access
+  'master_admin',       // org — creator, can delete org
+  'site_admin',         // org — full access except deletion
+  'events_manager',     // org — events only
+  'jobs_manager',       // org — job listings only
+  'classifieds_manager', // org — marketplace only
+] as const;
+
+export type Role = (typeof ROLES)[number];
+
+// Org-scoped subset — super_admin cannot be assigned via invite
+export const ORG_ROLES = [
+  'master_admin',
+  'site_admin',
+  'events_manager',
+  'jobs_manager',
+  'classifieds_manager',
+] as const;
+
+export type OrgRole = (typeof ORG_ROLES)[number];
+
 export interface IUser {
   _id: mongoose.Types.ObjectId;
   firebaseUid: string;
@@ -22,6 +45,15 @@ export interface IUser {
   regionCode: string | null;   // filter  — "GB-LND"    — set in onboarding step 1
   preferences: UserPreference[];
   onboardingCompleted: boolean;
+
+  // All platform and org roles in one array — [] for regular users
+  roles: Role[];
+
+  // Org membership — null/empty if not part of an org
+  orgId:        mongoose.Types.ObjectId | null;
+  orgInvitedBy: string | null;   // firebaseUid of inviter; null if org creator
+  orgJoinedAt:  Date | null;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,15 +62,22 @@ export type UserDocument = HydratedDocument<IUser>;
 
 export const UserSchema = new Schema<IUser>(
   {
-    firebaseUid:         { type: String, required: true, unique: true },
-    email:               { type: String, required: true, unique: true },
-    name:                { type: String, required: true },
-    region:              { type: String, default: null },
-    regionCode:          { type: String, default: null },
+    firebaseUid:         { type: String,  required: true, unique: true },
+    email:               { type: String,  required: true, unique: true },
+    name:                { type: String,  required: true },
+    region:              { type: String,  default: null },
+    regionCode:          { type: String,  default: null },
     preferences:         [{ type: String, enum: USER_PREFERENCES }],
     onboardingCompleted: { type: Boolean, default: false },
+
+    roles: [{ type: String, enum: ROLES }],
+
+    orgId:        { type: Schema.Types.ObjectId, default: null },
+    orgInvitedBy: { type: String, default: null },
+    orgJoinedAt:  { type: Date,   default: null },
   },
   { timestamps: true },
 );
 
 UserSchema.index({ regionCode: 1 });
+UserSchema.index({ orgId: 1 });
