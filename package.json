@@ -14,10 +14,10 @@
     "events": "node --env-file=.env dist/apps/subgraph-events/main.js",
     "classifieds": "node --env-file=.env dist/apps/subgraph-classifieds/main.js",
     "admin": "node --env-file=.env dist/apps/subgraph-admin/main.js",
-    "backend": "concurrently -n identity,events,classifieds,admin -c cyan,green,yellow,magenta \"npm run identity\" \"npm run events\" \"npm run classifieds\" \"npm run admin\"",
+    "backend": "concurrently -n identity,events,classifieds,admin -c cyan,green,yellow,magenta npm:identity npm:events npm:classifieds npm:admin",
     "cl":       "nx serve christian-listing",
     "cl-admin": "nx serve cl-admin",
-    "frontend": "concurrently -n cl,cl-admin -c blue,red \"npm run cl\" \"npm run cl-admin\""
+    "frontend": "concurrently -n cl,cl-admin -c blue,red npm:cl npm:cl-admin"
   },
   "dependencies": {
     "@apollo/client": "^3.14.1",
