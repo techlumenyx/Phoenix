@@ -1,0 +1,521 @@
+import { useState, FormEvent, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  updateProfile,
+} from 'firebase/auth';
+import { firebaseAuth } from '../../firebase';
+
+interface Props {
+  onClose: () => void;
+  defaultTab?: 'signup' | 'signin';
+}
+
+function SceneHeader({ onClose }: { onClose: () => void }) {
+  // viewBox 800×280. Terrain ground ~y=200, hill peak ~y=118. Sky occupies top ~43%.
+  // Moon at (310,72) r=62 — drawn BEFORE terrain fill so it shows in sky.
+  return (
+    <div className="relative h-36 sm:h-48 shrink-0 overflow-hidden rounded-t-2xl">
+      <svg
+        viewBox="0 0 800 280"
+        preserveAspectRatio="xMidYMid slice"
+        className="absolute inset-0 w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <linearGradient id="s-sky" x1="0" y1="0" x2="0.9" y2="1">
+            <stop offset="0%"   stopColor="#2b4253" />
+            <stop offset="50%"  stopColor="#3f6070" />
+            <stop offset="100%" stopColor="#5e8799" />
+          </linearGradient>
+          <radialGradient id="s-moon" cx="40%" cy="36%" r="56%">
+            <stop offset="0%"   stopColor="#e2eaef" />
+            <stop offset="58%"  stopColor="#c4d3db" />
+            <stop offset="100%" stopColor="#b0c3ce" />
+          </radialGradient>
+          <radialGradient id="s-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="rgba(195,218,232,0.28)" />
+            <stop offset="100%" stopColor="rgba(195,218,232,0)" />
+          </radialGradient>
+        </defs>
+
+        {/* Sky */}
+        <rect width="800" height="280" fill="url(#s-sky)" />
+
+        {/* Stars — scattered across upper sky */}
+        {([
+          [52,17,1.1],[88,42,0.7],[136,11,1.2],[180,34,0.8],[224,22,0.95],
+          [335,14,0.85],[412,17,1.0],[452,35,0.72],[492,11,1.1],[542,47,0.8],
+          [588,21,0.9],[632,40,0.7],[672,14,1.0],[714,33,0.8],[752,47,0.7],
+          [376,49,0.7],[696,53,0.7],[644,27,0.65],[500,26,0.8],[560,38,0.65],
+        ] as [number,number,number][]).map(([cx,cy,r],i) => (
+          <circle key={i} cx={cx} cy={cy} r={r} fill="white" opacity="0.46" />
+        ))}
+
+        {/* Moon glow — drawn before terrain so it stays in sky */}
+        <circle cx="310" cy="72" r="96" fill="url(#s-glow)" />
+        {/* Moon body */}
+        <circle cx="310" cy="72" r="52" fill="url(#s-moon)" />
+
+        {/* Birds — upper right of moon */}
+        {/* Largest / closest */}
+        <path d="M 460 58 C 474 46 492 51 501 58 C 510 51 528 46 542 58"
+              stroke="white" strokeWidth="2.6" fill="none" strokeLinecap="round"/>
+        {/* Medium */}
+        <path d="M 436 82 C 447 74 459 78 465 83 C 471 78 483 74 494 82"
+              stroke="white" strokeWidth="2.0" fill="none" strokeLinecap="round"/>
+        {/* Small / furthest */}
+        <path d="M 510 97 C 518 90 527 94 531 98 C 535 94 544 90 552 97"
+              stroke="white" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+
+        {/* ── TERRAIN ── */}
+        {/*
+          Hill profile in 800×280 space:
+            Left ground:        (0,   202)
+            Hill peak:          (205, 118)
+            Valley after peak:  (310, 165)
+            Secondary bump:     (480, 152)
+            Right ground:       (800, 188)
+          Contour lines step every ~7px from ground (y=202) toward peak (y=118),
+          giving 12 visible lines.
+        */}
+
+        {/* Solid white base — drawn LAST so it covers terrain body, NOT moon */}
+        <path fill="white" d="
+          M -10 300 L -10 202
+          C 22 190, 62 173, 100 155
+          C 132 140, 168 120, 205 118
+          C 224 118, 240 124, 258 135
+          C 278 148, 298 165, 320 172
+          C 345 179, 380 177, 420 170
+          C 452 164, 478 153, 510 155
+          C 548 157, 590 168, 800 188
+          L 800 300 Z
+        "/>
+
+        {/* Contour 1 — just above ground */}
+        <path stroke="white" strokeWidth="1.0" fill="none" opacity="0.88" d="
+          M -10 193 C 20 181, 60 164, 98 146
+          C 130 131, 166 111, 203 110
+          C 222 110, 238 116, 256 127
+          C 276 140, 296 157, 318 164
+          C 343 171, 378 169, 418 162
+          C 450 156, 476 145, 508 147
+          C 546 149, 588 160, 800 180
+        "/>
+        {/* Contour 2 */}
+        <path stroke="white" strokeWidth="0.98" fill="none" opacity="0.80" d="
+          M -10 184 C 18 172, 58 155, 95 137
+          C 127 122, 163 102, 200 102
+          C 220 102, 236 108, 254 119
+          C 274 132, 294 149, 316 156
+          C 341 163, 376 161, 416 154
+          C 448 148, 474 137, 506 139
+          C 544 141, 586 152, 800 172
+        "/>
+        {/* Contour 3 */}
+        <path stroke="white" strokeWidth="0.95" fill="none" opacity="0.72" d="
+          M -10 175 C 16 163, 55 146, 91 128
+          C 123 113, 159 93, 197 93
+          C 217 93, 234 100, 252 111
+          C 272 124, 292 141, 314 148
+          C 339 155, 374 153, 414 146
+          C 446 140, 472 129, 504 131
+          C 542 133, 584 144, 800 164
+        "/>
+        {/* Contour 4 */}
+        <path stroke="white" strokeWidth="0.92" fill="none" opacity="0.65" d="
+          M -5 166 C 14 154, 52 137, 87 119
+          C 119 104, 155 84, 193 84
+          C 214 85, 231 92, 249 103
+          C 269 116, 290 133, 311 140
+          C 336 147, 372 145, 411 138
+          C 443 132, 469 121, 501 123
+          C 539 125, 582 136, 800 156
+        "/>
+        {/* Contour 5 */}
+        <path stroke="white" strokeWidth="0.90" fill="none" opacity="0.58" d="
+          M 10 157 C 24 146, 50 129, 82 111
+          C 113 96, 150 76, 188 76
+          C 210 77, 228 84, 247 95
+          C 267 108, 288 125, 309 132
+          C 334 139, 369 137, 408 130
+          C 440 124, 466 113, 498 116
+          C 536 118, 580 129, 800 148
+        "/>
+        {/* Contour 6 */}
+        <path stroke="white" strokeWidth="0.87" fill="none" opacity="0.52" d="
+          M 28 148 C 40 137, 62 121, 76 103
+          C 103 88, 143 68, 182 68
+          C 205 69, 225 76, 244 87
+          C 264 100, 285 117, 306 124
+          C 331 131, 367 129, 406 122
+          C 437 116, 463 105, 495 108
+          C 533 110, 578 121, 800 140
+        "/>
+        {/* Contour 7 */}
+        <path stroke="white" strokeWidth="0.84" fill="none" opacity="0.46" d="
+          M 50 139 C 60 129, 74 114, 82 96
+          C 96 81, 130 62, 175 61
+          C 200 62, 221 69, 241 80
+          C 261 93, 282 110, 303 116
+          C 328 123, 364 121, 403 114
+          C 434 108, 460 97, 492 100
+          C 530 102, 576 113, 800 132
+        "/>
+        {/* Contour 8 */}
+        <path stroke="white" strokeWidth="0.81" fill="none" opacity="0.40" d="
+          M 76 130 C 84 121, 92 108, 96 90
+          C 104 74, 122 57, 168 56
+          C 194 57, 216 64, 237 75
+          C 257 88, 279 104, 299 110
+          C 324 116, 360 114, 399 107
+          C 430 101, 456 90, 489 93
+          C 527 95, 574 106, 800 124
+        "/>
+        {/* Contour 9 */}
+        <path stroke="white" strokeWidth="0.78" fill="none" opacity="0.34" d="
+          M 104 121 C 110 113, 116 101, 116 84
+          C 118 68, 130 52, 162 51
+          C 189 52, 212 59, 233 70
+          C 253 83, 275 99, 295 105
+          C 320 110, 356 108, 395 101
+          C 426 95, 452 84, 485 87
+          C 523 89, 571 100, 800 116
+        "/>
+        {/* Contour 10 */}
+        <path stroke="white" strokeWidth="0.75" fill="none" opacity="0.28" d="
+          M 134 112 C 138 106, 140 95, 140 78
+          C 140 63, 144 49, 158 48
+          C 184 49, 208 56, 229 67
+          C 249 79, 272 95, 292 100
+          C 317 105, 352 103, 391 96
+          C 422 90, 448 79, 481 82
+          C 519 84, 568 95, 800 108
+        "/>
+        {/* Contour 11 */}
+        <path stroke="white" strokeWidth="0.72" fill="none" opacity="0.22" d="
+          M 166 103 C 168 98, 166 88, 164 72
+          C 162 58, 158 47, 155 46
+          C 181 47, 205 54, 226 65
+          C 246 77, 269 92, 289 97
+          C 314 101, 349 99, 388 92
+          C 419 86, 445 75, 478 78
+          C 516 80, 566 91, 800 101
+        "/>
+        {/* Contour 12 — innermost, near peak */}
+        <path stroke="white" strokeWidth="0.68" fill="none" opacity="0.16" d="
+          M 192 93 C 192 89, 188 80, 184 65
+          C 180 52, 170 46, 162 46
+          C 180 47, 202 53, 222 63
+          C 243 75, 267 90, 287 95
+          C 312 99, 347 97, 386 90
+          C 417 84, 443 73, 476 76
+          C 514 78, 564 89, 800 97
+        "/>
+      </svg>
+
+      {/* Close */}
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 z-10 text-white/60 hover:text-white transition-colors"
+        aria-label="Close"
+      >
+        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd"
+            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+            clipRule="evenodd"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+const INPUT =
+  'w-full bg-[#ede9e4] rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C9A96E] transition';
+
+const DARK_BTN =
+  'w-full py-2.5 rounded-xl bg-[#1a1007] text-white text-sm font-semibold hover:bg-[#2d1e0d] transition-colors disabled:opacity-50';
+
+export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
+  const [tab, setTab] = useState<'signup' | 'signin'>(defaultTab);
+
+  const [fullName, setFullName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+
+  const [signinEmail, setSigninEmail] = useState('');
+  const [signinPassword, setSigninPassword] = useState('');
+
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const close = useCallback(() => onClose(), [onClose]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [close]);
+
+  function switchTab(next: 'signup' | 'signin') {
+    setTab(next);
+    setError('');
+  }
+
+  async function handleSignUp(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const { user } = await createUserWithEmailAndPassword(firebaseAuth, signupEmail, signupPassword);
+      if (fullName) await updateProfile(user, { displayName: fullName });
+      close();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign up failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSignIn(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(firebaseAuth, signinEmail, signinPassword);
+      close();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      close();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleFacebook() {
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithPopup(firebaseAuth, new FacebookAuthProvider());
+      close();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Facebook sign in failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={tab === 'signup' ? 'Sign up' : 'Sign in'}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60"
+        style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+        onClick={close}
+        aria-hidden="true"
+      />
+
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-[440px] bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <SceneHeader onClose={close} />
+
+        <div className="px-6 pb-4 overflow-y-hidden">
+          {/* Heading */}
+          <h2 className="text-2xl font-serif font-bold text-[#1a1007] mt-4 mb-0.5">
+            Join the Sanctuary
+          </h2>
+          <p className="text-xs text-gray-500 mb-3">
+            Discover Events, Jobs &amp; Deals all in one place, without the clutter
+          </p>
+
+          {/* Tab toggle */}
+          <div className="flex rounded-xl overflow-hidden mb-3" style={{ background: '#ede9e4' }}>
+            <button
+              onClick={() => switchTab('signup')}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
+                tab === 'signup'
+                  ? 'bg-[#1a1007] text-white shadow'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Sign Up
+            </button>
+            <button
+              onClick={() => switchTab('signin')}
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
+                tab === 'signin'
+                  ? 'bg-[#1a1007] text-white shadow'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              Sign In
+            </button>
+          </div>
+
+          {error && (
+            <p className="mb-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          {/* Sign Up form */}
+          {tab === 'signup' && (
+            <form onSubmit={handleSignUp} className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  className={INPUT}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                  placeholder="email@mail.com"
+                  className={INPUT}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  placeholder="••••••••••••••"
+                  className={INPUT}
+                />
+              </div>
+              <button type="submit" disabled={loading} className={`${DARK_BTN} mt-1`}>
+                {loading ? 'Creating…' : 'Create Account'}
+              </button>
+            </form>
+          )}
+
+          {/* Sign In form */}
+          {tab === 'signin' && (
+            <form onSubmit={handleSignIn} className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={signinEmail}
+                  onChange={(e) => setSigninEmail(e.target.value)}
+                  placeholder="email@mail.com"
+                  className={INPUT}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={signinPassword}
+                  onChange={(e) => setSigninPassword(e.target.value)}
+                  placeholder="••••••••••••••"
+                  className={INPUT}
+                />
+              </div>
+              <button type="submit" disabled={loading} className={`${DARK_BTN} mt-1`}>
+                {loading ? 'Signing in…' : 'Sign In'}
+              </button>
+            </form>
+          )}
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-3">
+            <hr className="flex-1 border-gray-200" />
+            <span className="text-[10px] tracking-widest font-medium text-gray-400 uppercase">
+              or sign-up with
+            </span>
+            <hr className="flex-1 border-gray-200" />
+          </div>
+
+          {/* Social */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={handleGoogle}
+              disabled={loading}
+              className="py-2.5 rounded-xl bg-[#1a1007] text-white text-xs font-semibold hover:bg-[#2d1e0d] transition-colors disabled:opacity-50"
+            >
+              Google Account
+            </button>
+            <button
+              onClick={handleFacebook}
+              disabled={loading}
+              className="py-2.5 rounded-xl bg-[#1a1007] text-white text-xs font-semibold hover:bg-[#2d1e0d] transition-colors disabled:opacity-50"
+            >
+              Facebook ID
+            </button>
+          </div>
+
+          {/* Org link */}
+          <p className="mt-3 text-center text-xs text-gray-500">
+            <Link
+              to="/org/signup"
+              onClick={close}
+              className="underline underline-offset-2 hover:text-gray-700"
+            >
+              Are you an Organization ? Sign Up as an Org. →
+            </Link>
+          </p>
+
+          {/* Legal */}
+          <p className="mt-2 text-center text-[10px] text-gray-400 leading-relaxed">
+            By joining, you agree to our{' '}
+            <Link
+              to="/terms"
+              onClick={close}
+              className="font-semibold text-gray-600 hover:underline"
+            >
+              Terms Of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              to="/privacy"
+              onClick={close}
+              className="font-semibold text-gray-600 hover:underline"
+            >
+              Privacy Policy
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
