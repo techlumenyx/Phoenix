@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write   # Required for Workload Identity Federation OIDC
 
     steps:
       - name: Checkout
@@ -47,24 +46,19 @@ jobs:
           CL_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.CL_FIREBASE_MESSAGING_SENDER_ID }}
           CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_CL }}
 
-      - name: Authenticate to Google Cloud (WIF)
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
       - name: Deploy to Firebase Hosting (christian-listing)
         run: firebase deploy --only hosting:christian-listing --project ${{ vars.FIREBASE_PROJECT_ID }}
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
   deploy-cl-admin:
     name: Build & Deploy cl-admin
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write   # Required for Workload Identity Federation OIDC
 
     steps:
       - name: Checkout
@@ -98,14 +92,10 @@ jobs:
           CL_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.CL_FIREBASE_MESSAGING_SENDER_ID }}
           CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_ADMIN }}
 
-      - name: Authenticate to Google Cloud (WIF)
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
       - name: Deploy to Firebase Hosting (cl-admin)
         run: firebase deploy --only hosting:cl-admin --project ${{ vars.FIREBASE_PROJECT_ID }}
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
