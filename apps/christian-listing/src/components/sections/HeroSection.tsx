@@ -3,19 +3,39 @@ import { SearchIcon } from '../layout/icons';
 export default function HeroSection() {
   return (
     <section
-      className="relative w-full min-h-[520px] md:min-h-[600px] flex items-center justify-center bg-[#2B2416] overflow-hidden"
+      style={{ minHeight: '100vh' }}
+      className="relative w-full min-h-full flex items-center justify-center bg-[#2B2416] overflow-hidden"
       aria-label="Hero"
     >
+      {/* Radial blur — sharp centre, blurred edges */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          maskImage:
+            'radial-gradient(ellipse 55% 55% at 50% 50%, transparent 40%, black 100%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse 55% 55% at 50% 50%, transparent 40%, black 100%)',
+        }}
+      />
+
       {/* Background image — replace src with the actual church interior asset */}
       <img
-        src="/assets/hero-church.jpg"
+        src="/assets/background/background.png"
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover object-center opacity-80"
       />
 
-      {/* Gradient overlay to darken edges and keep centre readable */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+      {/* Rectangle 83 — design-spec radial white vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(148.64% 121.35% at 50% -30.34%, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 35.64%, rgba(255,255,255,0.25) 69.14%, rgba(255,255,255,0.68) 84.77%, #ffffff 100%)',
+        }}
+      />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-2xl mx-auto gap-5">

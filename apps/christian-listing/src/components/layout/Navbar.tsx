@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
 import { ChevronDownIcon, MapPinIcon } from './icons';
 
 const NAV_LINKS = [
-  { label: 'Home', to: '/' },
-  { label: 'Events', to: '/events' },
-  { label: 'Marketplace', to: '/marketplace' },
-  { label: 'Jobs', to: '/jobs' },
+  { label: 'Home', href: '/' },
+  { label: 'Events', href: '/events' },
+  { label: 'Marketplace', href: '/marketplace' },
+  { label: 'Jobs', href: '/jobs' },
 ] as const;
 
 function ChurchLogo() {
@@ -48,38 +46,39 @@ function RegionSelector() {
 }
 
 export default function Navbar() {
-  const { user, logout } = useAuthStore();
+  const [activeLink, setActiveLink] = useState<string>('Home');
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="w-full bg-[#1B1B1B] px-6 md:px-10 py-4 flex items-center justify-between sticky top-0 z-50">
+    <nav
+      className="w-full px-6 md:px-10 py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-50"
+      style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+    >
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-3 shrink-0">
+      <a href="/" className="flex items-center gap-3 shrink-0">
         <ChurchLogo />
         <span className="text-white font-semibold text-sm tracking-widest uppercase leading-tight">
           Christian
           <br />
           Listings
         </span>
-      </Link>
+      </a>
 
       {/* Desktop nav links */}
       <ul className="hidden md:flex items-center gap-8">
-        {NAV_LINKS.map(({ label, to }) => (
+        {NAV_LINKS.map(({ label, href }) => (
           <li key={label}>
-            <NavLink
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors pb-1 ${
-                  isActive
-                    ? 'text-white border-b-2 border-white'
-                    : 'text-white/70 hover:text-white'
-                }`
-              }
+            <a
+              href={href}
+              onClick={() => setActiveLink(label)}
+              className={`text-sm font-medium transition-colors pb-1 ${
+                activeLink === label
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-white/70 hover:text-white'
+              }`}
             >
               {label}
-            </NavLink>
+            </a>
           </li>
         ))}
       </ul>
@@ -87,29 +86,12 @@ export default function Navbar() {
       {/* Right actions */}
       <div className="hidden md:flex items-center gap-3">
         <RegionSelector />
-        {user ? (
-          <>
-            <Link
-              to="/dashboard"
-              className="px-5 py-2 rounded-full bg-[#2A2A2A] text-white text-sm font-medium hover:bg-[#333] transition-colors"
-            >
-              Dashboard
-            </Link>
-            <button
-              onClick={logout}
-              className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold hover:bg-[#b8965e] transition-colors"
-            >
-              Sign Out
-            </button>
-          </>
-        ) : (
-          <Link
-            to="/signin"
-            className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold hover:bg-[#b8965e] transition-colors"
-          >
-            Sign In
-          </Link>
-        )}
+        <a
+          href="/signin"
+          className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold hover:bg-[#b8965e] transition-colors"
+        >
+          Sign In
+        </a>
       </div>
 
       {/* Mobile hamburger */}
@@ -125,38 +107,28 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div className="absolute top-full left-0 w-full bg-[#1B1B1B] md:hidden flex flex-col px-6 py-4 gap-4 border-t border-white/10">
-          {NAV_LINKS.map(({ label, to }) => (
-            <NavLink
+        <div
+          className="absolute top-full left-0 w-full md:hidden flex flex-col px-6 py-4 gap-4 border-t border-white/10"
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+        >
+          {NAV_LINKS.map(({ label, href }) => (
+            <a
               key={label}
-              to={to}
-              end={to === '/'}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) =>
-                `text-sm font-medium ${isActive ? 'text-white' : 'text-white/70'}`
-              }
+              href={href}
+              onClick={() => { setActiveLink(label); setMenuOpen(false); }}
+              className={`text-sm font-medium ${activeLink === label ? 'text-white' : 'text-white/70'}`}
             >
               {label}
-            </NavLink>
+            </a>
           ))}
-          <div className="flex items-center gap-3 pt-2 border-t border-white/10 flex-wrap">
+          <div className="flex items-center gap-3 pt-2 border-t border-white/10">
             <RegionSelector />
-            {user ? (
-              <button
-                onClick={() => { logout(); setMenuOpen(false); }}
-                className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <Link
-                to="/signin"
-                onClick={() => setMenuOpen(false)}
-                className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold"
-              >
-                Sign In
-              </Link>
-            )}
+            <a
+              href="/signin"
+              className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold"
+            >
+              Sign In
+            </a>
           </div>
         </div>
       )}
