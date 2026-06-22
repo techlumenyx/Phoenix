@@ -30,7 +30,7 @@ export interface IVerificationDetails {
 
 export interface IOrganisation {
   _id: mongoose.Types.ObjectId;
-  firebaseUid: string;   // links to the organisation's Firebase Auth account
+  createdBy: string;   // firebaseUid of the master_admin (user who created the org)
   // Step 1 — mandatory
   phoneNumber: string;
   // Step 2 — skippable
@@ -66,7 +66,7 @@ const VerificationDetailsSchema = new Schema<IVerificationDetails>(
 
 export const OrganisationSchema = new Schema<IOrganisation>(
   {
-    firebaseUid:  { type: String, required: true, unique: true },
+    createdBy:    { type: String, required: true },
     phoneNumber:  { type: String, required: true },
 
     name:             { type: String, default: null },
@@ -88,6 +88,7 @@ export const OrganisationSchema = new Schema<IOrganisation>(
   { timestamps: true },
 );
 
+OrganisationSchema.index({ createdBy: 1 });
 OrganisationSchema.index({ regionCode: 1 });
 OrganisationSchema.index({ verificationStatus: 1 });
 
