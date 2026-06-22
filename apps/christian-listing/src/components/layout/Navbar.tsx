@@ -1,33 +1,15 @@
 import { useState } from 'react';
-import { ChevronDownIcon, MapPinIcon } from './icons';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDownIcon, ChurchLogo, MapPinIcon } from './icons';
 import SignInModal from './SignInModal';
+import { useAuthStore } from '../../store/authStore';
 
 const NAV_LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'Events', href: '/events' },
+  { label: 'Home',        href: '/' },
+  { label: 'Events',      href: '/events' },
   { label: 'Marketplace', href: '/marketplace' },
-  { label: 'Jobs', href: '/jobs' },
+  { label: 'Jobs',        href: '/jobs' },
 ] as const;
-
-function ChurchLogo() {
-  return (
-    <svg
-      width="36"
-      height="44"
-      viewBox="0 0 36 44"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect x="1.5" y="1.5" width="33" height="41" rx="2" stroke="white" strokeWidth="1.5" />
-      <line x1="18" y1="5" x2="18" y2="16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="12" y1="10.5" x2="24" y2="10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M7 22 Q7 15 18 15 Q29 15 29 22" stroke="white" strokeWidth="1.5" fill="none" />
-      <path d="M13 43 L13 32 Q13 28 16 28 L20 28 Q23 28 23 32 L23 43" stroke="white" strokeWidth="1.5" fill="none" />
-      <rect x="7" y="22" width="22" height="21" fill="none" />
-    </svg>
-  );
-}
 
 function RegionSelector() {
   const [open, setOpen] = useState(false);
@@ -46,10 +28,35 @@ function RegionSelector() {
   );
 }
 
+function UserAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div className="w-8 h-8 rounded-full bg-[#C9A96E] flex items-center justify-center text-[#1B1B1B] text-xs font-bold shrink-0">
+      {initials}
+    </div>
+  );
+}
+
 export default function Navbar() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+
   const [activeLink, setActiveLink] = useState<string>('Home');
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen]     = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
+
+  const handleProfileClick = () => {
+    // orgId routing added here once GraphQL me query is wired
+    navigate('/profile');
+  };
+
+  const displayName = user?.displayName ?? user?.email ?? 'User';
 
   return (
     <>
@@ -89,12 +96,24 @@ export default function Navbar() {
         {/* Right actions */}
         <div className="hidden md:flex items-center gap-3">
           <RegionSelector />
-          <button
-            onClick={() => setSignInOpen(true)}
-            className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold hover:bg-[#b8965e] transition-colors"
-          >
-            Sign In
-          </button>
+          {user ? (
+            <button
+              onClick={handleProfileClick}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2A2A2A] hover:bg-[#333] transition-colors"
+            >
+              <UserAvatar name={displayName} />
+              <span className="text-white text-sm font-medium max-w-[120px] truncate">
+                {displayName}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setSignInOpen(true)}
+              className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold hover:bg-[#b8965e] transition-colors"
+            >
+              Sign In
+            </button>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -126,12 +145,24 @@ export default function Navbar() {
             ))}
             <div className="flex items-center gap-3 pt-2 border-t border-white/10">
               <RegionSelector />
-              <button
-                onClick={() => { setMenuOpen(false); setSignInOpen(true); }}
-                className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold"
-              >
-                Sign In
-              </button>
+              {user ? (
+                <button
+                  onClick={() => { setMenuOpen(false); handleProfileClick(); }}
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2A2A2A]"
+                >
+                  <UserAvatar name={displayName} />
+                  <span className="text-white text-sm font-medium truncate max-w-[100px]">
+                    {displayName}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setMenuOpen(false); setSignInOpen(true); }}
+                  className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
         )}
