@@ -14,36 +14,10 @@ module.exports = composePlugins(
     );
     config.plugins.push(new DefinePlugin(clEnvVars));
 
-    // Bundle analyzer — opt-in only via ANALYZE=true, never runs in CI
     if (process.env.ANALYZE === 'true') {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
       config.plugins.push(new BundleAnalyzerPlugin());
     }
-
-    // Manual vendor chunk splitting
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          react: {
-            test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/,
-            name: 'vendor-react',
-            chunks: 'all',
-          },
-          apollo: {
-            test: /[\\/]node_modules[\\/](@apollo|graphql)[\\/]/,
-            name: 'vendor-apollo',
-            chunks: 'all',
-          },
-          firebase: {
-            test: /[\\/]node_modules[\\/](firebase|@firebase)[\\/]/,
-            name: 'vendor-firebase',
-            chunks: 'all',
-          },
-        },
-      },
-    };
 
     return config;
   }
