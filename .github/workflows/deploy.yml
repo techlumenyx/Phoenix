@@ -1,0 +1,107 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  deploy-christian-listing:
+    name: Build & Deploy christian-listing
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build christian-listing (production)
+        run: npx nx build christian-listing --configuration=production
+        env:
+          CL_GRAPHQL_URL: ${{ secrets.CL_GRAPHQL_URL }}
+          CL_FIREBASE_API_KEY: ${{ secrets.CL_FIREBASE_API_KEY }}
+          CL_FIREBASE_AUTH_DOMAIN: ${{ secrets.CL_FIREBASE_AUTH_DOMAIN }}
+          CL_FIREBASE_PROJECT_ID: ${{ secrets.CL_FIREBASE_PROJECT_ID }}
+          CL_FIREBASE_STORAGE_BUCKET: ${{ secrets.CL_FIREBASE_STORAGE_BUCKET }}
+          CL_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.CL_FIREBASE_MESSAGING_SENDER_ID }}
+          CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_CL }}
+
+      - name: Deploy to Firebase Hosting (christian-listing)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          target: christian-listing
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+
+  deploy-cl-admin:
+    name: Build & Deploy cl-admin
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build cl-admin (production)
+        run: npx nx build cl-admin --configuration=production
+        env:
+          CL_GRAPHQL_URL: ${{ secrets.CL_GRAPHQL_URL }}
+          CL_FIREBASE_API_KEY: ${{ secrets.CL_FIREBASE_API_KEY }}
+          CL_FIREBASE_AUTH_DOMAIN: ${{ secrets.CL_FIREBASE_AUTH_DOMAIN }}
+          CL_FIREBASE_PROJECT_ID: ${{ secrets.CL_FIREBASE_PROJECT_ID }}
+          CL_FIREBASE_STORAGE_BUCKET: ${{ secrets.CL_FIREBASE_STORAGE_BUCKET }}
+          CL_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.CL_FIREBASE_MESSAGING_SENDER_ID }}
+          CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_ADMIN }}
+
+      - name: Deploy to Firebase Hosting (cl-admin)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          target: cl-admin
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
