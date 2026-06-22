@@ -8,7 +8,7 @@ module.exports = composePlugins(
   (config) => {
     const clEnvVars = Object.fromEntries(
       Object.entries(process.env)
-        .filter(([k]) => k.startsWith('CL_'))
+        .filter(([k]) => k.startsWith('CL_') || k.startsWith('VITE_'))
         .map(([k, v]) => [`process.env.${k}`, JSON.stringify(v)])
     );
     config.plugins.push(new DefinePlugin(clEnvVars));

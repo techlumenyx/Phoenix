@@ -1,5 +1,9 @@
+const path = require('path');
+
 module.exports = {
-  content: ['./src/**/*.{tsx,ts,html}'],
+  content: [
+    path.resolve(__dirname, './src/**/*.{tsx,ts,html}'),
+  ],
   theme: { extend: {} },
   plugins: [],
 };

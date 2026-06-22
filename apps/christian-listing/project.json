@@ -15,6 +15,7 @@
         "main": "apps/christian-listing/src/main.tsx",
         "tsConfig": "apps/christian-listing/tsconfig.app.json",
         "assets": ["apps/christian-listing/src/assets"],
+        "styles": ["apps/christian-listing/src/styles.css"],
         "webpackConfig": "apps/christian-listing/webpack.config.js"
       },
       "configurations": {
