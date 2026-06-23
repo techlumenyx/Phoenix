@@ -7,6 +7,8 @@ import MarketplacePage from '../pages/MarketplacePage';
 import JobsPage from '../pages/JobsPage';
 import SignInPage from '../pages/SignInPage';
 import SignUpPage from '../pages/SignUpPage';
+import OrgSignupPage from '../pages/OrgSignupPage';
+import OrgSetupPage from '../pages/OrgSetupPage';
 import DashboardPage from '../pages/DashboardPage';
 import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -23,6 +25,8 @@ const router = createBrowserRouter([
       { path: 'jobs', element: <JobsPage /> },
       { path: 'signin', element: <SignInPage /> },
       { path: 'signup', element: <SignUpPage /> },
+      { path: 'org/signup', element: <OrgSignupPage /> },
+      { path: 'org/setup', element: <OrgSetupPage /> },
 
       // ── Protected routes (auth required) ───────────────────────────
       {
