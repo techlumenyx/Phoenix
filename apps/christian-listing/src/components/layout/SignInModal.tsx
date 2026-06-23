@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
+  getAdditionalUserInfo,
   updateProfile,
   getAuth,
 } from 'firebase/auth';
@@ -313,31 +314,32 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
     }
   }
 
-  async function handleGoogle() {
+  async function handleSocialSignIn(provider: GoogleAuthProvider | FacebookAuthProvider) {
     setError('');
     setLoading(true);
     try {
-      await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      const result = await signInWithPopup(firebaseAuth, provider);
+      if (getAdditionalUserInfo(result)?.isNewUser) {
+        const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+        try {
+          await createUser({ variables: { input: { name: displayName } } });
+          await getAuth().currentUser?.getIdToken(true);
+        } catch {
+          setError('Account setup failed — please try again.');
+          setLoading(false);
+          return;
+        }
+      }
       close();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+      setError(err instanceof Error ? err.message : 'Sign in failed.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleFacebook() {
-    setError('');
-    setLoading(true);
-    try {
-      await signInWithPopup(firebaseAuth, new FacebookAuthProvider());
-      close();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Facebook sign in failed.');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleGoogle = () => handleSocialSignIn(new GoogleAuthProvider());
+  const handleFacebook = () => handleSocialSignIn(new FacebookAuthProvider());
 
   return (
     <div
@@ -358,7 +360,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
       <div className="relative z-10 w-full max-w-[440px] bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         <SceneHeader onClose={close} />
 
-        <div className="px-6 pb-4 overflow-y-hidden">
+        <div className="px-6 pb-4 overflow-y-auto">
           {/* Heading */}
           <h2 className="text-2xl font-serif font-bold text-[#1a1007] mt-4 mb-0.5">
             Join the Sanctuary
