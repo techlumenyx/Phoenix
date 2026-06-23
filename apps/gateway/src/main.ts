@@ -2,8 +2,8 @@ import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-const ROUTER_CONFIG = join(__dirname, '..', 'router.yaml');
-const SUPERGRAPH = join(__dirname, '..', 'supergraph.graphql');
+const ROUTER_CONFIG = join(__dirname, 'router.yaml');
+const SUPERGRAPH = join(__dirname, 'supergraph.graphql');
 
 function startRouter() {
   if (!existsSync(SUPERGRAPH)) {
