@@ -19,10 +19,12 @@ export async function createUser(
 
   await getAuth().setCustomUserClaims(firebaseUid, { accountType: 'user' });
 
+  const safeName = (args.input.name ?? '').trim() || context.auth.email?.split('@')[0] || 'User';
+
   return UserModel.create({
     firebaseUid,
     email,
-    name: args.input.name,
+    name: safeName,
     region: null,
     regionCode: null,
     preferences: [],
