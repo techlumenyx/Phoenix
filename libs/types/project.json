@@ -21,6 +21,14 @@
       "options": {
         "jestConfig": "libs/types/jest.config.ts"
       }
+    },
+    "codegen": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/lib/generated"],
+      "options": {
+        "command": "node node_modules/@graphql-codegen/cli/cjs/bin.js --config {projectRoot}/codegen.ts",
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }
