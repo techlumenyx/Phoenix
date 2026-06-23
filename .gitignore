@@ -50,3 +50,7 @@ serviceAccount.json
 # Logs
 *.log
 npm-debug.log*
+
+# Apollo Router binary
+router.exe
+router
