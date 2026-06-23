@@ -1,6 +1,3 @@
-supergraph:
-  path: ./supergraph.graphql
-
 sandbox:
   enabled: true
 
@@ -13,20 +10,21 @@ health_check:
   path: /health
 
 cors:
-  origins:
-    - http://localhost:5173
-    - http://localhost:3000
-  allow_credentials: true
-  methods:
-    - GET
-    - POST
-    - OPTIONS
-  headers:
-    - content-type
-    - authorization
-    - x-cl-region
-    - x-request-id
-    - apollo-require-preflight
+  policies:
+    - origins:
+        - http://localhost:5173
+        - http://localhost:3000
+      allow_credentials: true
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+      allow_headers:
+        - content-type
+        - authorization
+        - x-cl-region
+        - x-request-id
+        - apollo-require-preflight
 
 headers:
   all:
