@@ -38,6 +38,24 @@ describe('createOrganisation', () => {
     const result = await createOrganisation({}, { input: { name: 'My Church' } }, baseContext);
     expect(result).toBe(existing);
     expect(mockSetCustomUserClaims).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('updates the name if existing org has no name', async () => {
+    const existingOrg = { _id: 'org-id', name: null, createdBy: 'uid-123', save: jest.fn().mockResolvedValue(undefined) };
+    mockFindOne.mockResolvedValueOnce(existingOrg);
+
+    const result = await createOrganisation(
+      {},
+      { input: { name: 'My Church' } },
+      baseContext,
+    );
+
+    expect(existingOrg.save).toHaveBeenCalledTimes(1);
+    expect(existingOrg.name).toBe('My Church');
+    expect(result.name).toBe('My Church');
+    expect(mockSetCustomUserClaims).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it('sets organisation claim and creates org document', async () => {

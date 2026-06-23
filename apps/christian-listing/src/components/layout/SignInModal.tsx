@@ -281,9 +281,10 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
     setLoading(true);
     try {
       const { user } = await createUserWithEmailAndPassword(firebaseAuth, signupEmail, signupPassword);
-      if (fullName) await updateProfile(user, { displayName: fullName });
+      const displayName = fullName.trim() || signupEmail.split('@')[0];
+      await updateProfile(user, { displayName });
       try {
-        await createUser({ variables: { input: { name: fullName } } });
+        await createUser({ variables: { input: { name: displayName } } });
         await getAuth().currentUser?.getIdToken(true);
       } catch {
         setError('Account setup failed — please try again.');

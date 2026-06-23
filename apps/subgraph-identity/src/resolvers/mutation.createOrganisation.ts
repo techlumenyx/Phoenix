@@ -15,7 +15,13 @@ export async function createOrganisation(
   const { firebaseUid } = context.auth;
 
   const existing = await OrganisationModel.findOne({ createdBy: firebaseUid });
-  if (existing) return existing;
+  if (existing) {
+    if (!existing.name && args.input.name) {
+      existing.name = args.input.name;
+      await existing.save();
+    }
+    return existing;
+  }
 
   await getAuth().setCustomUserClaims(firebaseUid, { accountType: 'organisation' });
 

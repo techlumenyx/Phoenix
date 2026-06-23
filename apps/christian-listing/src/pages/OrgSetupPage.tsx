@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { getAuth } from 'firebase/auth';
 import { useAuthStore } from '../store/authStore';
@@ -22,15 +22,8 @@ export default function OrgSetupPage() {
     if (!initialized) return;
     if (!user) {
       navigate('/org/signup', { replace: true });
-      return;
     }
-    const orgs: { id: string; name: string | null }[] = data?.myOrganisations ?? [];
-    const hasName = orgs.some((o) => o.name && o.name.trim().length > 0);
-    if (hasName) {
-      useAuthStore.setState({ orgSetupChecked: true });
-      navigate('/dashboard', { replace: true });
-    }
-  }, [initialized, user, data, navigate]);
+  }, [initialized, user, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -55,6 +48,13 @@ export default function OrgSetupPage() {
         <span className="text-gray-400 text-sm">Loading…</span>
       </div>
     );
+  }
+
+  const orgs: { id: string; name: string | null }[] = data?.myOrganisations ?? [];
+  const hasName = orgs.some((o) => o.name && o.name.trim().length > 0);
+  if (hasName) {
+    useAuthStore.setState({ orgSetupChecked: true });
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
