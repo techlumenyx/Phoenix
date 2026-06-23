@@ -67,7 +67,7 @@ const VerificationDetailsSchema = new Schema<IVerificationDetails>(
 export const OrganisationSchema = new Schema<IOrganisation>(
   {
     createdBy:    { type: String, required: true },
-    phoneNumber:  { type: String, required: true },
+    phoneNumber:  { type: String, default: null },
 
     name:             { type: String, default: null },
     organisationType: { type: String, enum: ORGANISATION_TYPES, default: null },
@@ -96,3 +96,7 @@ OrganisationSchema.index({ verificationStatus: 1 });
 OrganisationSchema.virtual('isVerified').get(function () {
   return this.verificationStatus === 'VERIFIED';
 });
+
+export const OrganisationModel =
+  (mongoose.models['Organisation'] as mongoose.Model<IOrganisation>) ??
+  mongoose.model<IOrganisation>('Organisation', OrganisationSchema);

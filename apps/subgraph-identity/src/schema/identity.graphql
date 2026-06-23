@@ -33,7 +33,7 @@ type Organisation @key(fields: "id") {
   name: String!
   description: String
   logoUrl: String
-  region: String!
+  region: String
   isVerified: Boolean!
   verificationTier: VerificationTier!
   followerCount: Int!
@@ -99,6 +99,7 @@ type OrganisationConnection {
 # ─── Mutations ────────────────────────────────────────────────────────────────
 
 type Mutation {
+  createUser(input: CreateUserInput!): User!
   updateProfile(input: UpdateProfileInput!): User!
   createOrganisation(input: CreateOrganisationInput!): Organisation!
   updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
@@ -123,11 +124,15 @@ input SocialLinksInput {
   website: String
 }
 
+input CreateUserInput {
+  name: String!
+}
+
 input CreateOrganisationInput {
   name: String!
   description: String
   logoUrl: String
-  region: String!
+  region: String
   websiteUrl: String
 }
 
