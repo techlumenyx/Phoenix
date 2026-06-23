@@ -7,8 +7,11 @@ import {
   FacebookAuthProvider,
   signInWithPopup,
   updateProfile,
+  getAuth,
 } from 'firebase/auth';
+import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../../firebase';
+import { CREATE_USER } from '../../graphql/mutations';
 
 interface Props {
   onClose: () => void;
@@ -253,6 +256,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [createUser] = useMutation(CREATE_USER);
 
   const close = useCallback(() => onClose(), [onClose]);
 
@@ -278,6 +282,14 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
     try {
       const { user } = await createUserWithEmailAndPassword(firebaseAuth, signupEmail, signupPassword);
       if (fullName) await updateProfile(user, { displayName: fullName });
+      try {
+        await createUser({ variables: { input: { name: fullName } } });
+        await getAuth().currentUser?.getIdToken(true);
+      } catch {
+        setError('Account setup failed — please try again.');
+        setLoading(false);
+        return;
+      }
       close();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign up failed.');
@@ -497,15 +509,15 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
 
           {/* Legal */}
           <p className="mt-2 text-center text-[10px] text-gray-400 leading-relaxed">
-            By joining, you agree to our{' '}
+            By joining, you agree to our
             <Link
               to="/terms"
               onClick={close}
               className="font-semibold text-gray-600 hover:underline"
             >
               Terms Of Service
-            </Link>{' '}
-            and{' '}
+            </Link>
+            and
             <Link
               to="/privacy"
               onClick={close}
