@@ -30,11 +30,11 @@ type User @key(fields: "id") {
 
 type Organisation @key(fields: "id") {
   id: ID!
-  name: String!
+  name: String! @shareable
   description: String
   logoUrl: String
   region: String
-  isVerified: Boolean!
+  isVerified: Boolean! @shareable
   verificationTier: VerificationTier!
   followerCount: Int!
   websiteUrl: String
