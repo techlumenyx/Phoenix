@@ -43,6 +43,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   createOrganisation: Organisation;
   createUser: User;
+  signUp: SignUpPayload;
   submitVerification: VerificationRequest;
   updateOrganisation: Organisation;
   updateProfile: User;
@@ -56,6 +57,11 @@ export type MutationCreateOrganisationArgs = {
 
 export type MutationCreateUserArgs = {
   input: CreateUserInput;
+};
+
+
+export type MutationSignUpArgs = {
+  input: SignUpInput;
 };
 
 
@@ -122,6 +128,17 @@ export type QueryOrganisationsArgs = {
 
 export type QueryUserArgs = {
   id: Scalars['ID']['input'];
+};
+
+export type SignUpInput = {
+  email: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
+
+export type SignUpPayload = {
+  __typename?: 'SignUpPayload';
+  customToken: Scalars['String']['output'];
 };
 
 export type SocialLinks = {
@@ -301,6 +318,8 @@ export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   OrganisationConnection: ResolverTypeWrapper<OrganisationConnection>;
   Query: ResolverTypeWrapper<{}>;
+  SignUpInput: SignUpInput;
+  SignUpPayload: ResolverTypeWrapper<SignUpPayload>;
   SocialLinks: ResolverTypeWrapper<SocialLinks>;
   SocialLinksInput: SocialLinksInput;
   UpdateOrganisationInput: UpdateOrganisationInput;
@@ -326,6 +345,8 @@ export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars['Boolean']['output'];
   OrganisationConnection: OrganisationConnection;
   Query: {};
+  SignUpInput: SignUpInput;
+  SignUpPayload: SignUpPayload;
   SocialLinks: SocialLinks;
   SocialLinksInput: SocialLinksInput;
   UpdateOrganisationInput: UpdateOrganisationInput;
@@ -351,6 +372,7 @@ export type FollowRelationshipResolvers<ContextType = GraphQLContext, ParentType
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
   createOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationCreateOrganisationArgs, 'input'>>;
   createUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'input'>>;
+  signUp?: Resolver<ResolversTypes['SignUpPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
   submitVerification?: Resolver<ResolversTypes['VerificationRequest'], ParentType, ContextType, RequireFields<MutationSubmitVerificationArgs, 'documentUrls' | 'organisationId'>>;
   updateOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationUpdateOrganisationArgs, 'id' | 'input'>>;
   updateProfile?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUpdateProfileArgs, 'input'>>;
@@ -386,6 +408,11 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   organisation?: Resolver<Maybe<ResolversTypes['Organisation']>, ParentType, ContextType, RequireFields<QueryOrganisationArgs, 'id'>>;
   organisations?: Resolver<ResolversTypes['OrganisationConnection'], ParentType, ContextType, Partial<QueryOrganisationsArgs>>;
   user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'id'>>;
+}>;
+
+export type SignUpPayloadResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SignUpPayload'] = ResolversParentTypes['SignUpPayload']> = ResolversObject<{
+  customToken?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SocialLinksResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SocialLinks'] = ResolversParentTypes['SocialLinks']> = ResolversObject<{
@@ -439,6 +466,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Organisation?: OrganisationResolvers<ContextType>;
   OrganisationConnection?: OrganisationConnectionResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  SignUpPayload?: SignUpPayloadResolvers<ContextType>;
   SocialLinks?: SocialLinksResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
   UserConnection?: UserConnectionResolvers<ContextType>;

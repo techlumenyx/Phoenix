@@ -1,5 +1,17 @@
 supergraph:
   introspection: true
+  path: /graphql
+
+include_subgraph_errors:
+  all: true
+
+# Override subgraph URLs for local dev (env vars from .env).
+# In Docker, docker-compose sets these to Docker DNS names.
+override_subgraph_url:
+  identity: "${SUBGRAPH_IDENTITY_URL:-http://localhost:4001/graphql}"
+  events: "${SUBGRAPH_EVENTS_URL:-http://localhost:4002/graphql}"
+  classifieds: "${SUBGRAPH_CLASSIFIEDS_URL:-http://localhost:4003/graphql}"
+  admin: "${SUBGRAPH_ADMIN_URL:-http://localhost:4004/graphql}"
 
 sandbox:
   enabled: true

@@ -97,6 +97,3 @@ OrganisationSchema.virtual('isVerified').get(function () {
   return this.verificationStatus === 'VERIFIED';
 });
 
-export const OrganisationModel =
-  (mongoose.models['Organisation'] as mongoose.Model<IOrganisation>) ??
-  mongoose.model<IOrganisation>('Organisation', OrganisationSchema);

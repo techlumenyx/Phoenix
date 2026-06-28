@@ -6,19 +6,23 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin } from '@christian-listings/auth';
+import { buildAuthPlugin, getFirebaseAdmin } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
 import { buildContext, type GraphQLContext } from './context';
 import { resolvers } from './resolvers';
+import { setupModels } from './models';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/identity.graphql'), 'utf-8'),
 );
 
 async function bootstrap() {
+  getFirebaseAdmin(); // initialize Firebase Admin before any requests arrive
+
   const mongoUri = process.env['MONGO_URI'];
   if (!mongoUri) throw new Error('MONGO_URI is required');
-  await createMongoConnection(mongoUri, 'cl_identity');
+  const conn = await createMongoConnection(mongoUri, 'cl_identity');
+  setupModels(conn);
 
   const fastify = Fastify({
     logger: process.env['NODE_ENV'] !== 'test',

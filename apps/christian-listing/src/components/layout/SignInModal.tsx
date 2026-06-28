@@ -2,17 +2,16 @@ import { useState, FormEvent, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithCustomToken,
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
   getAdditionalUserInfo,
-  updateProfile,
   getAuth,
 } from 'firebase/auth';
 import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../../firebase';
-import { CREATE_USER } from '../../graphql/mutations';
+import { SIGN_UP, CREATE_USER } from '../../graphql/mutations';
 
 interface Props {
   onClose: () => void;
@@ -257,6 +256,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signUpMutation] = useMutation(SIGN_UP);
   const [createUser] = useMutation(CREATE_USER);
 
   const close = useCallback(() => onClose(), [onClose]);
@@ -281,17 +281,10 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
     setError('');
     setLoading(true);
     try {
-      const { user } = await createUserWithEmailAndPassword(firebaseAuth, signupEmail, signupPassword);
-      const displayName = fullName.trim() || signupEmail.split('@')[0];
-      await updateProfile(user, { displayName });
-      try {
-        await createUser({ variables: { input: { name: displayName } } });
-        await getAuth().currentUser?.getIdToken(true);
-      } catch {
-        setError('Account setup failed — please try again.');
-        setLoading(false);
-        return;
-      }
+      const { data } = await signUpMutation({
+        variables: { input: { email: signupEmail, password: signupPassword, name: fullName } },
+      });
+      await signInWithCustomToken(firebaseAuth, data.signUp.customToken);
       close();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign up failed.');

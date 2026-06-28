@@ -99,6 +99,7 @@ type OrganisationConnection {
 # ─── Mutations ────────────────────────────────────────────────────────────────
 
 type Mutation {
+  signUp(input: SignUpInput!): SignUpPayload!
   createUser(input: CreateUserInput!): User!
   updateProfile(input: UpdateProfileInput!): User!
   createOrganisation(input: CreateOrganisationInput!): Organisation!
@@ -122,6 +123,16 @@ input SocialLinksInput {
   facebook: String
   twitter: String
   website: String
+}
+
+input SignUpInput {
+  email: String!
+  password: String!
+  name: String!
+}
+
+type SignUpPayload {
+  customToken: String!
 }
 
 input CreateUserInput {

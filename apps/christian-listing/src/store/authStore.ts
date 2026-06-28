@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { onIdTokenChanged, signOut, User } from 'firebase/auth';
 import { firebaseAuth } from '../firebase';
 
 interface AuthState {
@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }));
 
-onAuthStateChanged(firebaseAuth, async (user) => {
+onIdTokenChanged(firebaseAuth, async (user) => {
   if (user) {
     const result = await user.getIdTokenResult();
     const accountType = (result.claims['accountType'] as string) ?? null;

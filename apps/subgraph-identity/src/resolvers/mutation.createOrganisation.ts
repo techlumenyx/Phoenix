@@ -1,6 +1,6 @@
 import { getAuth } from 'firebase-admin/auth';
 import { GraphQLError } from 'graphql';
-import { OrganisationModel } from '../models/organisation.model';
+import { OrganisationModel } from '../models';
 import type { GraphQLContext } from '../context';
 
 export async function createOrganisation(
