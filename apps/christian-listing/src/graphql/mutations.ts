@@ -33,6 +33,19 @@ export const MY_ORGANISATIONS = gql`
     myOrganisations {
       id
       name
+      description
+      logoUrl
+      websiteUrl
+      socialLinks {
+        whatsapp
+        instagram
+        facebook
+        twitter
+        website
+      }
+      region
+      isVerified
+      followerCount
     }
   }
 `;

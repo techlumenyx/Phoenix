@@ -1,50 +1,89 @@
 import { useState } from 'react';
+import { useQuery } from '@apollo/client';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
+import { MY_ORGANISATIONS } from '../../graphql/mutations';
 
-// ── Mock data (replace with GraphQL me query later) ──────────────────────────
-const ORG = {
-  name:          'Grace Community',
-  tagline:       'Dedicated to intentional connection and faith-led community development across Lagos.',
-  description:   'Empowering communities through digital transformation and sustainable fellowship initiatives since 2018.',
-  website:       'grace-community.org',
-  followerCount: '8k',
-  jobCount:      12,
-  logoUrl:       null as string | null,
-  isVerified:    false,
-};
+interface OrgSocialLinks {
+  whatsapp:  string | null;
+  instagram: string | null;
+  facebook:  string | null;
+  twitter:   string | null;
+  website:   string | null;
+}
+
+interface OrgData {
+  id:           string;
+  name:         string | null;
+  description:  string | null;
+  logoUrl:      string | null;
+  websiteUrl:   string | null;
+  socialLinks:  OrgSocialLinks | null;
+  region:       string | null;
+  isVerified:   boolean;
+  followerCount: number;
+}
+
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}k`;
+  return n.toString();
+}
+
+function OrgAvatarInitials({ name }: { name: string }) {
+  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  return (
+    <div className="w-full h-full bg-[#C9A96E] flex items-center justify-center text-white text-4xl font-bold">
+      {initials || '?'}
+    </div>
+  );
+}
 
 // ── Org Profile Header ────────────────────────────────────────────────────────
-function OrgProfileHeader() {
+function OrgProfileHeader({ org }: { org: OrgData }) {
+  const socialEntries = org.socialLinks
+    ? (['instagram', 'twitter', 'whatsapp', 'facebook'] as const)
+        .map((k) => ({ key: k, handle: org.socialLinks![k] }))
+        .filter((e) => !!e.handle)
+        .slice(0, 2)
+        .map((e) => ({ key: e.key, handle: e.handle! }))
+    : [];
+
+  const websiteDisplay = org.websiteUrl?.replace(/^https?:\/\//, '') ?? null;
+  const websiteHref = org.websiteUrl
+    ? org.websiteUrl.startsWith('http') ? org.websiteUrl : `https://${org.websiteUrl}`
+    : null;
+
   return (
     <div className="bg-[#FDF8EE] px-10 py-12 flex items-start gap-8 font-sans min-w-max">
-      
+
       {/* Left Column: Avatar */}
       <div className="relative shrink-0">
         <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-200">
-          <img 
-            src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Última_Cena_-_Da_Vinci_5.jpg" 
-            alt="Grace Community" 
-            className="w-full h-full object-cover" 
-          />
+          {org.logoUrl ? (
+            <img src={org.logoUrl} alt={org.name ?? 'Organisation'} className="w-full h-full object-cover" />
+          ) : (
+            <OrgAvatarInitials name={org.name ?? 'O'} />
+          )}
         </div>
-        {/* Verified Badge */}
-        <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#FDF8EE]">
-          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2l2.4 2.4 3.2-.8.8 3.2 2.4 2.4-2.4 2.4-.8 3.2-3.2-.8L12 22l-2.4-2.4-3.2.8-.8-3.2-2.4-2.4 2.4-2.4.8-3.2 3.2.8L12 2z" />
-            <path fill="#FDF8EE" d="M10.5 15.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
-          </svg>
-        </div>
+        {org.isVerified && (
+          <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#FDF8EE]">
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2l2.4 2.4 3.2-.8.8 3.2 2.4 2.4-2.4 2.4-.8 3.2-3.2-.8L12 22l-2.4-2.4-3.2.8-.8-3.2-2.4-2.4 2.4-2.4.8-3.2 3.2.8L12 2z" />
+              <path fill="#FDF8EE" d="M10.5 15.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Right Column: Content */}
       <div className="flex flex-col w-full max-w-4xl">
-        
+
         {/* Title & Edit Action */}
         <div className="flex items-center gap-3 mb-4">
           <h1 className="text-4xl font-serif font-bold text-[#1B1B1B] tracking-tight">
-            Grace Community
+            {org.name ?? 'Your Organisation'}
           </h1>
-          <button 
+          <button
             className="text-gray-500 hover:text-gray-800 transition-colors"
             aria-label="Edit organisation name"
           >
@@ -55,34 +94,37 @@ function OrgProfileHeader() {
         </div>
 
         {/* Tagline */}
-        <div className="border-l-[3px] border-gray-200 pl-4 mb-5">
-          <p className="text-gray-600 italic text-lg tracking-wide">
-            "Dedicated to intentional connection and faith-led community development across Lagos."
-          </p>
-        </div>
+        {org.description && (
+          <div className="border-l-[3px] border-gray-200 pl-4 mb-5">
+            <p className="text-gray-600 italic text-lg tracking-wide">
+              "{org.description}"
+            </p>
+          </div>
+        )}
 
         {/* Stats & Links */}
         <div className="flex items-center gap-6 text-sm text-gray-500 mb-6">
-          <span><strong className="text-[#1B1B1B] font-semibold">12k</strong> Followers</span>
-          <span><strong className="text-[#1B1B1B] font-semibold">650</strong> Listings</span>
-          <a href="https://gracecommunity.org" className="flex items-center gap-1.5 text-[#1B1B1B] hover:underline font-medium">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            gracecommunity.org
-          </a>
+          <span><strong className="text-[#1B1B1B] font-semibold">{formatCount(org.followerCount)}</strong> Followers</span>
+          {websiteHref && websiteDisplay && (
+            <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#1B1B1B] hover:underline font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              {websiteDisplay}
+            </a>
+          )}
         </div>
 
         {/* White Dashed Container: Mission & Social */}
         <div className="bg-white border border-dashed border-gray-300 rounded-xl p-6 flex flex-col md:flex-row gap-8">
-          
+
           {/* Mission Section */}
           <div className="flex-1">
             <h3 className="text-xs font-semibold text-gray-400 tracking-wider mb-3 uppercase">
               Our Mission
             </h3>
             <p className="text-gray-700 leading-relaxed text-[15px]">
-              Empowering faith communities through digital transformation and sustainable fellowship initiatives since 2018.
+              {org.description ?? 'Add a mission statement in your settings to inspire your community.'}
             </p>
           </div>
 
@@ -92,21 +134,16 @@ function OrgProfileHeader() {
               Social Connection
             </h3>
             <div className="flex items-center gap-3">
-              {/* Pill 1 */}
-              <button className="bg-[#FCEBBB] hover:bg-[#F9DF9F] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
-                </svg>
-                @grace_community
-              </button>
-              {/* Pill 2 */}
-              <button className="bg-[#FCEBBB] hover:bg-[#F9DF9F] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
-                </svg>
-                @grace_community
-              </button>
-              {/* Add Button */}
+              {socialEntries.length > 0 ? socialEntries.map(({ key, handle }) => (
+                <button key={key} className="bg-[#FCEBBB] hover:bg-[#F9DF9F] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+                  </svg>
+                  {handle}
+                </button>
+              )) : (
+                <p className="text-sm text-gray-400 italic">No social links added yet.</p>
+              )}
               <button className="w-9 h-9 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors shrink-0">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -114,7 +151,7 @@ function OrgProfileHeader() {
               </button>
             </div>
           </div>
-          
+
         </div>
       </div>
     </div>
@@ -1297,16 +1334,31 @@ function CreationCentre() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function OrgOverviewPage() {
+  const { data, loading } = useQuery<{ myOrganisations: OrgData[] }>(MY_ORGANISATIONS);
+  const org = data?.myOrganisations?.[0] ?? null;
+
   return (
     <div className="min-h-screen bg-white">
-      <OrgProfileHeader />
+      {loading ? (
+        <div className="bg-[#FDF8EE] h-64 flex items-center justify-center">
+          <span className="w-8 h-8 border-4 border-[#C9A96E] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : org ? (
+        <OrgProfileHeader org={org} />
+      ) : (
+        <div className="bg-[#FDF8EE] px-10 py-16 text-center">
+          <p className="text-gray-500 text-sm mb-3">No organisation found.</p>
+          <a href="/org/signup" className="text-sm font-semibold text-[#C9A96E] underline">
+            Set one up →
+          </a>
+        </div>
+      )}
 
       <AnalyticsAtAGlance />
 
       <ListingsManager />
 
       <div className="px-8 py-6 space-y-6">
-        {/* Two-column: Marketplace Messages + Notification Centre */}
         <div className="grid grid-cols-3 gap-6 items-start">
           <div className="col-span-2">
             <MarketplaceMessages />
@@ -1314,7 +1366,6 @@ export default function OrgOverviewPage() {
           <NotificationCentre />
         </div>
 
-        {/* Creation Centre */}
         <CreationCentre />
       </div>
     </div>

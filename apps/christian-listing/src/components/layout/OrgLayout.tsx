@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQuery } from '@apollo/client';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { MY_ORGANISATIONS } from '../../graphql/mutations';
 import {
   BriefcaseIcon,
   CalendarIcon,
@@ -70,6 +72,10 @@ export default function OrgLayout() {
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
+  const { data: orgData } = useQuery<{ myOrganisations: { id: string; name: string | null }[] }>(MY_ORGANISATIONS);
+  const orgName = orgData?.myOrganisations?.[0]?.name ?? 'Organisation';
+  const orgInitials = orgName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
   return (
     <div className="min-h-screen bg-[#FEF7E9]">
       <OrgTopBar />
@@ -88,7 +94,7 @@ export default function OrgLayout() {
                 className="text-[#1B1B1B] truncate"
                 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 16, lineHeight: '20px', letterSpacing: 0 }}
               >
-                Grace Community
+                {orgName}
               </p>
               <p
                 className="text-gray-400 mt-1"
@@ -99,7 +105,7 @@ export default function OrgLayout() {
             </>
           ) : (
             <div className="w-8 h-8 rounded-full bg-[#C9A96E] flex items-center justify-center text-white text-xs font-bold mx-auto">
-              GC
+              {orgInitials}
             </div>
           )}
         </div>
