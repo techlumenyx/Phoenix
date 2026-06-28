@@ -2,8 +2,11 @@ import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-const ROUTER_CONFIG = join(__dirname, '..', 'router.yaml');
-const SUPERGRAPH = join(__dirname, '..', 'supergraph.graphql');
+// Config files live in the project source dir, not dist.
+// process.cwd() is the workspace root when invoked via `nx serve`.
+const GATEWAY_DIR = join(process.cwd(), 'apps', 'gateway');
+const ROUTER_CONFIG = join(GATEWAY_DIR, 'router.yaml');
+const SUPERGRAPH = join(GATEWAY_DIR, 'supergraph.graphql');
 
 function startRouter() {
   if (!existsSync(SUPERGRAPH)) {
