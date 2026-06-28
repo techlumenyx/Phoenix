@@ -47,6 +47,10 @@ serviceAccount.json
 # MCP config (contains secrets — never commit)
 .mcp.json
 
+# Apollo Router binary (downloaded locally — not committed)
+tools/bin/router.exe
+tools/bin/router
+
 # Logs
 *.log
 npm-debug.log*
