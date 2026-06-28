@@ -44,21 +44,16 @@ const router = createBrowserRouter([
   },
 
   {
-    // ── Org dashboard — own sidebar layout, no public navbar ─────────
+    // ── Org dashboard — public for testing, auth to be restored pre-launch ──
     path: '/org',
-    element: <ProtectedRoute />,
+    element: <OrgLayout />,
     children: [
-      {
-        element: <OrgLayout />,
-        children: [
-          { index: true,          element: <OrgOverviewPage /> },
-          { path: 'events',       element: <OrgEventsPage /> },
-          { path: 'listings',     element: <OrgListingsPage /> },
-          { path: 'jobs',         element: <OrgJobsPage /> },
-          { path: 'messages',     element: <OrgMessagesPage /> },
-          { path: 'settings',     element: <OrgSettingsPage /> },
-        ],
-      },
+      { index: true,        element: <OrgOverviewPage /> },
+      { path: 'events',     element: <OrgEventsPage /> },
+      { path: 'listings',   element: <OrgListingsPage /> },
+      { path: 'jobs',       element: <OrgJobsPage /> },
+      { path: 'messages',   element: <OrgMessagesPage /> },
+      { path: 'settings',   element: <OrgSettingsPage /> },
     ],
   },
 ]);

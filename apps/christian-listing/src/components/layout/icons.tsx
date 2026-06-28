@@ -2,7 +2,7 @@ interface IconProps {
   className?: string;
 }
 
-export function ChurchLogo({ className }: IconProps) {
+export function ChurchLogo({ className, color = 'currentColor' }: IconProps & { color?: string }) {
   return (
     <svg
       width="36"
@@ -13,11 +13,11 @@ export function ChurchLogo({ className }: IconProps) {
       className={className}
       aria-hidden="true"
     >
-      <rect x="1.5" y="1.5" width="33" height="41" rx="2" stroke="white" strokeWidth="1.5" />
-      <line x1="18" y1="5" x2="18" y2="16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="12" y1="10.5" x2="24" y2="10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M7 22 Q7 15 18 15 Q29 15 29 22" stroke="white" strokeWidth="1.5" fill="none" />
-      <path d="M13 43 L13 32 Q13 28 16 28 L20 28 Q23 28 23 32 L23 43" stroke="white" strokeWidth="1.5" fill="none" />
+      <rect x="1.5" y="1.5" width="33" height="41" rx="2" stroke={color} strokeWidth="1.5" />
+      <line x1="18" y1="5" x2="18" y2="16" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="12" y1="10.5" x2="24" y2="10.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M7 22 Q7 15 18 15 Q29 15 29 22" stroke={color} strokeWidth="1.5" fill="none" />
+      <path d="M13 43 L13 32 Q13 28 16 28 L20 28 Q23 28 23 32 L23 43" stroke={color} strokeWidth="1.5" fill="none" />
       <rect x="7" y="22" width="22" height="21" fill="none" />
     </svg>
   );

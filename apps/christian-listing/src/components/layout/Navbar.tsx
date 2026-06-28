@@ -66,7 +66,7 @@ export default function Navbar() {
       >
         {/* Logo */}
         <a href="/" className="flex items-center gap-3 shrink-0">
-          <ChurchLogo />
+          <ChurchLogo color="white" />
           <span className="text-white font-semibold text-sm tracking-widest uppercase leading-tight">
             Christian
             <br />
