@@ -20,10 +20,7 @@ export function buildAuthPlugin(options: AuthPluginOptions = {}) {
       try {
         request.firebaseUser = await verifyFirebaseToken(token);
       } catch (err) {
-        if (options.optional) {
-          console.warn('[auth] token verification failed (continuing, optional=true):', err instanceof Error ? err.message : err);
-          return;
-        }
+        if (options.optional) return;
         reply.code(401);
         throw err;
       }

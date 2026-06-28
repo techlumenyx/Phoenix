@@ -18,6 +18,7 @@ export type Scalars = {
 };
 
 export enum ApplicationStatus {
+  Hired = 'HIRED',
   Rejected = 'REJECTED',
   Shortlisted = 'SHORTLISTED',
   Submitted = 'SUBMITTED',
@@ -68,7 +69,7 @@ export type CreateEventInput = {
   endDate?: InputMaybe<Scalars['DateTime']['input']>;
   externalTicketUrl?: InputMaybe<Scalars['String']['input']>;
   hostOrganisationIds: Array<Scalars['ID']['input']>;
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   isRecurring?: InputMaybe<Scalars['Boolean']['input']>;
   location: EventLocationInput;
   region: Scalars['String']['input'];
@@ -96,6 +97,7 @@ export type CreateJobListingInput = {
 };
 
 export type CreateMarketplaceItemInput = {
+  area?: InputMaybe<Scalars['String']['input']>;
   category: MarketplaceCategory;
   condition: ItemCondition;
   currency: Scalars['String']['input'];
@@ -131,7 +133,7 @@ export type Event = {
   externalTicketUrl?: Maybe<Scalars['String']['output']>;
   hosts: Array<Organisation>;
   id: Scalars['ID']['output'];
-  imageUrl?: Maybe<Scalars['String']['output']>;
+  imageUrls: Array<Scalars['String']['output']>;
   interestedCount: Scalars['Int']['output'];
   isPromoted: Scalars['Boolean']['output'];
   isRecurring: Scalars['Boolean']['output'];
@@ -147,10 +149,13 @@ export type Event = {
 };
 
 export enum EventCategory {
+  BibleStudy = 'BIBLE_STUDY',
   Charity = 'CHARITY',
   Community = 'COMMUNITY',
   Conference = 'CONFERENCE',
   Cultural = 'CULTURAL',
+  Music = 'MUSIC',
+  Other = 'OTHER',
   Welfare = 'WELFARE',
   Worship = 'WORSHIP',
   Youth = 'YOUTH'
@@ -211,8 +216,11 @@ export type JobApplication = {
   __typename?: 'JobApplication';
   applicant: User;
   createdAt: Scalars['DateTime']['output'];
+  cvUrl?: Maybe<Scalars['String']['output']>;
+  experience?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   listing: JobListing;
+  resumeUrl?: Maybe<Scalars['String']['output']>;
   status: ApplicationStatus;
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -276,6 +284,7 @@ export enum MarketplaceCategory {
 
 export type MarketplaceItem = {
   __typename?: 'MarketplaceItem';
+  area?: Maybe<Scalars['String']['output']>;
   category: MarketplaceCategory;
   condition: ItemCondition;
   convertedPrice?: Maybe<ConvertedPrice>;
@@ -742,7 +751,7 @@ export type UpdateEventInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   endDate?: InputMaybe<Scalars['DateTime']['input']>;
   externalTicketUrl?: InputMaybe<Scalars['String']['input']>;
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   location?: InputMaybe<EventLocationInput>;
   status?: InputMaybe<EventStatus>;
   title?: InputMaybe<Scalars['String']['input']>;

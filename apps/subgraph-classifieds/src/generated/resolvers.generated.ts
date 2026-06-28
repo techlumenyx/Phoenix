@@ -20,6 +20,7 @@ export type Scalars = {
 };
 
 export const ApplicationStatus = {
+  Hired: 'HIRED',
   Rejected: 'REJECTED',
   Shortlisted: 'SHORTLISTED',
   Submitted: 'SUBMITTED',
@@ -52,6 +53,7 @@ export type CreateJobListingInput = {
 };
 
 export type CreateMarketplaceItemInput = {
+  area?: InputMaybe<Scalars['String']['input']>;
   category: MarketplaceCategory;
   condition: ItemCondition;
   currency: Scalars['String']['input'];
@@ -81,8 +83,11 @@ export type JobApplication = {
   __typename?: 'JobApplication';
   applicant: User;
   createdAt: Scalars['DateTime']['output'];
+  cvUrl?: Maybe<Scalars['String']['output']>;
+  experience?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   listing: JobListing;
+  resumeUrl?: Maybe<Scalars['String']['output']>;
   status: ApplicationStatus;
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -143,6 +148,7 @@ export const MarketplaceCategory = {
 export type MarketplaceCategory = typeof MarketplaceCategory[keyof typeof MarketplaceCategory];
 export type MarketplaceItem = {
   __typename?: 'MarketplaceItem';
+  area?: Maybe<Scalars['String']['output']>;
   category: MarketplaceCategory;
   condition: ItemCondition;
   convertedPrice?: Maybe<ConvertedPrice>;
@@ -493,8 +499,11 @@ export type JobApplicationResolvers<ContextType = GraphQLContext, ParentType ext
   __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['JobApplication']>, { __typename: 'JobApplication' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
   applicant?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  cvUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  experience?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   listing?: Resolver<ResolversTypes['JobListing'], ParentType, ContextType>;
+  resumeUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ApplicationStatus'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -530,6 +539,7 @@ export type JobListingConnectionResolvers<ContextType = GraphQLContext, ParentTy
 
 export type MarketplaceItemResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['MarketplaceItem'] = ResolversParentTypes['MarketplaceItem']> = ResolversObject<{
   __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['MarketplaceItem']>, { __typename: 'MarketplaceItem' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  area?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   category?: Resolver<ResolversTypes['MarketplaceCategory'], ParentType, ContextType>;
   condition?: Resolver<ResolversTypes['ItemCondition'], ParentType, ContextType>;
   convertedPrice?: Resolver<Maybe<ResolversTypes['ConvertedPrice']>, ParentType, ContextType>;

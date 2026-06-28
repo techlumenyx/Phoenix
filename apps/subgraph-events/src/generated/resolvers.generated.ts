@@ -27,7 +27,7 @@ export type CreateEventInput = {
   endDate?: InputMaybe<Scalars['DateTime']['input']>;
   externalTicketUrl?: InputMaybe<Scalars['String']['input']>;
   hostOrganisationIds: Array<Scalars['ID']['input']>;
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   isRecurring?: InputMaybe<Scalars['Boolean']['input']>;
   location: EventLocationInput;
   region: Scalars['String']['input'];
@@ -46,7 +46,7 @@ export type Event = {
   externalTicketUrl?: Maybe<Scalars['String']['output']>;
   hosts: Array<Organisation>;
   id: Scalars['ID']['output'];
-  imageUrl?: Maybe<Scalars['String']['output']>;
+  imageUrls: Array<Scalars['String']['output']>;
   interestedCount: Scalars['Int']['output'];
   isPromoted: Scalars['Boolean']['output'];
   isRecurring: Scalars['Boolean']['output'];
@@ -62,10 +62,13 @@ export type Event = {
 };
 
 export const EventCategory = {
+  BibleStudy: 'BIBLE_STUDY',
   Charity: 'CHARITY',
   Community: 'COMMUNITY',
   Conference: 'CONFERENCE',
   Cultural: 'CULTURAL',
+  Music: 'MUSIC',
+  Other: 'OTHER',
   Welfare: 'WELFARE',
   Worship: 'WORSHIP',
   Youth: 'YOUTH'
@@ -216,7 +219,7 @@ export type UpdateEventInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   endDate?: InputMaybe<Scalars['DateTime']['input']>;
   externalTicketUrl?: InputMaybe<Scalars['String']['input']>;
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   location?: InputMaybe<EventLocationInput>;
   status?: InputMaybe<EventStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
@@ -368,7 +371,7 @@ export type EventResolvers<ContextType = GraphQLContext, ParentType extends Reso
   externalTicketUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hosts?: Resolver<Array<ResolversTypes['Organisation']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  imageUrls?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   interestedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   isPromoted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isRecurring?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;

@@ -90,6 +90,9 @@ type JobApplication @key(fields: "id") {
   listing: JobListing!
   applicant: User!
   status: ApplicationStatus!
+  experience: String
+  resumeUrl: String
+  cvUrl: String
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -98,6 +101,7 @@ enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
   SHORTLISTED
+  HIRED
   REJECTED
   WITHDRAWN
 }
@@ -111,6 +115,7 @@ type MarketplaceItem @key(fields: "id") {
   currency: String!
   condition: ItemCondition!
   category: MarketplaceCategory!
+  area: String
   region: String!
   imageUrls: [String!]!
   status: ListingStatus!
@@ -236,6 +241,7 @@ input CreateMarketplaceItemInput {
   currency: String!
   condition: ItemCondition!
   category: MarketplaceCategory!
+  area: String
   region: String!
   imageUrls: [String!]!
   isDonation: Boolean!

@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import RootLayout from '../components/layout/RootLayout';
+import OrgLayout from '../components/layout/OrgLayout';
 import ProtectedRoute from '../components/routing/ProtectedRoute';
 import HomePage from '../pages/HomePage';
 import EventsPage from '../pages/EventsPage';
@@ -12,33 +13,51 @@ import OrgSetupPage from '../pages/OrgSetupPage';
 import DashboardPage from '../pages/DashboardPage';
 import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
+import OrgOverviewPage from '../pages/org/OrgOverviewPage';
+import OrgEventsPage from '../pages/org/OrgEventsPage';
+import OrgListingsPage from '../pages/org/OrgListingsPage';
+import OrgJobsPage from '../pages/org/OrgJobsPage';
+import OrgMessagesPage from '../pages/org/OrgMessagesPage';
+import OrgSettingsPage from '../pages/org/OrgSettingsPage';
 
 const router = createBrowserRouter([
   {
+    // ── Public site — top navbar layout ─────────────────────────────
     path: '/',
     element: <RootLayout />,
     children: [
-      // ── Public routes ──────────────────────────────────────────────
-      { index: true, element: <HomePage /> },
-      { path: 'events', element: <EventsPage /> },
-      { path: 'marketplace', element: <MarketplacePage /> },
-      { path: 'jobs', element: <JobsPage /> },
-      { path: 'signin', element: <SignInPage /> },
-      { path: 'signup', element: <SignUpPage /> },
-      { path: 'org/signup', element: <OrgSignupPage /> },
-      { path: 'org/setup', element: <OrgSetupPage /> },
+      { index: true,           element: <HomePage /> },
+      { path: 'events',        element: <EventsPage /> },
+      { path: 'marketplace',   element: <MarketplacePage /> },
+      { path: 'jobs',          element: <JobsPage /> },
+      { path: 'signin',        element: <SignInPage /> },
+      { path: 'signup',        element: <SignUpPage /> },
+      { path: 'org/signup',    element: <OrgSignupPage /> },
+      { path: 'org/setup',     element: <OrgSetupPage /> },
 
-      // ── Protected routes (auth required) ───────────────────────────
       {
         element: <ProtectedRoute />,
         children: [
           { path: 'dashboard', element: <DashboardPage /> },
-          { path: 'profile', element: <ProfilePage /> },
+          { path: 'profile',   element: <ProfilePage /> },
         ],
       },
 
-      // ── Fallback ───────────────────────────────────────────────────
       { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+
+  {
+    // ── Org dashboard — public for testing, auth to be restored pre-launch ──
+    path: '/org',
+    element: <OrgLayout />,
+    children: [
+      { index: true,        element: <OrgOverviewPage /> },
+      { path: 'events',     element: <OrgEventsPage /> },
+      { path: 'listings',   element: <OrgListingsPage /> },
+      { path: 'jobs',       element: <OrgJobsPage /> },
+      { path: 'messages',   element: <OrgMessagesPage /> },
+      { path: 'settings',   element: <OrgSettingsPage /> },
     ],
   },
 ]);
