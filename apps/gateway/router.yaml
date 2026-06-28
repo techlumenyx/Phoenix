@@ -1,6 +1,8 @@
 sandbox:
   enabled: true
 
+introspection: true
+
 homepage:
   enabled: false
 
