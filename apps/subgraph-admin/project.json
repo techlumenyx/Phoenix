@@ -37,7 +37,8 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "subgraph-admin:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "inspectPort": 9233
       },
       "configurations": {
         "development": {

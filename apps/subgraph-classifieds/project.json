@@ -37,7 +37,8 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "subgraph-classifieds:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "inspectPort": 9232
       },
       "configurations": {
         "development": {

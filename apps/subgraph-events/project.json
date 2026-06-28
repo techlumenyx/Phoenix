@@ -37,7 +37,8 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "subgraph-events:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "inspectPort": 9231
       },
       "configurations": {
         "development": {
