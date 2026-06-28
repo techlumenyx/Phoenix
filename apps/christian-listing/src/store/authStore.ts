@@ -33,6 +33,8 @@ export interface DbUser {
 interface AuthState {
   user: User | null;
   dbUser: DbUser | null;
+  accountType: string | null;
+  orgSetupChecked: boolean;
   loading: boolean;
   initialized: boolean;
   logout: () => Promise<void>;
@@ -41,6 +43,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   dbUser: null,
+  accountType: null,
+  orgSetupChecked: false,
   loading: true,
   initialized: false,
 
@@ -52,11 +56,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 onAuthStateChanged(firebaseAuth, async (user) => {
   if (!user) {
-    useAuthStore.setState({ user: null, dbUser: null, loading: false, initialized: true });
+    useAuthStore.setState({ user: null, dbUser: null, accountType: null, orgSetupChecked: false, loading: false, initialized: true });
     return;
   }
 
-  useAuthStore.setState({ user, loading: false, initialized: true });
+  const tokenResult = await user.getIdTokenResult();
+  const accountType = (tokenResult.claims['accountType'] as string) ?? null;
+
+  useAuthStore.setState({ user, accountType, orgSetupChecked: false, loading: false, initialized: true });
 
   try {
     const { data } = await apolloClient.query<{ me: DbUser }>({
