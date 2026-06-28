@@ -10,6 +10,7 @@ import { buildAuthPlugin } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
 import { buildContext, type GraphQLContext } from './context';
 import { resolvers } from './resolvers';
+import { setConnection } from './db';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/identity.graphql'), 'utf-8'),
@@ -18,7 +19,8 @@ const typeDefs = parse(
 async function bootstrap() {
   const mongoUri = process.env['MONGO_URI'];
   if (!mongoUri) throw new Error('MONGO_URI is required');
-  await createMongoConnection(mongoUri, 'cl_identity');
+  const conn = await createMongoConnection(mongoUri, 'cl_identity');
+  setConnection(conn);
 
   const fastify = Fastify({
     logger: process.env['NODE_ENV'] !== 'test',

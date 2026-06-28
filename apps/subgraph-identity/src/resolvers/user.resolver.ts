@@ -1,9 +1,14 @@
 import { GraphQLError } from 'graphql';
-import mongoose, { type HydratedDocument } from 'mongoose';
+import { type HydratedDocument, type Model } from 'mongoose';
 import { UserSchema, type IUser } from '../models/user.model';
 import type { GraphQLContext } from '../context';
+import { getConnection } from '../db';
 
-const UserModel = mongoose.model<IUser>('User', UserSchema);
+let _UserModel: Model<IUser> | null = null;
+function UserModel(): Model<IUser> {
+  if (!_UserModel) _UserModel = getConnection().model<IUser>('User', UserSchema);
+  return _UserModel;
+}
 
 function mapUser(doc: HydratedDocument<IUser>) {
   return {
@@ -15,6 +20,8 @@ function mapUser(doc: HydratedDocument<IUser>) {
     bio: doc.bio ?? null,
     socialLinks: doc.socialLinks ?? null,
     isVerified: doc.isVerified ?? false,
+    onboardingCompleted: doc.onboardingCompleted ?? false,
+    preferences: doc.preferences ?? [],
     region: doc.region ?? '',
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -26,11 +33,11 @@ export const userResolvers = {
     me: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) return null;
 
-      const existing = await UserModel.findOne({ firebaseUid: ctx.auth.firebaseUid });
+      const existing = await UserModel().findOne({ firebaseUid: ctx.auth.firebaseUid });
       if (existing) return mapUser(existing);
 
       // First login — create the MongoDB record from Firebase token data
-      const created = await UserModel.create({
+      const created = await UserModel().create({
         firebaseUid: ctx.auth.firebaseUid,
         email: ctx.auth.email ?? '',
         name:
@@ -42,7 +49,7 @@ export const userResolvers = {
     },
 
     user: async (_: unknown, { id }: { id: string }) => {
-      const doc = await UserModel.findById(id);
+      const doc = await UserModel().findById(id);
       return doc ? mapUser(doc) : null;
     },
   },
@@ -56,7 +63,7 @@ export const userResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const doc = await UserModel.findOneAndUpdate(
+      const doc = await UserModel().findOneAndUpdate(
         { firebaseUid: ctx.auth.firebaseUid },
         { $set: input },
         { new: true },
@@ -68,11 +75,10 @@ export const userResolvers = {
 
   User: {
     __resolveReference: async ({ id }: { id: string }) => {
-      const doc = await UserModel.findById(id);
+      const doc = await UserModel().findById(id);
       return doc ? mapUser(doc) : null;
     },
   },
 };
 
-export { UserModel };
 export type { IUser };

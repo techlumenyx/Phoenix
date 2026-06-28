@@ -4,6 +4,8 @@ import { gql } from '@apollo/client';
 import { firebaseAuth } from '../firebase';
 import { apolloClient } from '../apolloClient';
 
+const ONBOARDING_PATHS = ['/onboarding', '/org/onboarding', '/org/signup', '/signup', '/signin'];
+
 const ME_QUERY = gql`
   query Me {
     me {
@@ -13,6 +15,7 @@ const ME_QUERY = gql`
       avatarUrl
       isVerified
       onboardingCompleted
+      preferences
     }
   }
 `;
@@ -24,6 +27,7 @@ export interface DbUser {
   avatarUrl: string | null;
   isVerified: boolean;
   onboardingCompleted: boolean;
+  preferences: string[];
 }
 
 interface AuthState {
@@ -61,6 +65,14 @@ onAuthStateChanged(firebaseAuth, async (user) => {
       fetchPolicy: 'network-only',
     });
     useAuthStore.setState({ dbUser: data.me });
+
+    // Redirect to onboarding if not yet completed and not already on an onboarding path
+    if (!data.me?.onboardingCompleted) {
+      const current = window.location.pathname;
+      if (!ONBOARDING_PATHS.some((p) => current.startsWith(p))) {
+        window.location.replace('/onboarding/region');
+      }
+    }
   } catch (err) {
     console.error('[authStore] me query failed — is the backend running?', err);
   }

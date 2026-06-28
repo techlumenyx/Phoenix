@@ -1,9 +1,14 @@
 import { GraphQLError } from 'graphql';
-import mongoose, { type HydratedDocument } from 'mongoose';
+import mongoose, { type HydratedDocument, type Model } from 'mongoose';
 import { OrganisationSchema, type IOrganisation } from '../models/organisation.model';
 import type { GraphQLContext } from '../context';
+import { getConnection } from '../db';
 
-const OrganisationModel = mongoose.model<IOrganisation>('Organisation', OrganisationSchema);
+let _OrgModel: Model<IOrganisation> | null = null;
+function OrganisationModel(): Model<IOrganisation> {
+  if (!_OrgModel) _OrgModel = getConnection().model<IOrganisation>('Organisation', OrganisationSchema);
+  return _OrgModel;
+}
 
 function mapOrg(doc: HydratedDocument<IOrganisation>) {
   return {
@@ -48,7 +53,7 @@ interface UpdateOrgInput {
 export const organisationResolvers = {
   Query: {
     organisation: async (_: unknown, { id }: { id: string }) => {
-      const doc = await OrganisationModel.findById(id);
+      const doc = await OrganisationModel().findById(id);
       return doc ? mapOrg(doc) : null;
     },
 
@@ -60,7 +65,7 @@ export const organisationResolvers = {
       if (region) filter['regionCode'] = region;
       if (after) filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
-      const docs = await OrganisationModel.find(filter).limit(limit + 1).sort({ _id: 1 });
+      const docs = await OrganisationModel().find(filter).limit(limit + 1).sort({ _id: 1 });
       const hasNextPage = docs.length > limit;
       const edges = docs.slice(0, limit).map(mapOrg);
 
@@ -73,7 +78,7 @@ export const organisationResolvers = {
 
     myOrganisations: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) return [];
-      const docs = await OrganisationModel.find({ createdBy: ctx.auth.firebaseUid });
+      const docs = await OrganisationModel().find({ createdBy: ctx.auth.firebaseUid });
       return docs.map(mapOrg);
     },
   },
@@ -87,7 +92,7 @@ export const organisationResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const doc = await OrganisationModel.create({
+      const doc = await OrganisationModel().create({
         createdBy: ctx.auth.firebaseUid,
         name: input.name,
         description: input.description ?? null,
@@ -107,7 +112,7 @@ export const organisationResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const doc = await OrganisationModel.findOneAndUpdate(
+      const doc = await OrganisationModel().findOneAndUpdate(
         { _id: id, createdBy: ctx.auth.firebaseUid },
         { $set: input },
         { new: true },
@@ -128,7 +133,7 @@ export const organisationResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const doc = await OrganisationModel.findOneAndUpdate(
+      const doc = await OrganisationModel().findOneAndUpdate(
         { _id: organisationId, createdBy: ctx.auth.firebaseUid },
         {
           $set: {
@@ -158,10 +163,8 @@ export const organisationResolvers = {
 
   Organisation: {
     __resolveReference: async ({ id }: { id: string }) => {
-      const doc = await OrganisationModel.findById(id);
+      const doc = await OrganisationModel().findById(id);
       return doc ? mapOrg(doc) : null;
     },
   },
 };
-
-export { OrganisationModel };

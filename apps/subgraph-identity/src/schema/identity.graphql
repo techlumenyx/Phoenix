@@ -21,6 +21,8 @@ type User @key(fields: "id") {
   name: String!
   region: String!
   isVerified: Boolean!
+  onboardingCompleted: Boolean!
+  preferences: [String!]!
   avatarUrl: String
   bio: String
   socialLinks: SocialLinks
@@ -113,6 +115,8 @@ input UpdateProfileInput {
   bio: String
   avatarUrl: String
   socialLinks: SocialLinksInput
+  preferences: [String!]
+  onboardingCompleted: Boolean
 }
 
 input SocialLinksInput {

@@ -32,6 +32,13 @@ function startRouter() {
     env: { ...process.env },
   });
 
+  const cleanup = () => {
+    if (!router.killed) router.kill();
+  };
+  process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+  process.on('SIGINT',  () => { cleanup(); process.exit(0); });
+  process.on('exit',    () => { cleanup(); });
+
   router.on('error', (err) => {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       console.error(

@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import { firebaseAuth } from './firebase';
 
 const httpLink = createHttpLink({
-  uri: process.env['VITE_GATEWAY_URL'] ?? 'http://localhost:4000/graphql',
+  uri: process.env['CL_GRAPHQL_URL'] ?? 'http://localhost:4000/',
 });
 
 const authLink = setContext(async (_, { headers }) => {
