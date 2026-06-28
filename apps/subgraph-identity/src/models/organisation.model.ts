@@ -28,21 +28,35 @@ export interface IVerificationDetails {
   documentUrls:       string[];
 }
 
+export const VERIFICATION_TIERS = ['NONE', 'STANDARD', 'CHARITY', 'NGO'] as const;
+export type VerificationTier = (typeof VERIFICATION_TIERS)[number];
+
+export interface ISocialLinks {
+  whatsapp:  string | null;
+  instagram: string | null;
+  facebook:  string | null;
+  twitter:   string | null;
+  website:   string | null;
+}
+
 export interface IOrganisation {
   _id: mongoose.Types.ObjectId;
   createdBy: string;   // firebaseUid of the master_admin (user who created the org)
-  // Step 1 — mandatory
-  phoneNumber: string;
-  // Step 2 — skippable
+  // Step 1 — optional for schema-driven creation
+  phoneNumber: string | null;
+  // Core fields
   name:             string | null;
+  description:      string | null;
+  logoUrl:          string | null;
+  websiteUrl:       string | null;
+  socialLinks:      ISocialLinks | null;
   organisationType: OrganisationType | null;
-  missionStatement: string | null;
   region:           string | null;   // display — "London, UK"
   regionCode:       string | null;   // filter  — "GB-LND"
-  // Step 3 — skippable
+  // Verification
   verificationDetails: IVerificationDetails;
-  // Platform state
   verificationStatus:  VerificationStatus;
+  verificationTier:    VerificationTier;
   isVerified:          boolean;   // virtual — derived from verificationStatus
   onboardingCompleted: boolean;
   followerCount:       number;
@@ -64,14 +78,28 @@ const VerificationDetailsSchema = new Schema<IVerificationDetails>(
   { _id: false },
 );
 
+const SocialLinksSchema = new Schema<ISocialLinks>(
+  {
+    whatsapp:  { type: String, default: null },
+    instagram: { type: String, default: null },
+    facebook:  { type: String, default: null },
+    twitter:   { type: String, default: null },
+    website:   { type: String, default: null },
+  },
+  { _id: false },
+);
+
 export const OrganisationSchema = new Schema<IOrganisation>(
   {
-    createdBy:    { type: String, required: true },
-    phoneNumber:  { type: String, required: true },
+    createdBy:   { type: String, required: true },
+    phoneNumber: { type: String, default: null },
 
     name:             { type: String, default: null },
+    description:      { type: String, default: null },
+    logoUrl:          { type: String, default: null },
+    websiteUrl:       { type: String, default: null },
+    socialLinks:      { type: SocialLinksSchema, default: null },
     organisationType: { type: String, enum: ORGANISATION_TYPES, default: null },
-    missionStatement: { type: String, default: null },
     region:           { type: String, default: null },
     regionCode:       { type: String, default: null },
 
@@ -81,6 +109,11 @@ export const OrganisationSchema = new Schema<IOrganisation>(
       type:    String,
       enum:    VERIFICATION_STATUSES,
       default: 'PENDING_SUBMISSION',
+    },
+    verificationTier: {
+      type:    String,
+      enum:    VERIFICATION_TIERS,
+      default: 'NONE',
     },
     onboardingCompleted: { type: Boolean, default: false },
     followerCount:       { type: Number,  default: 0 },

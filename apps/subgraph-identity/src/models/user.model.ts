@@ -36,11 +36,23 @@ export const ORG_ROLES = [
 
 export type OrgRole = (typeof ORG_ROLES)[number];
 
+export interface ISocialLinks {
+  whatsapp:  string | null;
+  instagram: string | null;
+  facebook:  string | null;
+  twitter:   string | null;
+  website:   string | null;
+}
+
 export interface IUser {
   _id: mongoose.Types.ObjectId;
   firebaseUid: string;
   email: string;
   name: string;
+  avatarUrl:   string | null;
+  bio:         string | null;
+  socialLinks: ISocialLinks | null;
+  isVerified:  boolean;          // platform-level trust badge, set by admins
   region:     string | null;   // display — "London, UK" — set in onboarding step 1
   regionCode: string | null;   // filter  — "GB-LND"    — set in onboarding step 1
   preferences: UserPreference[];
@@ -60,11 +72,26 @@ export interface IUser {
 
 export type UserDocument = HydratedDocument<IUser>;
 
+const SocialLinksSchema = new Schema<ISocialLinks>(
+  {
+    whatsapp:  { type: String, default: null },
+    instagram: { type: String, default: null },
+    facebook:  { type: String, default: null },
+    twitter:   { type: String, default: null },
+    website:   { type: String, default: null },
+  },
+  { _id: false },
+);
+
 export const UserSchema = new Schema<IUser>(
   {
     firebaseUid:         { type: String,  required: true, unique: true },
     email:               { type: String,  required: true, unique: true },
     name:                { type: String,  required: true },
+    avatarUrl:           { type: String,  default: null },
+    bio:                 { type: String,  default: null },
+    socialLinks:         { type: SocialLinksSchema, default: null },
+    isVerified:          { type: Boolean, default: false },
     region:              { type: String,  default: null },
     regionCode:          { type: String,  default: null },
     preferences:         [{ type: String, enum: USER_PREFERENCES }],
