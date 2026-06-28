@@ -129,3 +129,4 @@ OrganisationSchema.index({ verificationStatus: 1 });
 OrganisationSchema.virtual('isVerified').get(function () {
   return this.verificationStatus === 'VERIFIED';
 });
+

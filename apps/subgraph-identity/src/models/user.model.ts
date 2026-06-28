@@ -108,3 +108,4 @@ export const UserSchema = new Schema<IUser>(
 
 UserSchema.index({ regionCode: 1 });
 UserSchema.index({ orgId: 1 });
+

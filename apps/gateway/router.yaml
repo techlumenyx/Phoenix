@@ -1,6 +1,9 @@
 supergraph:
   introspection: true
 
+include_subgraph_errors:
+  all: true
+
 sandbox:
   enabled: true
 
@@ -44,7 +47,7 @@ traffic_shaping:
     timeout: 30s
 
 override_subgraph_url:
-  identity: http://localhost:4001/graphql
-  events: http://localhost:4002/graphql
-  classifieds: http://localhost:4003/graphql
-  admin: http://localhost:4004/graphql
+  identity: "${SUBGRAPH_IDENTITY_URL:-http://localhost:4001/graphql}"
+  events: "${SUBGRAPH_EVENTS_URL:-http://localhost:4002/graphql}"
+  classifieds: "${SUBGRAPH_CLASSIFIEDS_URL:-http://localhost:4003/graphql}"
+  admin: "${SUBGRAPH_ADMIN_URL:-http://localhost:4004/graphql}"

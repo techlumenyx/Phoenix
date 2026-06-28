@@ -1,7 +1,9 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, getAuth } from 'firebase/auth';
+import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../firebase';
+import { CREATE_USER } from '../graphql/mutations';
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -10,6 +12,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [createUser] = useMutation(CREATE_USER);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -18,6 +21,14 @@ export default function SignUpPage() {
     try {
       const { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       await updateProfile(user, { displayName: name });
+      try {
+        await createUser({ variables: { input: { name } } });
+        await getAuth().currentUser?.getIdToken(true);
+      } catch {
+        setError('Account setup failed — please try again.');
+        setLoading(false);
+        return;
+      }
       navigate('/', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign up failed.');
@@ -40,54 +51,34 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700" htmlFor="name">
-              Full name
-            </label>
+            <label className="text-sm font-medium text-gray-700" htmlFor="name">Full name</label>
             <input
-              id="name"
-              type="text"
-              required
-              value={name}
+              id="name" type="text" required value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#C9A96E] focus:border-transparent"
               placeholder="John Doe"
             />
           </div>
-
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700" htmlFor="email">
-              Email
-            </label>
+            <label className="text-sm font-medium text-gray-700" htmlFor="email">Email</label>
             <input
-              id="email"
-              type="email"
-              required
-              value={email}
+              id="email" type="email" required value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#C9A96E] focus:border-transparent"
               placeholder="you@example.com"
             />
           </div>
-
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700" htmlFor="password">
-              Password
-            </label>
+            <label className="text-sm font-medium text-gray-700" htmlFor="password">Password</label>
             <input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
+              id="password" type="password" required minLength={6} value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#C9A96E] focus:border-transparent"
               placeholder="Min. 6 characters"
             />
           </div>
-
           <button
-            type="submit"
-            disabled={loading}
+            type="submit" disabled={loading}
             className="mt-2 w-full py-2.5 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold hover:bg-[#b8965e] transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating account…' : 'Create Account'}
@@ -96,9 +87,7 @@ export default function SignUpPage() {
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link to="/signin" className="text-[#1B1B1B] font-semibold hover:underline">
-            Sign in
-          </Link>
+          <Link to="/signin" className="text-[#1B1B1B] font-semibold hover:underline">Sign in</Link>
         </p>
       </div>
     </div>

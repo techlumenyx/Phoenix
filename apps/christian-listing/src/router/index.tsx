@@ -35,12 +35,12 @@ const router = createBrowserRouter([
       { path: 'jobs',          element: <JobsPage /> },
       { path: 'signin',        element: <AuthPage /> },
       { path: 'signup',        element: <AuthPage /> },
-      { path: 'onboarding/region',         element: <OnboardingRegionPage /> },
-      { path: 'onboarding/preferences',   element: <OnboardingPreferencesPage /> },
-      { path: 'org/signup',               element: <OrgAuthPage /> },
-      { path: 'org/onboarding/identity',  element: <OrgIdentityPage /> },
-      { path: 'org/onboarding/verification', element: <OrgVerificationPage /> },
-      { path: 'org/onboarding/success',   element: <OrgSuccessPage /> },
+      { path: 'onboarding/region',            element: <OnboardingRegionPage /> },
+      { path: 'onboarding/preferences',       element: <OnboardingPreferencesPage /> },
+      { path: 'org/signup',                   element: <OrgAuthPage /> },
+      { path: 'org/onboarding/identity',      element: <OrgIdentityPage /> },
+      { path: 'org/onboarding/verification',  element: <OrgVerificationPage /> },
+      { path: 'org/onboarding/success',       element: <OrgSuccessPage /> },
 
       {
         element: <ProtectedRoute />,

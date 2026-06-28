@@ -1,14 +1,10 @@
 import { GraphQLError } from 'graphql';
-import mongoose, { type HydratedDocument, type Model } from 'mongoose';
-import { OrganisationSchema, type IOrganisation } from '../models/organisation.model';
+import mongoose, { type HydratedDocument } from 'mongoose';
+import { type IOrganisation } from '../models/organisation.model';
+import { OrganisationModel as _OrgModel } from '../models';
 import type { GraphQLContext } from '../context';
-import { getConnection } from '../db';
 
-let _OrgModel: Model<IOrganisation> | null = null;
-function OrganisationModel(): Model<IOrganisation> {
-  if (!_OrgModel) _OrgModel = getConnection().model<IOrganisation>('Organisation', OrganisationSchema);
-  return _OrgModel;
-}
+function OrganisationModel() { return _OrgModel; }
 
 function mapOrg(doc: HydratedDocument<IOrganisation>) {
   return {

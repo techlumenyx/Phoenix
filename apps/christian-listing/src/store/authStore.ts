@@ -58,7 +58,6 @@ onAuthStateChanged(firebaseAuth, async (user) => {
 
   useAuthStore.setState({ user, loading: false, initialized: true });
 
-  // Upsert the MongoDB user — creates the document on first login
   try {
     const { data } = await apolloClient.query<{ me: DbUser }>({
       query: ME_QUERY,
@@ -66,7 +65,6 @@ onAuthStateChanged(firebaseAuth, async (user) => {
     });
     useAuthStore.setState({ dbUser: data.me });
 
-    // Redirect to onboarding if not yet completed and not already on an onboarding path
     if (!data.me?.onboardingCompleted) {
       const current = window.location.pathname;
       if (!ONBOARDING_PATHS.some((p) => current.startsWith(p))) {

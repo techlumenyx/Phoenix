@@ -1,14 +1,10 @@
 import { GraphQLError } from 'graphql';
-import { type HydratedDocument, type Model } from 'mongoose';
-import { UserSchema, type IUser } from '../models/user.model';
+import { type HydratedDocument } from 'mongoose';
+import { type IUser } from '../models/user.model';
+import { UserModel as _UserModel } from '../models';
 import type { GraphQLContext } from '../context';
-import { getConnection } from '../db';
 
-let _UserModel: Model<IUser> | null = null;
-function UserModel(): Model<IUser> {
-  if (!_UserModel) _UserModel = getConnection().model<IUser>('User', UserSchema);
-  return _UserModel;
-}
+function UserModel() { return _UserModel; }
 
 function mapUser(doc: HydratedDocument<IUser>) {
   return {

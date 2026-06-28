@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom';
 import SceneHeader from './SceneHeader';
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithCustomToken,
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
-  updateProfile,
+  getAdditionalUserInfo,
+  getAuth,
 } from 'firebase/auth';
+import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../../firebase';
+import { SIGN_UP, CREATE_USER } from '../../graphql/mutations';
 
 interface Props {
   onClose: () => void;
@@ -35,6 +38,8 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signUpMutation] = useMutation(SIGN_UP);
+  const [createUser] = useMutation(CREATE_USER);
 
   const close = useCallback(() => onClose(), [onClose]);
 
@@ -58,8 +63,10 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
     setError('');
     setLoading(true);
     try {
-      const { user } = await createUserWithEmailAndPassword(firebaseAuth, signupEmail, signupPassword);
-      if (fullName) await updateProfile(user, { displayName: fullName });
+      const { data } = await signUpMutation({
+        variables: { input: { email: signupEmail, password: signupPassword, name: fullName } },
+      });
+      await signInWithCustomToken(firebaseAuth, data.signUp.customToken);
       close();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign up failed.');
@@ -82,31 +89,32 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
     }
   }
 
-  async function handleGoogle() {
+  async function handleSocialSignIn(provider: GoogleAuthProvider | FacebookAuthProvider) {
     setError('');
     setLoading(true);
     try {
-      await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      const result = await signInWithPopup(firebaseAuth, provider);
+      if (getAdditionalUserInfo(result)?.isNewUser) {
+        const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User';
+        try {
+          await createUser({ variables: { input: { name: displayName } } });
+          await getAuth().currentUser?.getIdToken(true);
+        } catch {
+          setError('Account setup failed — please try again.');
+          setLoading(false);
+          return;
+        }
+      }
       close();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+      setError(err instanceof Error ? err.message : 'Sign in failed.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleFacebook() {
-    setError('');
-    setLoading(true);
-    try {
-      await signInWithPopup(firebaseAuth, new FacebookAuthProvider());
-      close();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Facebook sign in failed.');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleGoogle = () => handleSocialSignIn(new GoogleAuthProvider());
+  const handleFacebook = () => handleSocialSignIn(new FacebookAuthProvider());
 
   return (
     <div
@@ -127,7 +135,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
       <div className="relative z-10 w-full max-w-[440px] bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         <SceneHeader onClose={close} />
 
-        <div className="px-6 pb-4 overflow-y-hidden">
+        <div className="px-6 pb-4 overflow-y-auto">
           {/* Heading */}
           <h2 className="text-2xl font-serif font-bold text-[#1a1007] mt-4 mb-0.5">
             Join the Sanctuary
@@ -279,15 +287,15 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
 
           {/* Legal */}
           <p className="mt-2 text-center text-[10px] text-gray-400 leading-relaxed">
-            By joining, you agree to our{' '}
+            By joining, you agree to our
             <Link
               to="/terms"
               onClick={close}
               className="font-semibold text-gray-600 hover:underline"
             >
               Terms Of Service
-            </Link>{' '}
-            and{' '}
+            </Link>
+            and
             <Link
               to="/privacy"
               onClick={close}

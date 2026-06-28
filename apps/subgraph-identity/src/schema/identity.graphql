@@ -35,7 +35,7 @@ type Organisation @key(fields: "id") {
   name: String! @shareable
   description: String
   logoUrl: String
-  region: String!
+  region: String
   isVerified: Boolean! @shareable
   verificationTier: VerificationTier!
   followerCount: Int!
@@ -101,6 +101,8 @@ type OrganisationConnection {
 # ─── Mutations ────────────────────────────────────────────────────────────────
 
 type Mutation {
+  signUp(input: SignUpInput!): SignUpPayload!
+  createUser(input: CreateUserInput!): User!
   updateProfile(input: UpdateProfileInput!): User!
   createOrganisation(input: CreateOrganisationInput!): Organisation!
   updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
@@ -127,11 +129,25 @@ input SocialLinksInput {
   website: String
 }
 
+input SignUpInput {
+  email: String!
+  password: String!
+  name: String!
+}
+
+type SignUpPayload {
+  customToken: String!
+}
+
+input CreateUserInput {
+  name: String!
+}
+
 input CreateOrganisationInput {
   name: String!
   description: String
   logoUrl: String
-  region: String!
+  region: String
   websiteUrl: String
 }
 
