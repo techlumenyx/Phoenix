@@ -1,21 +1,20 @@
 import mongoose, { Schema, type HydratedDocument } from 'mongoose';
 
 export const EMPLOYMENT_TYPES = [
-  'FULL_TIME',
-  'PART_TIME',
+  'PAID',
   'VOLUNTEER',
   'INTERNSHIP',
-  'CONTRACT',
-  'FREELANCE',
 ] as const;
 
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
 
+export const WORK_LOCATIONS = ['PHYSICAL', 'REMOTE', 'HYBRID'] as const;
+export type WorkLocation = (typeof WORK_LOCATIONS)[number];
+
 export const JOB_STATUSES = [
-  'DRAFT',
-  'PUBLISHED',
-  'CLOSED',
+  'ACTIVE',
   'ARCHIVED',
+  'CLOSED',
 ] as const;
 
 export type JobStatus = (typeof JOB_STATUSES)[number];
@@ -29,12 +28,18 @@ export interface IJobListing {
   companyDisplayName: string | null;   // override org name on the listing; null = use org name
 
   employmentType: EmploymentType;
+  workLocation:   WorkLocation;
+  skillsRequired: string[];
+  faithAlignmentTag: 'OPEN_TO_ALL' | 'FAITH_BACKGROUND_PREFERRED' | null;
 
   region:     string | null;   // display — "Lagos, Nigeria"
   regionCode: string | null;   // filter  — "NG-LA"
 
-  closingDate: Date;
-  salary:      string | null;   // free text — "$30k–$70k P.A."
+  closingDate:  Date;
+  salaryMin:    number | null;
+  salaryMax:    number | null;
+  salaryCurrency: string | null;
+  salary:       string | null;   // legacy free-text field
 
   description:      string;
   responsibilities: string[];   // array of bullet points
@@ -75,13 +80,19 @@ export const JobListingSchema = new Schema<IJobListing>(
     title:              { type: String, required: true },
     companyDisplayName: { type: String, default: null },
 
-    employmentType: { type: String, enum: EMPLOYMENT_TYPES, required: true },
+    employmentType:    { type: String, enum: EMPLOYMENT_TYPES, required: true },
+    workLocation:      { type: String, enum: WORK_LOCATIONS, required: true },
+    skillsRequired:    [{ type: String }],
+    faithAlignmentTag: { type: String, default: null },
 
     region:     { type: String, default: null },
     regionCode: { type: String, default: null },
 
-    closingDate: { type: Date,   required: true },
-    salary:      { type: String, default: null },
+    closingDate:    { type: Date,   required: true },
+    salaryMin:      { type: Number, default: null },
+    salaryMax:      { type: Number, default: null },
+    salaryCurrency: { type: String, default: null },
+    salary:         { type: String, default: null },
 
     description:      { type: String,   required: true },
     responsibilities: [{ type: String }],
@@ -97,7 +108,7 @@ export const JobListingSchema = new Schema<IJobListing>(
 
     externalApplyUrl: { type: String, default: null },
 
-    status:        { type: String, enum: JOB_STATUSES, default: 'DRAFT' },
+    status:        { type: String, enum: JOB_STATUSES, default: 'ACTIVE' },
     isPromoted:    { type: Boolean, default: false },
     promotedUntil: { type: Date,    default: null },
 

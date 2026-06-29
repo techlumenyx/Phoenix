@@ -33,7 +33,7 @@ export default function OrgSetupPage() {
     try {
       await createOrganisation({ variables: { input: { name: orgName.trim() } } });
       await getAuth().currentUser?.getIdToken(true);
-      useAuthStore.setState({ accountType: 'organisation', orgSetupChecked: true });
+      useAuthStore.setState({ accountType: 'organisation' });
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Setup failed — please try again.');
@@ -53,7 +53,6 @@ export default function OrgSetupPage() {
   const orgs: { id: string; name: string | null }[] = data?.myOrganisations ?? [];
   const hasName = orgs.some((o) => o.name && o.name.trim().length > 0);
   if (hasName) {
-    useAuthStore.setState({ orgSetupChecked: true });
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
-import { MY_ORGANISATIONS, CREATE_EVENT } from '../../graphql/mutations';
+import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING } from '../../graphql/mutations';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -969,20 +969,97 @@ const LISTING_CATEGORIES = [
 const LISTING_CONDITIONS = ['New', 'Like New', 'Good', 'Fair'] as const;
 const LISTING_CURRENCIES = ['GBP (£)', 'NGN (₦)', 'USD ($)', 'EUR (€)'] as const;
 
-function CreateListingForm() {
+const LISTING_CATEGORY_TO_ENUM: Record<string, string> = {
+  'Electronics': 'ELECTRONICS', 'Clothing': 'CLOTHING', 'Books': 'BOOKS',
+  'Furniture': 'FURNITURE', 'Food': 'FOOD', 'Baby & Kids': 'BABY_AND_KIDS',
+  'Charity Items': 'CHARITY_ITEMS', 'Other': 'OTHER',
+};
+const LISTING_CONDITION_TO_ENUM: Record<string, string> = {
+  'New': 'NEW', 'Like New': 'LIKE_NEW', 'Good': 'GOOD', 'Fair': 'FAIR',
+};
+const CURRENCY_CODE: Record<string, string> = {
+  'GBP (£)': 'GBP', 'NGN (₦)': 'NGN', 'USD ($)': 'USD', 'EUR (€)': 'EUR',
+};
+
+function CreateListingForm({ orgId }: { orgId?: string }) {
   const [condition, setCondition]       = useState<typeof LISTING_CONDITIONS[number]>('New');
   const [currency, setCurrency]         = useState<typeof LISTING_CURRENCIES[number]>('GBP (£)');
   const [selectedCategory, setCategory] = useState<string | null>(null);
   const [isDonation, setIsDonation]     = useState(false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const [title, setTitle]       = useState('');
+  const [description, setDesc]  = useState('');
+  const [price, setPrice]       = useState('');
+  const [area, setArea]         = useState('');
+  const [region, setRegion]     = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState(false);
+
+  const [createItem] = useMutation(CREATE_MARKETPLACE_ITEM);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !description.trim() || !selectedCategory || !region.trim()) {
+      setError('Please fill in title, description, category, and region.');
+      return;
+    }
+    if (!isDonation && !price) {
+      setError('Please enter a price, or mark this as a donation.');
+      return;
+    }
+    setError(''); setSubmitting(true);
+    try {
+      await createItem({
+        variables: {
+          input: {
+            title:       title.trim(),
+            description: description.trim(),
+            price:       isDonation ? 0 : parseFloat(price) || 0,
+            currency:    CURRENCY_CODE[currency] ?? 'GBP',
+            condition:   LISTING_CONDITION_TO_ENUM[condition] ?? 'GOOD',
+            category:    LISTING_CATEGORY_TO_ENUM[selectedCategory] ?? 'OTHER',
+            area:        area.trim() || undefined,
+            region:      region.trim(),
+            imageUrls:   [],
+            isDonation,
+          },
+        },
+      });
+      setSuccess(true);
+      setTitle(''); setDesc(''); setPrice(''); setArea(''); setRegion('');
+      setCategory(null); setCondition('New'); setIsDonation(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to publish listing.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div className="w-12 h-12 rounded-full bg-[#ECFDE8] flex items-center justify-center">
+          <svg className="w-6 h-6 text-[#0F6D1A]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-base font-semibold text-[#1B1B1B]">Listing published!</p>
+        <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">Create another</button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2.5">{error}</p>}
       {/* Title */}
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Item Title</label>
         <input
           type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="What are you selling or giving away?"
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
         />
@@ -1031,6 +1108,8 @@ function CreateListingForm() {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Description</label>
         <textarea
           rows={3}
+          value={description}
+          onChange={(e) => setDesc(e.target.value)}
           placeholder="Describe the item — condition details, size, age, reason for selling..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
         />
@@ -1092,6 +1171,8 @@ function CreateListingForm() {
             <input
               type="number"
               min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               placeholder="0.00"
               className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
             />
@@ -1105,6 +1186,8 @@ function CreateListingForm() {
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">General Location</label>
           <input
             type="text"
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
             placeholder="Area or neighbourhood (e.g. Peckham, Lagos Island)"
             className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
@@ -1114,6 +1197,8 @@ function CreateListingForm() {
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Region Tag</label>
           <input
             type="text"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
             placeholder="e.g. United Kingdom, Nigeria..."
             className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
@@ -1136,14 +1221,15 @@ function CreateListingForm() {
 
       {/* Submit */}
       <div className="flex items-center gap-3 pt-2">
-        <button className="px-6 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-          Preview Draft
-        </button>
-        <button className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors">
-          Publish Listing
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-60"
+        >
+          {submitting ? 'Publishing...' : 'Publish Listing'}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -1157,13 +1243,35 @@ const SKILL_SUGGESTIONS = [
   'Community Outreach', 'Event Planning', 'Legal', 'Healthcare',
 ];
 
-function CreateJobsForm() {
+const ROLE_TYPE_TO_ENUM: Record<string, string> = {
+  'Paid': 'PAID', 'Volunteer': 'VOLUNTEER', 'Internship': 'INTERNSHIP',
+};
+const LOCATION_TO_ENUM: Record<string, string> = {
+  'Physical': 'PHYSICAL', 'Remote': 'REMOTE', 'Hybrid': 'HYBRID',
+};
+const FAITH_TAG_TO_ENUM: Record<string, string> = {
+  'Open to All': 'OPEN_TO_ALL', 'Faith Background Preferred': 'FAITH_BACKGROUND_PREFERRED',
+};
+
+function CreateJobsForm({ orgId }: { orgId?: string }) {
   const [roleType, setRoleType]         = useState<typeof JOB_ROLE_TYPES[number]>('Paid');
   const [locationType, setLocationType] = useState<typeof JOB_LOCATION_TYPES[number]>('Physical');
   const [faithTag, setFaithTag]         = useState<typeof JOB_FAITH_TAGS[number]>('Open to All');
   const [skills, setSkills]             = useState<string[]>([]);
   const [customSkill, setCustomSkill]   = useState('');
   const [showSalary, setShowSalary]     = useState(false);
+  const [title, setTitle]               = useState('');
+  const [description, setDesc]          = useState('');
+  const [deadline, setDeadline]         = useState('');
+  const [region, setRegion]             = useState('');
+  const [externalUrl, setExternalUrl]   = useState('');
+  const [salaryMin, setSalaryMin]       = useState('');
+  const [salaryMax, setSalaryMax]       = useState('');
+  const [submitting, setSubmitting]     = useState(false);
+  const [error, setError]               = useState('');
+  const [success, setSuccess]           = useState(false);
+
+  const [createJob] = useMutation(CREATE_JOB_LISTING);
 
   const toggleSkill = (skill: string) =>
     setSkills((prev) => prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]);
@@ -1174,13 +1282,74 @@ function CreateJobsForm() {
     setCustomSkill('');
   };
 
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !description.trim() || !deadline || !region.trim()) {
+      setError('Please fill in job title, description, deadline, and region.');
+      return;
+    }
+    if (!orgId) {
+      setError('No organisation found. Please create an organisation first.');
+      return;
+    }
+    const salaryRange =
+      showSalary && salaryMin && salaryMax
+        ? { min: parseFloat(salaryMin) || 0, max: parseFloat(salaryMax) || 0, currency: 'GBP' }
+        : undefined;
+    setError(''); setSubmitting(true);
+    try {
+      await createJob({
+        variables: {
+          input: {
+            title:               title.trim(),
+            description:         description.trim(),
+            organisationId:      orgId,
+            roleType:            ROLE_TYPE_TO_ENUM[roleType] ?? 'PAID',
+            workLocation:        LOCATION_TO_ENUM[locationType] ?? 'PHYSICAL',
+            skillsRequired:      skills,
+            region:              region.trim(),
+            applicationDeadline: new Date(deadline).toISOString(),
+            externalApplyUrl:    externalUrl.trim() || undefined,
+            faithAlignmentTag:   FAITH_TAG_TO_ENUM[faithTag] ?? 'OPEN_TO_ALL',
+            ...(salaryRange ? { salaryRange } : {}),
+          },
+        },
+      });
+      setSuccess(true);
+      setTitle(''); setDesc(''); setDeadline(''); setRegion(''); setExternalUrl('');
+      setSalaryMin(''); setSalaryMax(''); setSkills([]);
+      setRoleType('Paid'); setLocationType('Physical'); setFaithTag('Open to All');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to post job.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div className="w-12 h-12 rounded-full bg-[#ECFDE8] flex items-center justify-center">
+          <svg className="w-6 h-6 text-[#0F6D1A]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-base font-semibold text-[#1B1B1B]">Job posted!</p>
+        <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">Post another</button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2.5">{error}</p>}
       {/* Title */}
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Job Title</label>
         <input
           type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Community Outreach Coordinator, Finance Volunteer..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
         />
@@ -1230,6 +1399,8 @@ function CreateJobsForm() {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Role Description</label>
         <textarea
           rows={3}
+          value={description}
+          onChange={(e) => setDesc(e.target.value)}
           placeholder="Describe the role, its purpose, and what makes it meaningful..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
         />
@@ -1301,6 +1472,8 @@ function CreateJobsForm() {
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Application Deadline</label>
           <input
             type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
             className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
         </div>
@@ -1308,6 +1481,8 @@ function CreateJobsForm() {
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Region Tag</label>
           <input
             type="text"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
             placeholder="e.g. United Kingdom, Nigeria..."
             className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
@@ -1333,13 +1508,19 @@ function CreateJobsForm() {
         {showSalary ? (
           <div className="grid grid-cols-2 gap-3">
             <input
-              type="text"
-              placeholder="Min (e.g. £25,000)"
+              type="number"
+              min="0"
+              value={salaryMin}
+              onChange={(e) => setSalaryMin(e.target.value)}
+              placeholder="Min (e.g. 25000)"
               className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
             />
             <input
-              type="text"
-              placeholder="Max (e.g. £35,000)"
+              type="number"
+              min="0"
+              value={salaryMax}
+              onChange={(e) => setSalaryMax(e.target.value)}
+              placeholder="Max (e.g. 35000)"
               className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
             />
           </div>
@@ -1353,6 +1534,8 @@ function CreateJobsForm() {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">External Application URL</label>
         <input
           type="url"
+          value={externalUrl}
+          onChange={(e) => setExternalUrl(e.target.value)}
           placeholder="https://yourorganisation.org/apply or mailto:jobs@org.com"
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
         />
@@ -1383,14 +1566,15 @@ function CreateJobsForm() {
 
       {/* Submit */}
       <div className="flex items-center gap-3 pt-2">
-        <button className="px-6 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-          Preview Draft
-        </button>
-        <button className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors">
-          Post Job
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-60"
+        >
+          {submitting ? 'Posting...' : 'Post Job'}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -1426,8 +1610,8 @@ function CreationCentre({ orgId }: { orgId?: string }) {
       {/* Form */}
       <div className="px-6 py-6">
         {activeTab === 0 && <CreateEventForm orgId={orgId} />}
-        {activeTab === 1 && <CreateListingForm />}
-        {activeTab === 2 && <CreateJobsForm />}
+        {activeTab === 1 && <CreateListingForm orgId={orgId} />}
+        {activeTab === 2 && <CreateJobsForm orgId={orgId} />}
       </div>
     </div>
   );

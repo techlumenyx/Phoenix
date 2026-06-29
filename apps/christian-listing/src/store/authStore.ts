@@ -34,7 +34,6 @@ interface AuthState {
   user: User | null;
   dbUser: DbUser | null;
   accountType: string | null;
-  orgSetupChecked: boolean;
   loading: boolean;
   initialized: boolean;
   logout: () => Promise<void>;
@@ -44,7 +43,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   dbUser: null,
   accountType: null,
-  orgSetupChecked: false,
   loading: true,
   initialized: false,
 
@@ -56,14 +54,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 onAuthStateChanged(firebaseAuth, async (user) => {
   if (!user) {
-    useAuthStore.setState({ user: null, dbUser: null, accountType: null, orgSetupChecked: false, loading: false, initialized: true });
+    useAuthStore.setState({ user: null, dbUser: null, accountType: null, loading: false, initialized: true });
     return;
   }
 
   const tokenResult = await user.getIdTokenResult();
   const accountType = (tokenResult.claims['accountType'] as string) ?? null;
 
-  useAuthStore.setState({ user, accountType, orgSetupChecked: false, loading: false, initialized: true });
+  useAuthStore.setState({ user, accountType, loading: false, initialized: true });
 
   try {
     const { data } = await apolloClient.query<{ me: DbUser }>({
@@ -72,7 +70,8 @@ onAuthStateChanged(firebaseAuth, async (user) => {
     });
     useAuthStore.setState({ dbUser: data.me });
 
-    if (!data.me?.onboardingCompleted) {
+    // Org users have their own onboarding path (/org/onboarding/*) — skip this redirect for them.
+    if (accountType !== 'organisation' && !data.me?.onboardingCompleted) {
       const current = window.location.pathname;
       if (!ONBOARDING_PATHS.some((p) => current.startsWith(p))) {
         window.location.replace('/onboarding/region');

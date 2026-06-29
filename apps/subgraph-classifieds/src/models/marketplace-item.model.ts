@@ -1,14 +1,14 @@
 import mongoose, { Schema, type HydratedDocument } from 'mongoose';
 
 export const MARKETPLACE_CATEGORIES = [
-  'Electronics',
-  'Clothing & Fashion',
-  'Books & Media',
-  'Furniture & Home',
-  'Food & Groceries',
-  'Baby & Kids',
-  'Charity Items',
-  'Other',
+  'ELECTRONICS',
+  'CLOTHING',
+  'BOOKS',
+  'FURNITURE',
+  'FOOD',
+  'BABY_AND_KIDS',
+  'CHARITY_ITEMS',
+  'OTHER',
 ] as const;
 
 export type MarketplaceCategory = (typeof MARKETPLACE_CATEGORIES)[number];
@@ -16,7 +16,6 @@ export type MarketplaceCategory = (typeof MARKETPLACE_CATEGORIES)[number];
 export const ITEM_CONDITIONS = [
   'NEW',
   'LIKE_NEW',
-  'GENTLY_USED',
   'GOOD',
   'FAIR',
 ] as const;
@@ -24,18 +23,18 @@ export const ITEM_CONDITIONS = [
 export type ItemCondition = (typeof ITEM_CONDITIONS)[number];
 
 export const LISTING_STATUSES = [
-  'DRAFT',
   'AVAILABLE',
   'RESERVED',
   'SOLD',
+  'PENDING_REVIEW',
 ] as const;
 
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
 export interface IMarketplaceItem {
   _id: mongoose.Types.ObjectId;
-  organisationId: mongoose.Types.ObjectId;
-  createdBy: string;   // firebaseUid of org member who created this listing
+  organisationId: mongoose.Types.ObjectId | null;
+  createdBy: string;   // firebaseUid of the user who created this listing
 
   title:       string;
   category:    MarketplaceCategory;
@@ -74,7 +73,7 @@ export type MarketplaceItemDocument = HydratedDocument<IMarketplaceItem>;
 
 export const MarketplaceItemSchema = new Schema<IMarketplaceItem>(
   {
-    organisationId: { type: Schema.Types.ObjectId, required: true },
+    organisationId: { type: Schema.Types.ObjectId, default: null },
     createdBy:      { type: String,                required: true },
 
     title:       { type: String, required: true },
@@ -100,7 +99,7 @@ export const MarketplaceItemSchema = new Schema<IMarketplaceItem>(
     contactInfo:        { type: String,  default: null },
     showContactOnOffer: { type: Boolean, default: false },
 
-    status:        { type: String, enum: LISTING_STATUSES, default: 'DRAFT' },
+    status:        { type: String, enum: LISTING_STATUSES, default: 'AVAILABLE' },
     isPromoted:    { type: Boolean, default: false },
     promotedUntil: { type: Date,    default: null },
   },
