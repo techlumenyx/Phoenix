@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useState, FormEvent } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
-import { MY_ORGANISATIONS } from '../../graphql/mutations';
+import { MY_ORGANISATIONS, CREATE_EVENT } from '../../graphql/mutations';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -671,37 +671,125 @@ const EVENT_CATEGORY_PILLS = [
   'Charity & Welfare', 'Cultural & Heritage', 'Other',
 ];
 
-function CreateEventForm() {
-  const [eventType, setEventType] = useState<'PHYSICAL' | 'VIRTUAL' | 'HYBRID'>('PHYSICAL');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+const PILL_TO_ENUM: Record<string, string> = {
+  'Worship & Prayer':       'WORSHIP',
+  'Bible Study & Theology': 'BIBLE_STUDY',
+  'Community & Social':     'COMMUNITY',
+  'Conferences & Seminars': 'CONFERENCE',
+  'Youth & Young Adults':   'YOUTH',
+  'Music & Arts':           'MUSIC',
+  'Charity & Welfare':      'CHARITY',
+  'Cultural & Heritage':    'CULTURAL',
+  'Other':                  'OTHER',
+};
+
+function CreateEventForm({ orgId }: { orgId?: string }) {
+  const [title, setTitle]           = useState('');
+  const [description, setDesc]      = useState('');
+  const [date, setDate]             = useState('');
+  const [time, setTime]             = useState('');
+  const [address, setAddress]       = useState('');
+  const [virtualLink, setVirtual]   = useState('');
+  const [region, setRegion]         = useState('');
+  const [capacity, setCapacity]     = useState('');
+  const [isTicketed, setIsTicketed] = useState(false);
+  const [eventType, setEventType]   = useState<'PHYSICAL' | 'VIRTUAL' | 'HYBRID'>('PHYSICAL');
+  const [selectedCategory, setCategory] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]           = useState('');
+  const [success, setSuccess]       = useState(false);
+
+  const [createEvent] = useMutation(CREATE_EVENT);
 
   const toggleCategory = (cat: string) =>
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    setCategory((prev) => (prev === cat ? null : cat));
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!orgId) { setError('No organisation found — set one up first.'); return; }
+    if (!title.trim() || !description.trim() || !date || !selectedCategory || !region.trim()) {
+      setError('Please fill in all required fields (title, description, category, date, region).');
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+    try {
+      const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
+      await createEvent({
+        variables: {
+          input: {
+            title:              title.trim(),
+            description:        description.trim(),
+            category:           PILL_TO_ENUM[selectedCategory] ?? 'OTHER',
+            date:               new Date(dateTime).toISOString(),
+            location: {
+              type:         eventType,
+              address:      eventType !== 'VIRTUAL' ? address.trim() || undefined : undefined,
+              virtualLink:  eventType !== 'PHYSICAL' ? virtualLink.trim() || undefined : undefined,
+            },
+            hostOrganisationIds: [orgId],
+            region:             region.trim(),
+            capacityLimit:      capacity ? parseInt(capacity, 10) : undefined,
+          },
+        },
+      });
+      setSuccess(true);
+      setTitle(''); setDesc(''); setDate(''); setTime('');
+      setAddress(''); setVirtual(''); setRegion(''); setCapacity('');
+      setCategory(null); setEventType('PHYSICAL'); setIsTicketed(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to publish event — please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div className="w-12 h-12 rounded-full bg-[#ECFDE8] flex items-center justify-center">
+          <svg className="w-6 h-6 text-[#0F6D1A]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-base font-semibold text-[#1B1B1B]">Event published!</p>
+        <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">
+          Create another
+        </button>
+      </div>
     );
+  }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+
       {/* Title */}
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Event Title</label>
         <input
           type="text"
+          required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="Give your event a clear, welcoming name..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
         />
       </div>
 
-      {/* Event Type (category pills) */}
+      {/* Category pills */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-2">Event Type</label>
+        <label className="block text-xs font-semibold text-gray-600 mb-2">Category</label>
         <div className="flex flex-wrap gap-2">
           {EVENT_CATEGORY_PILLS.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => toggleCategory(cat)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedCategories.includes(cat)
+                selectedCategory === cat
                   ? 'bg-[#1B1B1B] text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -717,6 +805,9 @@ function CreateEventForm() {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Event Description</label>
         <textarea
           rows={3}
+          required
+          value={description}
+          onChange={(e) => setDesc(e.target.value)}
           placeholder="Share the event description, for users to understand the vision and purpose behind the gathering..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
         />
@@ -728,6 +819,9 @@ function CreateEventForm() {
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Date</label>
           <input
             type="date"
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
         </div>
@@ -735,6 +829,8 @@ function CreateEventForm() {
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Time</label>
           <input
             type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
             className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
         </div>
@@ -744,6 +840,7 @@ function CreateEventForm() {
             {(['PHYSICAL', 'VIRTUAL', 'HYBRID'] as const).map((t) => (
               <button
                 key={t}
+                type="button"
                 onClick={() => setEventType(t)}
                 className={`flex-1 py-2.5 transition-colors ${
                   eventType === t ? 'bg-[#1B1B1B] text-white' : 'text-gray-500 hover:bg-gray-50'
@@ -756,6 +853,8 @@ function CreateEventForm() {
           {eventType !== 'VIRTUAL' && (
             <input
               type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
               placeholder="Street address or venue name"
               className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
             />
@@ -763,6 +862,8 @@ function CreateEventForm() {
           {eventType !== 'PHYSICAL' && (
             <input
               type="url"
+              value={virtualLink}
+              onChange={(e) => setVirtual(e.target.value)}
               placeholder="Online meeting link"
               className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
             />
@@ -775,12 +876,15 @@ function CreateEventForm() {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Region Tag</label>
         <input
           type="text"
-          placeholder="Select a region for better local discovery..."
+          required
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          placeholder="e.g. United Kingdom, Nigeria..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
         />
       </div>
 
-      {/* Media Gallery */}
+      {/* Media Gallery — placeholder, Cloudinary wired in Phase 2 */}
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">
           Media Gallery <span className="text-gray-400 font-normal">(up to 10)</span>
@@ -788,16 +892,6 @@ function CreateEventForm() {
         <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
           <p className="text-xs text-gray-400">Click to upload gallery images / videos</p>
         </div>
-      </div>
-
-      {/* Embed Video */}
-      <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1.5">Embed Video</label>
-        <input
-          type="url"
-          placeholder="YouTube URL"
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
-        />
       </div>
 
       {/* RSVP Configuration */}
@@ -808,7 +902,10 @@ function CreateEventForm() {
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">Total Capacity</label>
             <input
               type="number"
-              placeholder="Select total capacity of attendees..."
+              min="1"
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+              placeholder="Leave blank for unlimited"
               className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
             />
           </div>
@@ -820,7 +917,6 @@ function CreateEventForm() {
           </div>
         </div>
 
-        {/* RSVP Stage indicators */}
         <div className="flex items-center gap-3 mt-4">
           {['Interested', 'Saved', 'Confirmed'].map((stage, i) => (
             <div key={stage} className="flex items-center gap-3">
@@ -833,10 +929,14 @@ function CreateEventForm() {
           ))}
         </div>
 
-        {/* Ticket + Notifications */}
         <div className="flex flex-col gap-2 mt-4">
           <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-            <input type="checkbox" className="rounded border-gray-300 accent-[#C9A96E]" />
+            <input
+              type="checkbox"
+              checked={isTicketed}
+              onChange={(e) => setIsTicketed(e.target.checked)}
+              className="rounded border-gray-300 accent-[#C9A96E]"
+            />
             This is a Ticket Event
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
@@ -849,14 +949,15 @@ function CreateEventForm() {
 
       {/* Submit */}
       <div className="flex items-center gap-3 pt-2">
-        <button className="px-6 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-          Preview Draft
-        </button>
-        <button className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors">
-          Publish Event
+        <button
+          type="submit"
+          disabled={submitting || !orgId}
+          className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-50"
+        >
+          {submitting ? 'Publishing…' : 'Publish Event'}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -1293,7 +1394,7 @@ function CreateJobsForm() {
   );
 }
 
-function CreationCentre() {
+function CreationCentre({ orgId }: { orgId?: string }) {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
@@ -1324,7 +1425,7 @@ function CreationCentre() {
 
       {/* Form */}
       <div className="px-6 py-6">
-        {activeTab === 0 && <CreateEventForm />}
+        {activeTab === 0 && <CreateEventForm orgId={orgId} />}
         {activeTab === 1 && <CreateListingForm />}
         {activeTab === 2 && <CreateJobsForm />}
       </div>
@@ -1366,7 +1467,7 @@ export default function OrgOverviewPage() {
           <NotificationCentre />
         </div>
 
-        <CreationCentre />
+        <CreationCentre orgId={org?.id} />
       </div>
     </div>
   );

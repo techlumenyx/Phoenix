@@ -9,24 +9,26 @@ import { parse } from 'graphql';
 import { buildAuthPlugin } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
 import { buildContext, type GraphQLContext } from './context';
+import { setupModels } from './models';
+import { resolvers } from './resolvers';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/events.graphql'), 'utf-8'),
 );
 
-const resolvers = {};
-
 async function bootstrap() {
   const mongoUri = process.env['MONGO_URI'];
   if (!mongoUri) throw new Error('MONGO_URI is required');
-  await createMongoConnection(mongoUri, 'cl_events');
+  const conn = await createMongoConnection(mongoUri, 'cl_events');
+  setupModels(conn);
 
   const fastify = Fastify({
     logger: process.env['NODE_ENV'] !== 'test',
   });
 
   const apollo = new ApolloServer<GraphQLContext>({
-    schema: buildSubgraphSchema({ typeDefs, resolvers }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    schema: buildSubgraphSchema({ typeDefs, resolvers: resolvers as any }),
     plugins: [
       ApolloServerPluginInlineTrace(),
       fastifyApolloDrainPlugin(fastify),

@@ -1,15 +1,16 @@
 import mongoose, { Schema, type HydratedDocument } from 'mongoose';
 
 export const EVENT_CATEGORIES = [
-  'Worship & Prayer',
-  'Bible Study & Theology',
-  'Youth & Young Adults',
-  'Community & Social',
-  'Charity & Welfare',
-  'Conferences & Seminars',
-  'Music & Arts',
-  'Cultural & Heritage',
-  'Other',
+  'WORSHIP',
+  'BIBLE_STUDY',
+  'YOUTH',
+  'COMMUNITY',
+  'CHARITY',
+  'WELFARE',
+  'CONFERENCE',
+  'CULTURAL',
+  'MUSIC',
+  'OTHER',
 ] as const;
 
 export type EventCategory = (typeof EVENT_CATEGORIES)[number];
@@ -39,7 +40,7 @@ export interface IEvent {
   category:    EventCategory;
 
   // Format & location
-  eventType: 'IN_PERSON' | 'ONLINE' | 'HYBRID';
+  eventType: 'PHYSICAL' | 'VIRTUAL' | 'HYBRID';
   location:  IEventLocation | null;   // null for ONLINE events
   onlineUrl: string | null;           // null for IN_PERSON events
 
@@ -100,7 +101,7 @@ export const EventSchema = new Schema<IEvent>(
 
     eventType: {
       type:     String,
-      enum:     ['IN_PERSON', 'ONLINE', 'HYBRID'],
+      enum:     ['PHYSICAL', 'VIRTUAL', 'HYBRID'],
       required: true,
     },
     location:  { type: EventLocationSchema, default: null },
