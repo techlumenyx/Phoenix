@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── CSS custom properties ──────────────────────────────────────────────────
+   Values that Tailwind can't tokenise cleanly (gradients, complex expressions).
+   Reference these in inline style props where needed.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Hero section overlays */
+  --gradient-hero-vignette: radial-gradient(ellipse 55% 55% at 50% 50%, transparent 40%, black 100%);
+  --gradient-hero-fade:     radial-gradient(148.64% 121.35% at 50% -30.34%, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 35.64%, rgba(255,255,255,0.25) 69.14%, rgba(255,255,255,0.68) 84.77%, #ffffff 100%);
+
+  /* Navbar backdrop */
+  --bg-navbar: rgba(0, 0, 0, 0.8);
+
+  /* Layout offsets */
+  --h-navbar: 72px;
+}
+
+/* ── Base layer ─────────────────────────────────────────────────────────────
+   Wire font families and set sensible document defaults.
+   ────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    @apply font-sans text-dark antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
