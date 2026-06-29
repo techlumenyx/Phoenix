@@ -53,6 +53,8 @@ jobs:
         run: npm install -g @apollo/rover
 
       - name: Compose supergraph
+        env:
+          APOLLO_ELV2_LICENSE: accept
         run: rover supergraph compose --config rover.yaml --output apps/gateway/supergraph.graphql
 
       - name: Verify supergraph was produced
