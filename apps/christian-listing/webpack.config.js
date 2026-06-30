@@ -11,6 +11,8 @@ module.exports = composePlugins(
         .filter(([k]) => k.startsWith('CL_') || k.startsWith('VITE_'))
         .map(([k, v]) => [`process.env.${k}`, JSON.stringify(v)])
     );
+    console.log('[webpack] CL/VITE env vars injected:', Object.keys(clEnvVars));
+    console.log('[webpack] CL_FIREBASE_API_KEY set:', !!process.env['CL_FIREBASE_API_KEY']);
     config.plugins.push(new DefinePlugin(clEnvVars));
 
     if (process.env.ANALYZE === 'true') {
