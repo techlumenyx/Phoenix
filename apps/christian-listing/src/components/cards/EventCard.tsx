@@ -9,9 +9,10 @@ export interface EventCardProps {
   time?: string;
   invites?: string;
   likes?: string;
-  featured?: boolean;
+  verified?: boolean;
   imageSrc?: string;
   ctaLabel?: string;
+  className?: string;
 }
 
 export default function EventCard({
@@ -23,13 +24,13 @@ export default function EventCard({
   time,
   invites,
   likes,
-  featured = false,
+  verified = false,
   imageSrc,
   ctaLabel = 'RSVP Now',
+  className = '',
 }: EventCardProps) {
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px]">
-      {/* Background image */}
+    <div className={`relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${className}`}>
       {imageSrc && (
         <img
           src={imageSrc}
@@ -38,16 +39,14 @@ export default function EventCard({
           className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-      {/* Featured dot */}
-      {featured && (
-        <span className="absolute top-3 left-3 w-2.5 h-2.5 rounded-full bg-green-400 z-10" />
+      {verified && (
+        <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E] z-10" />
       )}
 
-      {/* Top row: badge + date */}
       <div className="relative z-10 flex items-start justify-between p-4">
-        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-purple-600/90">
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#A460A5] text-white">
           {badge}
         </span>
         {date && (
@@ -55,9 +54,8 @@ export default function EventCard({
         )}
       </div>
 
-      {/* Content pushes to bottom */}
       <div className="relative z-10 mt-auto p-4 flex flex-col gap-2">
-        <h3 className="text-lg font-bold leading-tight line-clamp-2">{title}</h3>
+        <h3 className="text-lg font-serif font-bold leading-tight line-clamp-2">{title}</h3>
         {description && (
           <p className="text-xs text-white/70 line-clamp-2">{description}</p>
         )}
@@ -77,7 +75,7 @@ export default function EventCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
           <div className="flex items-center gap-3 text-xs text-white/60">
             {invites && (
               <span className="flex items-center gap-1">

@@ -14,7 +14,13 @@
         "index": "apps/christian-listing/index.html",
         "main": "apps/christian-listing/src/main.tsx",
         "tsConfig": "apps/christian-listing/tsconfig.app.json",
-        "assets": ["apps/christian-listing/src/assets"],
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/christian-listing/src/assets",
+            "output": "assets"
+          }
+        ],
         "styles": ["apps/christian-listing/src/styles.css"],
         "webpackConfig": "apps/christian-listing/webpack.config.js"
       },
