@@ -50,8 +50,10 @@ jobs:
 
       - name: Deploy to Firebase Hosting (christian-listing)
         run: |
+          set +e
           output=$(npx firebase deploy --only hosting:christian-listing --project ${{ vars.FIREBASE_PROJECT_ID }} 2>&1)
           exit_code=$?
+          set -e
           echo "$output"
           if [ $exit_code -ne 0 ] && echo "$output" | grep -q "current active version"; then
             echo "Nothing to deploy — christian-listing is already up-to-date"
@@ -97,8 +99,10 @@ jobs:
 
       - name: Deploy to Firebase Hosting (cl-admin)
         run: |
+          set +e
           output=$(npx firebase deploy --only hosting:christian-listings-admin --project ${{ vars.FIREBASE_PROJECT_ID }} 2>&1)
           exit_code=$?
+          set -e
           echo "$output"
           if [ $exit_code -ne 0 ] && echo "$output" | grep -q "current active version"; then
             echo "Nothing to deploy — cl-admin is already up-to-date"
