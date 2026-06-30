@@ -29,7 +29,8 @@
           "mode": "production",
           "sourceMap": false,
           "extractLicenses": true,
-          "optimization": true
+          "optimization": true,
+          "outputHashing": "all"
         }
       }
     },
