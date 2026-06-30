@@ -88,4 +88,12 @@ jobs:
           CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_ADMIN }}
 
       - name: Deploy to Firebase Hosting (cl-admin)
-        run: npx firebase deploy --only hosting:christian-listings-admin --project ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          output=$(npx firebase deploy --only hosting:christian-listings-admin --project ${{ vars.FIREBASE_PROJECT_ID }} 2>&1)
+          exit_code=$?
+          echo "$output"
+          if [ $exit_code -ne 0 ] && echo "$output" | grep -q "current active version"; then
+            echo "Nothing to deploy — cl-admin is already up-to-date"
+            exit 0
+          fi
+          exit $exit_code
