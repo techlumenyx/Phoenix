@@ -1,10 +1,12 @@
 version: "3.9"
 
+# Production compose — pulls pre-built images from GHCR.
+# Never runs `docker build`. The server only downloads and runs.
+# Images are built and pushed by GitHub Actions on every push to main.
+
 services:
   gateway:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.router
+    image: ghcr.io/techlumenyx/phoenix/gateway:latest
     ports:
       - "4000:4000"
     environment:
@@ -14,6 +16,11 @@ services:
       - SUBGRAPH_EVENTS_URL=http://events:4002/graphql
       - SUBGRAPH_CLASSIFIEDS_URL=http://classifieds:4003/graphql
       - SUBGRAPH_ADMIN_URL=http://admin:4004/graphql
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       identity:
         condition: service_healthy
@@ -23,15 +30,10 @@ services:
         condition: service_healthy
       admin:
         condition: service_healthy
+    restart: unless-stopped
 
   identity:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.node
-      args:
-        APP_NAME: subgraph-identity
-    ports:
-      - "4001:4001"
+    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
     environment:
       - NODE_ENV=production
       - PORT=4001
@@ -42,15 +44,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   events:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.node
-      args:
-        APP_NAME: subgraph-events
-    ports:
-      - "4002:4002"
+    image: ghcr.io/techlumenyx/phoenix/subgraph-events:latest
     environment:
       - NODE_ENV=production
       - PORT=4002
@@ -61,15 +58,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   classifieds:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.node
-      args:
-        APP_NAME: subgraph-classifieds
-    ports:
-      - "4003:4003"
+    image: ghcr.io/techlumenyx/phoenix/subgraph-classifieds:latest
     environment:
       - NODE_ENV=production
       - PORT=4003
@@ -83,15 +75,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   admin:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.node
-      args:
-        APP_NAME: subgraph-admin
-    ports:
-      - "4004:4004"
+    image: ghcr.io/techlumenyx/phoenix/subgraph-admin:latest
     environment:
       - NODE_ENV=production
       - PORT=4004
@@ -102,12 +89,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  web:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.web
-    ports:
-      - "80:80"
-    depends_on:
-      - gateway
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # worker:
+  #   image: ghcr.io/techlumenyx/phoenix/worker:latest
+  #   environment:
+  #     - NODE_ENV=production
+  #     - REDIS_URL=redis://redis:6379
+  #     - MONGO_URI=${MONGO_URI}
+  #     - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+  #   depends_on:
+  #     - redis
+  #   restart: unless-stopped
+  # ↑ Uncomment when apps/worker is scaffolded
+
+volumes:
+  redis_data:

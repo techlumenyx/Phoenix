@@ -1,0 +1,14 @@
+# Gateway image — Apollo Router (Rust binary), not a Node app.
+# Build context is the repo root (same as Dockerfile.node) so it can read
+# apps/gateway/router.yaml and the composed apps/gateway/supergraph.graphql.
+FROM ghcr.io/apollographql/router:v2.16.0
+
+USER root
+COPY apps/gateway/router.yaml /dist/config/router.yaml
+COPY apps/gateway/supergraph.graphql /dist/schema/supergraph.graphql
+RUN chown -R router:router /dist/config /dist/schema
+USER router
+
+EXPOSE 4000 8088
+
+CMD ["--supergraph", "/dist/schema/supergraph.graphql"]
