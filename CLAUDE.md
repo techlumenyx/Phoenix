@@ -47,9 +47,17 @@ Faith-community platform (Events, Jobs, Marketplace) for diaspora audiences. Nx 
 
 ### Authentication
 - **Always** call `buildAuthContext(request)` from `@christian-listings/auth` in every subgraph's Apollo context function.
-- Use `buildAuthPlugin({ optional: true })` for public routes (browse without login).
+- Use `buildAuthPlugin({ optional: true })` for public routes (browse without login). `subgraph-admin` deliberately uses `optional: false` (mandatory auth) since it's admin-only.
+- `/health` is always exempt from the auth check (`fastify-auth.plugin.ts` special-cases it) regardless of a subgraph's `optional` setting — container healthchecks and infra monitoring must never need a Firebase token.
 - The browser apps read `CL_FIREBASE_*` env vars for the client SDK.
 - The backend reads `FIREBASE_SERVICE_ACCOUNT_JSON` (base64 JSON) for the Admin SDK.
+
+### Docker / Deployment
+- `apps/gateway` (Apollo Router) is **not** a Node app — it has no `nx build` target and must never be built with `docker/Dockerfile.node`. It has its own `docker/Dockerfile.router`, based on the official `ghcr.io/apollographql/router` image.
+- `apps/gateway/router.yaml` must keep `supergraph.listen: 0.0.0.0:4000` explicit — the router defaults to `127.0.0.1:4000`, unreachable from outside its own container. (`nx serve gateway` overrides this via `--listen` on the CLI, so this only bites in Docker.)
+- `docker/Dockerfile.node` runs `npm ci --legacy-peer-deps`. The `--legacy-peer-deps` is required: `mongodb` (via `mongoose`) declares `gcp-metadata`/`gaxios`/`https-proxy-agent`/`agent-base` as optional peer dependencies for unused GCP auth features, and `npm ci`'s strict lock-sync check flags them as "missing from lock file" inconsistently across npm versions/platforms without this flag.
+- Container healthchecks must hit `127.0.0.1`, never `localhost` — Alpine/musl can resolve `localhost` to the IPv6 loopback (`::1`) first, and since Fastify only binds the IPv4 wildcard (`0.0.0.0`), that gets an instant connection-refused even though the app is genuinely up.
+- `apps/gateway/supergraph.graphql` is gitignored (composed, not committed) — any CI job that builds the gateway image must run `rover supergraph compose --config rover.yaml --output apps/gateway/supergraph.graphql` first (see `.github/workflows/deploy.yml`'s `build-and-push` job).
 
 ### Schema Changes
 After editing any `.graphql` file:

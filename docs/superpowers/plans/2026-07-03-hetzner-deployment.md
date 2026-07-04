@@ -1,4 +1,4 @@
-# Hetzner Deployment Plan — Christian Listings Backend
+﻿# Hetzner Deployment Plan — Christian Listings Backend
 
 **Goal:** Deploy the gateway + 4 subgraphs + Redis + worker to a single Hetzner VPS. The frontend (christian-listing, cl-admin) stays on Firebase Hosting. MongoDB stays on Atlas. This plan only moves the Node.js/Router layer.
 
@@ -307,7 +307,7 @@ Paste this (replace `cl-api.duckdns.org` with your actual subdomain):
 ```nginx
 server {
     listen 80;
-    server_name cl-api.duckdns.org;
+    server_name christian-listings.duckdns.org;
 
     location / {
         proxy_pass         http://localhost:4000;
@@ -326,7 +326,7 @@ server {
 
 Enable it:
 ```bash
-sudo ln -s /etc/nginx/sites-available/cl-api.duckdns.org /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/christian-listings.duckdns.org /etc/nginx/sites-enabled/
 sudo nginx -t          # should print "syntax is ok"
 sudo systemctl reload nginx
 ```
@@ -334,7 +334,7 @@ sudo systemctl reload nginx
 ### 5C — Get the SSL certificate
 
 ```bash
-sudo certbot --nginx -d cl-api.duckdns.org
+sudo certbot --nginx -d christian-listings.duckdns.org
 ```
 
 Certbot will:
@@ -793,18 +793,38 @@ sudo certbot renew --dry-run
 - [ ] Phase 1: Provision Hetzner CX23, get server IP
 - [ ] Phase 2: Secure server, install Docker
 - [ ] Phase 3: Add DNS A record for `cl-api.duckdns.org`
-- [ ] Phase 4A: Clone repo on server
-- [ ] Phase 4B: Create `.env` on server with all secrets
+- [x] Phase 4A: Clone repo on server
+- [x] Phase 4B: Create `.env` on server with all secrets
 - [x] Phase 4C: Add Firebase Hosting domains to `router.yaml` CORS, commit & push
 - [ ] Phase 5: Install Nginx + Certbot, get SSL cert
 - [x] Phase 6-pre: Create `docker/Dockerfile.router`, set `supergraph.listen: 0.0.0.0:4000` in `router.yaml`
 - [x] Phase 6: Create and commit `docker-compose.prod.yml` (image-based, no build)
-- [ ] Phase 6A: Create GHCR PAT, `docker login ghcr.io` on server
+- [x] Phase 6A: Create GHCR PAT, `docker login ghcr.io` on server
 - [ ] Phase 7A–C: Create deploy SSH key, install on server, add GitHub secrets
-- [x] Phase 7D: Add build-and-push + deploy jobs to `deploy.yml`, push to main (still needs 7A–C secrets before pushing)
-- [ ] Watch GitHub Actions — all jobs should go green
-- [ ] Phase 6B: First manual deploy on server (`docker compose pull && up -d`)
-- [ ] Verify: `https://cl-api.duckdns.org/health` returns healthy
+- [x] Phase 7D: Add build-and-push + deploy jobs to `deploy.yml`, push to main (still needs 7A–C secrets before automatic deploys work)
+- [x] Watch GitHub Actions — all jobs green
+- [x] Phase 6B: First manual deploy on server (`docker compose pull && up -d`) — all 6 containers `Up (healthy)` as of 2026-07-04
+- [ ] Verify: `https://cl-api.duckdns.org/health` returns healthy (needs Phase 5 / Nginx first)
 
 ### When building background jobs
 - [ ] Phase 8: Scaffold worker app, add BullMQ, add to matrix + docker-compose.prod.yml
+
+---
+
+## Troubleshooting log — issues hit getting the backend healthy (2026-07-03/04)
+
+Six unrelated bugs, all pre-existing in the codebase and never previously exercised, had to be fixed in sequence before `docker compose up` produced a fully healthy stack. Fixes are already committed to `main` — this log is so a future redeploy (new server, disaster recovery, second environment) doesn't have to re-discover them from scratch.
+
+1. **Gateway had no Docker packaging.** It's the Apollo Router (a Rust binary), but was being built with the Node.js `Dockerfile.node`, which has no build target for it and wouldn't run the binary anyway. → `docker/Dockerfile.router` (based on `ghcr.io/apollographql/router`).
+
+2. **`router.yaml` bound `127.0.0.1:4000` by default** — unreachable from outside its own container. → added `supergraph.listen: 0.0.0.0:4000`.
+
+3. **`npm ci --omit=dev=false`** in `Dockerfile.node` is invalid npm syntax, failed every subgraph build. → plain `npm ci`.
+
+4. **`npm ci` EUSAGE: "Missing gcp-metadata/gaxios/https-proxy-agent/agent-base from lock file"** on every subgraph build, even though the lock file was genuinely in sync (`npm install` locally produced a byte-identical lock file). Root cause: `mongodb` (via `mongoose`) declares these as *optional peer dependencies* (for GCP KMS/auth features this project doesn't use), and npm's resolution of optional peer deps during `npm ci`'s strict validation differs across npm patch versions/platforms (reproduced: passes on Windows npm 10.9.3, fails on Linux/Alpine npm 10.9.8). Node-version bumps didn't fix it. → `npm ci --legacy-peer-deps`.
+
+5. **`MongooseServerSelectionError: Could not connect to any servers`** on `docker compose up -d`, for all 4 subgraphs. Extensive isolated testing (IP whitelist active & correct, SRV/TXT DNS resolution fine from host and container, raw TCP connect fine, TLS handshake fine and authorized, direct `mongoose.connect()` test with the real `.env` succeeding both on the default Docker network and the Compose-created network) ruled out every plausible cause **except** the one thing never tested in isolation: all 4 subgraphs opening TLS connections to Atlas's 3 shard hosts at the same instant on cold start. Atlas's free M0 tier is more sensitive to connection bursts than paid tiers. → no code fix needed; `restart: unless-stopped` in `docker-compose.prod.yml` lets it self-resolve within a few restart cycles. If this recurs and is intolerable, consider staggering subgraph startup (e.g. `depends_on` chains with delays) rather than treating it as broken.
+
+6. **All 4 subgraph containers reported `(unhealthy)`** despite being confirmed up and logging "Server listening" — `docker exec ... wget http://localhost:$PORT/health` got instant `Connection refused`, but the identical request against `127.0.0.1` succeeded. Alpine/musl resolves `localhost` to the IPv6 loopback (`::1`) first; Fastify only binds the IPv4 wildcard (`0.0.0.0`), so nothing is listening on `::1`. → every healthcheck in both compose files now hits `127.0.0.1` explicitly, never `localhost`.
+
+7. **`subgraph-admin` specifically stayed `(unhealthy)`** after fix #6 — its `/health` endpoint itself returned `401 Unauthorized`. Unlike the other three subgraphs, `subgraph-admin` registers `buildAuthPlugin({ optional: false })` (mandatory auth, intentional for an admin-only service), and the plugin's `onRequest` hook is wrapped in `fastify-plugin` (`fp()`), which breaks Fastify's encapsulation and applies the hook globally regardless of route registration order — so `/health` inherited the mandatory-auth requirement. → `fastify-auth.plugin.ts` now exempts `/health` from the auth check unconditionally, for every subgraph, regardless of `optional`.
