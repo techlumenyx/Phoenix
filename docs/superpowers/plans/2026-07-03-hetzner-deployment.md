@@ -523,7 +523,9 @@ To check container health directly from the server: `docker exec <gateway-contai
 
 ---
 
-## Phase 7 — GitHub Actions: Build images in CI, deploy to server
+## Phase 7 — GitHub Actions: Build images in CI, 
+
+deploy to server
 
 This replaces the old single deploy job with two jobs:
 1. **build-and-push** — builds all 5 Docker images in parallel on GitHub's machines, pushes to GHCR
@@ -801,7 +803,7 @@ sudo certbot renew --dry-run
 - [x] Phase 6-pre: Create `docker/Dockerfile.router`, set `supergraph.listen: 0.0.0.0:4000` in `router.yaml`
 - [x] Phase 6: Create and commit `docker-compose.prod.yml` (image-based, no build)
 - [x] Phase 6A: Create GHCR PAT, `docker login ghcr.io` on server
-- [ ] Phase 7A–C: Create deploy SSH key (`ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/cl_deploy_key`), install public key on server (`echo "<pub>" >> ~/.ssh/authorized_keys`), add `HETZNER_HOST` / `HETZNER_USER` / `HETZNER_SSH_KEY` to GitHub repo secrets
+- [x] Phase 7A–C: Deploy SSH key created, installed on server, `HETZNER_HOST`/`HETZNER_USER`/`HETZNER_SSH_KEY` added to GitHub repo secrets — full pipeline (build → SSH deploy → smoke test) confirmed green 2026-07-04
 - [x] Phase 7D: Add build-and-push + deploy jobs to `deploy.yml`, push to main — improved with `set -euo pipefail`, `git fetch/reset --hard`, post-deploy smoke test (2026-07-04)
 - [x] Watch GitHub Actions — all jobs green
 - [x] Phase 6B: First manual deploy on server (`docker compose pull && up -d`) — all 6 containers `Up (healthy)` as of 2026-07-04
@@ -831,3 +833,9 @@ Six unrelated bugs, all pre-existing in the codebase and never previously exerci
 6. **All 4 subgraph containers reported `(unhealthy)`** despite being confirmed up and logging "Server listening" — `docker exec ... wget http://localhost:$PORT/health` got instant `Connection refused`, but the identical request against `127.0.0.1` succeeded. Alpine/musl resolves `localhost` to the IPv6 loopback (`::1`) first; Fastify only binds the IPv4 wildcard (`0.0.0.0`), so nothing is listening on `::1`. → every healthcheck in both compose files now hits `127.0.0.1` explicitly, never `localhost`.
 
 7. **`subgraph-admin` specifically stayed `(unhealthy)`** after fix #6 — its `/health` endpoint itself returned `401 Unauthorized`. Unlike the other three subgraphs, `subgraph-admin` registers `buildAuthPlugin({ optional: false })` (mandatory auth, intentional for an admin-only service), and the plugin's `onRequest` hook is wrapped in `fastify-plugin` (`fp()`), which breaks Fastify's encapsulation and applies the hook globally regardless of route registration order — so `/health` inherited the mandatory-auth requirement. → `fastify-auth.plugin.ts` now exempts `/health` from the auth check unconditionally, for every subgraph, regardless of `optional`.
+
+8. **`deploy-backend` job: `ssh: unable to authenticate, attempted methods [none publickey]`.** The GitHub Actions deploy public key was generated (Phase 7A) but the `echo "<pub>" >> ~/.ssh/authorized_keys` step (Phase 7B) was never actually run against the right file — `authorized_keys` only had the operator's personal key from Phase 1A. → appended the `github-actions-deploy` public key to `deploy`'s `~/.ssh/authorized_keys`.
+
+9. **`deploy-backend` job, after fixing #8: `fatal: detected dubious ownership in repository at '/opt/christian-listings'`.** Phase 4A's `git clone` was originally run as `root`, but the deploy job SSHs in as `deploy` — Git (CVE-2022-24765 mitigation) refuses to operate on a repo owned by a different user by default. → `git config --global --add safe.directory /opt/christian-listings` as the `deploy` user silences the check, but didn't fully fix it — see #10.
+
+10. **`deploy-backend` job, after fixing #9: `error: cannot open '.git/FETCH_HEAD': Permission denied`.** The `safe.directory` exception only tells Git to trust the repo despite the ownership mismatch — it doesn't grant filesystem write access. `/opt/christian-listings` (including `.git`) was still actually owned by `root`, so `deploy` had no write permission at all. → `sudo chown -R deploy:deploy /opt/christian-listings` once, on the server. **Takeaway for a future redeploy:** do Phase 4A (`git clone`) as the `deploy` user from the start, not `root`, to avoid this entirely.
