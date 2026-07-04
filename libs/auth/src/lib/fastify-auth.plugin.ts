@@ -9,6 +9,8 @@ interface AuthPluginOptions {
 export function buildAuthPlugin(options: AuthPluginOptions = {}) {
   return fp(async (fastify: FastifyInstance) => {
     fastify.addHook('onRequest', async (request, reply) => {
+      if (request.url.split('?')[0] === '/health') return;
+
       const authHeader = request.headers['authorization'];
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         if (options.optional) return;
