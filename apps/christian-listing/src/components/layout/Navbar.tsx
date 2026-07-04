@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDownIcon, ChurchLogo, MapPinIcon } from './icons';
 import SignInModal from './SignInModal';
@@ -43,20 +43,76 @@ function UserAvatar({ name }: { name: string }) {
   );
 }
 
+function UserMenu({ displayName }: { displayName: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { logout } = useAuthStore();
+
+  useEffect(() => {
+    if (!open) return;
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  async function handleSignOut() {
+    setOpen(false);
+    await logout();
+    navigate('/');
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2A2A2A] hover:bg-[#333] transition-colors"
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        <UserAvatar name={displayName} />
+        <span className="text-white text-sm font-medium max-w-[120px] truncate">{displayName}</span>
+        <ChevronDownIcon className={`w-3.5 h-3.5 text-white/60 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-44 rounded-xl bg-[#1B1B1B] border border-white/10 shadow-xl overflow-hidden z-50">
+          <button
+            onClick={() => { setOpen(false); navigate('/profile'); }}
+            className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            View Profile
+          </button>
+          <div className="h-px bg-white/10" />
+          <button
+            onClick={handleSignOut}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const [activeLink, setActiveLink] = useState<string>('Home');
   const [menuOpen, setMenuOpen]     = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
 
-  const handleProfileClick = () => {
-    // orgId routing added here once GraphQL me query is wired
-    navigate('/profile');
-  };
-
   const displayName = user?.displayName ?? user?.email ?? 'User';
+
+  async function handleMobileSignOut() {
+    setMenuOpen(false);
+    await logout();
+    navigate('/');
+  }
 
   return (
     <>
@@ -97,15 +153,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <RegionSelector />
           {user ? (
-            <button
-              onClick={handleProfileClick}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2A2A2A] hover:bg-[#333] transition-colors"
-            >
-              <UserAvatar name={displayName} />
-              <span className="text-white text-sm font-medium max-w-[120px] truncate">
-                {displayName}
-              </span>
-            </button>
+            <UserMenu displayName={displayName} />
           ) : (
             <button
               onClick={() => setSignInOpen(true)}
@@ -143,22 +191,30 @@ export default function Navbar() {
                 {label}
               </a>
             ))}
-            <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+            <div className="flex flex-col gap-3 pt-2 border-t border-white/10">
               <RegionSelector />
               {user ? (
-                <button
-                  onClick={() => { setMenuOpen(false); handleProfileClick(); }}
-                  className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2A2A2A]"
-                >
-                  <UserAvatar name={displayName} />
-                  <span className="text-white text-sm font-medium truncate max-w-[100px]">
-                    {displayName}
-                  </span>
-                </button>
+                <>
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/profile'); }}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2A2A2A] self-start"
+                  >
+                    <UserAvatar name={displayName} />
+                    <span className="text-white text-sm font-medium truncate max-w-[100px]">
+                      {displayName}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleMobileSignOut}
+                    className="self-start text-sm font-medium text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => { setMenuOpen(false); setSignInOpen(true); }}
-                  className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold"
+                  className="px-5 py-2 rounded-full bg-[#C9A96E] text-[#1B1B1B] text-sm font-semibold self-start"
                 >
                   Sign In
                 </button>

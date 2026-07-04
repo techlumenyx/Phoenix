@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MY_ORGANISATIONS } from '../../graphql/mutations';
+import { useAuthStore } from '../../store/authStore';
 import {
   BriefcaseIcon,
   CalendarIcon,
   ChatBubbleIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChurchLogo,
   CogIcon,
@@ -29,6 +31,62 @@ const NAV_ITEMS = [
   { label: 'Messages',         icon: ChatBubbleIcon, path: '/org/messages' },
   { label: 'Settings',         icon: CogIcon,        path: '/org/settings' },
 ] as const;
+
+function OrgUserMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (!open) return;
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  async function handleSignOut() {
+    setOpen(false);
+    await logout();
+    navigate('/');
+  }
+
+  const displayName = user?.displayName ?? user?.email ?? 'User';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#C9A96E] text-white text-xs font-semibold hover:bg-[#b8965e] transition-colors"
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        <span className="max-w-[100px] truncate">{displayName}</span>
+        <ChevronDownIcon className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-44 rounded-xl bg-white border border-gray-100 shadow-lg overflow-hidden z-50">
+          <button
+            onClick={() => { setOpen(false); navigate('/profile'); }}
+            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+          >
+            View Profile
+          </button>
+          <div className="h-px bg-gray-100" />
+          <button
+            onClick={handleSignOut}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function OrgTopBar() {
   return (
@@ -59,9 +117,7 @@ function OrgTopBar() {
           <MapPinIcon className="w-3.5 h-3.5 text-gray-400" />
           United Kingdom
         </button>
-        <button className="px-4 py-1.5 rounded-full bg-[#C9A96E] text-white text-xs font-semibold hover:bg-[#b8965e] transition-colors">
-          Profile
-        </button>
+        <OrgUserMenu />
       </div>
     </header>
   );
