@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDownIcon, ChurchLogo, MapPinIcon } from './icons';
 import SignInModal from './SignInModal';
 import { useAuthStore } from '../../store/authStore';
@@ -100,11 +100,14 @@ function UserMenu({ displayName }: { displayName: string }) {
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { user, logout } = useAuthStore();
 
-  const [activeLink, setActiveLink] = useState<string>('Home');
   const [menuOpen, setMenuOpen]     = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
+
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   const displayName = user?.displayName ?? user?.email ?? 'User';
 
@@ -136,9 +139,8 @@ export default function Navbar() {
             <li key={label}>
               <a
                 href={href}
-                onClick={() => setActiveLink(label)}
                 className={`text-sm font-medium transition-colors pb-1 ${
-                  activeLink === label
+                  isActive(href)
                     ? 'text-white border-b-2 border-white'
                     : 'text-white/70 hover:text-white'
                 }`}
@@ -185,8 +187,8 @@ export default function Navbar() {
               <a
                 key={label}
                 href={href}
-                onClick={() => { setActiveLink(label); setMenuOpen(false); }}
-                className={`text-sm font-medium ${activeLink === label ? 'text-white' : 'text-white/70'}`}
+                onClick={() => setMenuOpen(false)}
+                className={`text-sm font-medium ${isActive(href) ? 'text-white' : 'text-white/70'}`}
               >
                 {label}
               </a>
