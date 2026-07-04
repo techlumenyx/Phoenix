@@ -719,7 +719,8 @@ Once scaffolded, add it to the matrix in `deploy.yml` and uncomment the `worker`
 
 ## How to roll back a bad deploy
 
-If a deploy breaks something, roll back to the previous commit's images:
+If a deploy breaks something, roll back to the previous commit's
+ images:
 
 ```bash
 # On the server — replace <previous-sha> with the git SHA before the bad commit
@@ -796,7 +797,7 @@ sudo certbot renew --dry-run
 - [x] Phase 4A: Clone repo on server
 - [x] Phase 4B: Create `.env` on server with all secrets
 - [x] Phase 4C: Add Firebase Hosting domains to `router.yaml` CORS, commit & push
-- [ ] Phase 5: Install Nginx + Certbot, get SSL cert
+- [x] Phase 5: Install Nginx + Certbot, get SSL cert — confirmed live at `https://christian-listings.duckdns.org/` 2026-07-04
 - [x] Phase 6-pre: Create `docker/Dockerfile.router`, set `supergraph.listen: 0.0.0.0:4000` in `router.yaml`
 - [x] Phase 6: Create and commit `docker-compose.prod.yml` (image-based, no build)
 - [x] Phase 6A: Create GHCR PAT, `docker login ghcr.io` on server
@@ -804,7 +805,7 @@ sudo certbot renew --dry-run
 - [x] Phase 7D: Add build-and-push + deploy jobs to `deploy.yml`, push to main — improved with `set -euo pipefail`, `git fetch/reset --hard`, post-deploy smoke test (2026-07-04)
 - [x] Watch GitHub Actions — all jobs green
 - [x] Phase 6B: First manual deploy on server (`docker compose pull && up -d`) — all 6 containers `Up (healthy)` as of 2026-07-04
-- [x] Backend live: `https://christian-listings.duckdns.org/` returns `{"data":{"__typename":"Query"}}` (verified 2026-07-04)
+- [x] Backend live: `https://christian-listings.duckdns.org/` returns `{"data":{"__typename":"Query"}}` (verified independently twice, 2026-07-04)
 - [ ] Add GitHub secret `CL_GRAPHQL_URL=https://christian-listings.duckdns.org/` so frontend builds point at production backend
 - [ ] Add `APP_URL=https://christian-listing.web.app`, `APP_SECRET`, and `SMTP_*` vars to server `.env` (identity service needs them for email verification links)
 
