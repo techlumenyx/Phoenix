@@ -17,7 +17,7 @@ services:
       - SUBGRAPH_CLASSIFIEDS_URL=http://classifieds:4003/graphql
       - SUBGRAPH_ADMIN_URL=http://admin:4004/graphql
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8088/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8088/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +40,7 @@ services:
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,7 +54,7 @@ services:
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,7 +71,7 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4003/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -85,7 +85,7 @@ services:
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4004/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/health"]
       interval: 10s
       timeout: 5s
       retries: 5
