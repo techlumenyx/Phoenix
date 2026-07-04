@@ -181,9 +181,27 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
+          command_timeout: 5m
           script: |
+            set -euo pipefail
             cd /opt/christian-listings
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             docker compose -f docker-compose.prod.yml --env-file .env pull
             docker compose -f docker-compose.prod.yml --env-file .env up -d
             docker image prune -f
+
+      - name: Smoke test — verify GraphQL endpoint
+        run: |
+          echo "Waiting 20s for containers to stabilise..."
+          sleep 20
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://christian-listings.duckdns.org/ \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{__typename}"}' \
+            --max-time 15)
+          if [ "$status" != "200" ]; then
+            echo "Smoke test FAILED — HTTP $status from https://christian-listings.duckdns.org/"
+            exit 1
+          fi
+          echo "Smoke test passed — HTTP 200"
