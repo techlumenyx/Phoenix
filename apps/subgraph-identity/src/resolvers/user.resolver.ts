@@ -18,6 +18,8 @@ function mapUser(doc: HydratedDocument<IUser>) {
     isVerified: doc.isVerified ?? false,
     onboardingCompleted: doc.onboardingCompleted ?? false,
     preferences: doc.preferences ?? [],
+    roles: doc.roles ?? [],
+    orgId: doc.orgId?.toString() ?? null,
     region: doc.region ?? '',
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -70,8 +72,8 @@ export const userResolvers = {
   },
 
   User: {
-    __resolveReference: async ({ id }: { id: string }) => {
-      const doc = await UserModel().findById(id);
+    __resolveReference: async ({ id, firebaseUid }: { id?: string; firebaseUid?: string }) => {
+      const doc = firebaseUid ? await UserModel().findOne({ firebaseUid }) : await UserModel().findById(id);
       return doc ? mapUser(doc) : null;
     },
   },

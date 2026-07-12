@@ -64,6 +64,7 @@ export interface IMarketplaceItem {
   status:        ListingStatus;
   isPromoted:    boolean;
   promotedUntil: Date | null;
+  flagCount: number;
 
   createdAt: Date;
   updatedAt: Date;
@@ -102,6 +103,7 @@ export const MarketplaceItemSchema = new Schema<IMarketplaceItem>(
     status:        { type: String, enum: LISTING_STATUSES, default: 'AVAILABLE' },
     isPromoted:    { type: Boolean, default: false },
     promotedUntil: { type: Date,    default: null },
+    flagCount:     { type: Number,  default: 0 },
   },
   { timestamps: true },
 );

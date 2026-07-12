@@ -23,6 +23,14 @@ enum JobStatus {
   CLOSED
 }
 
+enum JobSort {
+  NEWEST
+  DEADLINE
+  SALARY_ASC
+  SALARY_DESC
+  POPULAR
+}
+
 enum ItemCondition {
   NEW
   LIKE_NEW
@@ -37,10 +45,22 @@ enum ListingStatus {
   PENDING_REVIEW
 }
 
+enum MarketplaceSort {
+  NEWEST
+  PRICE_ASC
+  PRICE_DESC
+  POPULAR
+}
+
+enum MessageThreadStatus { ACTIVE ARCHIVED BLOCKED }
+enum MessageType { TEXT SYSTEM OFFER }
+enum MessageParticipantRole { BUYER SELLER }
+
 # ─── Federation Entity Stubs ──────────────────────────────────────────────────
 
-type User @key(fields: "id") @extends {
+type User @key(fields: "id") @key(fields: "firebaseUid") @extends {
   id: ID! @external
+  firebaseUid: String! @external
   jobApplications: [JobApplication!]!
   marketplaceListings: [MarketplaceItem!]!
   savedJobs: [JobListing!]!
@@ -51,6 +71,7 @@ type Organisation @key(fields: "id") @extends {
   name: String! @external
   isVerified: Boolean! @external
   jobListings: [JobListing!]!
+  marketplaceListings: [MarketplaceItem!]!
 }
 
 # ─── Entities ─────────────────────────────────────────────────────────────────
@@ -59,7 +80,7 @@ type JobListing @key(fields: "id") {
   id: ID!
   title: String!
   description: String!
-  organisation: Organisation! @provides(fields: "name isVerified")
+  organisation: Organisation!
   roleType: RoleType!
   workLocation: WorkLocation!
   skillsRequired: [String!]!
@@ -70,6 +91,14 @@ type JobListing @key(fields: "id") {
   status: JobStatus!
   isPromoted: Boolean!
   faithAlignmentTag: FaithAlignmentTag
+  responsibilities: [String!]!
+  educationalRequirement: String
+  experience: String
+  certifications: String
+  otherSkills: String
+  faithDescription: String
+  keyFaithRequirements: [String!]!
+  applicationCount: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -93,8 +122,29 @@ type JobApplication @key(fields: "id") {
   experience: String
   resumeUrl: String
   cvUrl: String
+  fullName: String!
+  phoneNumber: String
+  email: String!
+  gender: String
+  dateOfBirth: DateTime
+  education: [EducationEntry!]!
+  yearsOfExperience: Float
+  currentSalary: String
+  expectedSalary: String
+  portfolioUrl: String
+  linkedInProfile: String
+  acknowledged: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+type EducationEntry {
+  highestQualification: String
+  institutionName: String
+  yearOfEnrollment: Int
+  yearOfCompletion: Int
+  marksGrades: String
+  degreeType: String
 }
 
 enum ApplicationStatus {
@@ -123,6 +173,12 @@ type MarketplaceItem @key(fields: "id") {
   isPromoted: Boolean!
   flagCount: Int!
   convertedPrice: ConvertedPrice
+  subCategory: String
+  dimensions: String
+  otherAttributes: String
+  maxRetailPrice: Float
+  contactInfo: String
+  showContactOnOffer: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -146,16 +202,57 @@ type ConvertedPrice @shareable {
   isEstimate: Boolean!
 }
 
+type MessageThread @key(fields: "id") {
+  id: ID!
+  listing: MarketplaceItem!
+  buyer: User!
+  seller: User!
+  organisation: Organisation
+  status: MessageThreadStatus!
+  lastMessage: String
+  lastMessageAt: DateTime
+  unreadCount: Int!
+  messages(limit: Int, before: String): MessageConnection!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Message @key(fields: "id") {
+  id: ID!
+  thread: MessageThread!
+  sender: User!
+  type: MessageType!
+  body: String!
+  readAt: DateTime
+  createdAt: DateTime!
+}
+
+type MessageConnection { edges: [Message!]! hasNextPage: Boolean! endCursor: String }
+type MessageThreadConnection { edges: [MessageThread!]! hasNextPage: Boolean! endCursor: String }
+
 # ─── Queries ──────────────────────────────────────────────────────────────────
 
 type Query {
   jobListing(id: ID!): JobListing
+  myJobApplication(jobId: ID!): JobApplication
+  organisationJobApplications(organisationId: ID!, jobId: ID, status: ApplicationStatus): [JobApplication!]!
+  mySavedJobs: [JobListing!]!
+  mySavedMarketplaceItems: [MarketplaceItem!]!
+  isJobSaved(id: ID!): Boolean!
+  isMarketplaceItemSaved(id: ID!): Boolean!
+  myMessageThreads(role: MessageParticipantRole, limit: Int, after: String): MessageThreadConnection!
+  messageThread(id: ID!): MessageThread
+  unreadMessageCount: Int!
   jobListings(
     region: String
+    search: String
     roleType: RoleType
     workLocation: WorkLocation
     skillTags: [String!]
+    minSalary: Float
+    maxSalary: Float
     status: JobStatus
+    sort: JobSort
     limit: Int
     after: String
   ): JobListingConnection!
@@ -163,10 +260,15 @@ type Query {
   marketplaceItem(id: ID!): MarketplaceItem
   marketplaceItems(
     region: String
+    search: String
     category: MarketplaceCategory
     condition: ItemCondition
+    subCategory: String
+    minPrice: Float
+    maxPrice: Float
     isDonation: Boolean
     status: ListingStatus
+    sort: MarketplaceSort
     limit: Int
     after: String
   ): MarketplaceItemConnection!
@@ -192,6 +294,8 @@ type Mutation {
   createJobListing(input: CreateJobListingInput!): JobListing!
   updateJobListing(id: ID!, input: UpdateJobListingInput!): JobListing!
   archiveJobListing(id: ID!): JobListing!
+  submitJobApplication(input: SubmitJobApplicationInput!): JobApplication!
+  updateJobApplicationStatus(id: ID!, status: ApplicationStatus!): JobApplication!
 
   createMarketplaceItem(input: CreateMarketplaceItemInput!): MarketplaceItem!
   updateMarketplaceItem(id: ID!, input: UpdateMarketplaceItemInput!): MarketplaceItem!
@@ -199,6 +303,14 @@ type Mutation {
   updateMarketplaceItemStatus(id: ID!, status: ListingStatus!): MarketplaceItem!
 
   reportListing(itemId: ID!, reason: String!): Boolean!
+  saveJob(id: ID!): Boolean!
+  unsaveJob(id: ID!): Boolean!
+  saveMarketplaceItem(id: ID!): Boolean!
+  unsaveMarketplaceItem(id: ID!): Boolean!
+  startListingConversation(listingId: ID!, message: String!): MessageThread!
+  sendMessage(threadId: ID!, body: String!): Message!
+  markThreadRead(threadId: ID!): Boolean!
+  archiveThread(threadId: ID!): MessageThread!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────
@@ -234,7 +346,34 @@ input SalaryRangeInput {
   currency: String!
 }
 
+input EducationEntryInput {
+  highestQualification: String
+  institutionName: String
+  yearOfEnrollment: Int
+  yearOfCompletion: Int
+  marksGrades: String
+  degreeType: String
+}
+
+input SubmitJobApplicationInput {
+  jobId: ID!
+  fullName: String!
+  phoneNumber: String
+  email: String!
+  gender: String
+  dateOfBirth: DateTime
+  education: [EducationEntryInput!]!
+  experienceDescription: String
+  yearsOfExperience: Float
+  currentSalary: String
+  expectedSalary: String
+  portfolioUrl: String
+  linkedInProfile: String
+  acknowledged: Boolean!
+}
+
 input CreateMarketplaceItemInput {
+  organisationId: ID
   title: String!
   description: String!
   price: Float!

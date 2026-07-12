@@ -14,7 +14,7 @@ enum VerificationTier {
 
 # ─── Entities ─────────────────────────────────────────────────────────────────
 
-type User @key(fields: "id") {
+type User @key(fields: "id") @key(fields: "firebaseUid") {
   id: ID!
   firebaseUid: String!
   email: String!
@@ -23,6 +23,8 @@ type User @key(fields: "id") {
   isVerified: Boolean!
   onboardingCompleted: Boolean!
   preferences: [String!]!
+  roles: [String!]!
+  orgId: ID
   avatarUrl: String
   bio: String
   socialLinks: SocialLinks
@@ -60,6 +62,9 @@ type FollowRelationship @key(fields: "id") {
   createdAt: DateTime!
 }
 
+type OrganisationTeamMember { user: User! roles: [String!]! joinedAt: DateTime }
+type OrganisationInvite { id: ID! email: String! organisation: Organisation! roles: [String!]! status: String! token: String! expiresAt: DateTime! createdAt: DateTime! }
+
 type VerificationRequest @key(fields: "id") {
   id: ID!
   organisation: Organisation!
@@ -82,8 +87,13 @@ type Query {
   me: User
   user(id: ID!): User
   organisation(id: ID!): Organisation
-  organisations(region: String, limit: Int, after: String): OrganisationConnection!
+  organisations(region: String, search: String, limit: Int, after: String): OrganisationConnection!
   myOrganisations: [Organisation!]!
+  myFollowingOrganisations: [Organisation!]!
+  isFollowingOrganisation(organisationId: ID!): Boolean!
+  organisationTeam(organisationId: ID!): [OrganisationTeamMember!]!
+  organisationInvites(organisationId: ID!): [OrganisationInvite!]!
+  organisationInvite(token: String!): OrganisationInvite
 }
 
 type UserConnection {
@@ -107,6 +117,14 @@ type Mutation {
   createOrganisation(input: CreateOrganisationInput!): Organisation!
   updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
   submitVerification(organisationId: ID!, documentUrls: [String!]!): VerificationRequest!
+  followOrganisation(organisationId: ID!): Organisation!
+  unfollowOrganisation(organisationId: ID!): Organisation!
+  inviteOrganisationMember(organisationId: ID!, email: String!, roles: [String!]!): OrganisationInvite!
+  acceptOrganisationInvite(token: String!): Organisation!
+  revokeOrganisationInvite(id: ID!): OrganisationInvite!
+  resendOrganisationInvite(id: ID!): OrganisationInvite!
+  updateOrganisationMemberRoles(organisationId: ID!, userId: ID!, roles: [String!]!): OrganisationTeamMember!
+  removeOrganisationMember(organisationId: ID!, userId: ID!): Boolean!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────

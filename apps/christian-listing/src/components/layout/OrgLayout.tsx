@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { label: 'Listings Manager', icon: ListBulletIcon, path: '/org/listings' },
   { label: 'Hiring & Jobs',    icon: BriefcaseIcon,  path: '/org/jobs' },
   { label: 'Messages',         icon: ChatBubbleIcon, path: '/org/messages' },
+  { label: 'Team & Roles',     icon: ChatBubbleIcon, path: '/org/team' },
   { label: 'Settings',         icon: CogIcon,        path: '/org/settings' },
 ] as const;
 

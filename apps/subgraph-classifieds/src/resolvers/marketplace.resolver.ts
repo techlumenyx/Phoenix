@@ -3,15 +3,16 @@ import mongoose, { type HydratedDocument } from 'mongoose';
 import { type IMarketplaceItem } from '../models/marketplace-item.model';
 import { MarketplaceItemModel } from '../models';
 import type { GraphQLContext } from '../context';
+import { canAccessOrganisation } from '@christian-listings/auth';
 
 type ItemDocument = HydratedDocument<IMarketplaceItem>;
 
-function mapItem(doc: ItemDocument) {
+export function mapItem(doc: ItemDocument) {
   return {
     id:          doc._id.toString(),
     title:       doc.title,
     description: doc.description,
-    seller:      { id: doc.createdBy },
+    seller:      { firebaseUid: doc.createdBy },
     price:       doc.sellingPrice,
     currency:    doc.currency,
     condition:   doc.condition,
@@ -22,8 +23,14 @@ function mapItem(doc: ItemDocument) {
     status:      doc.status,
     isDonation:  doc.isDonation,
     isPromoted:  doc.isPromoted,
-    flagCount:   0,
+    flagCount:   doc.flagCount ?? 0,
     convertedPrice: null,
+    subCategory: doc.subCategory ?? null,
+    dimensions: doc.dimensions ?? null,
+    otherAttributes: doc.otherAttributes ?? null,
+    maxRetailPrice: doc.maxRetailPrice ?? null,
+    contactInfo: doc.contactInfo ?? null,
+    showContactOnOffer: doc.showContactOnOffer,
     createdAt:   doc.createdAt,
     updatedAt:   doc.updatedAt,
   };
@@ -40,16 +47,22 @@ interface CreateItemInput {
   region:      string;
   imageUrls:   string[];
   isDonation:  boolean;
+  organisationId?: string;
 }
 
 interface ItemsArgs {
   region?:     string;
+  search?:     string;
   category?:   string;
   condition?:  string;
+  subCategory?: string;
+  minPrice?:   number;
+  maxPrice?:   number;
   isDonation?: boolean;
   status?:     string;
   limit?:      number;
   after?:      string;
+  sort?:       string;
 }
 
 export const marketplaceResolvers = {
@@ -59,16 +72,23 @@ export const marketplaceResolvers = {
       return doc ? mapItem(doc) : null;
     },
 
-    marketplaceItems: async (_: unknown, { region, category, condition, isDonation, status, limit = 20, after }: ItemsArgs) => {
+    marketplaceItems: async (_: unknown, { region, search, category, condition, subCategory, minPrice, maxPrice, isDonation, status, sort = 'NEWEST', limit = 20, after }: ItemsArgs) => {
       const filter: Record<string, unknown> = {};
       if (region)                 filter['region'] = region;
+      if (search?.trim()) {
+        const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
+        filter['$or'] = [{ title: pattern }, { description: pattern }, { area: pattern }];
+      }
       if (category)               filter['category'] = category;
       if (condition)              filter['condition'] = condition;
+      if (subCategory)            filter['subCategory'] = { $regex: escapeRegex(subCategory), $options: 'i' };
+      if (minPrice !== undefined || maxPrice !== undefined) filter['sellingPrice'] = { ...(minPrice !== undefined && { $gte: minPrice }), ...(maxPrice !== undefined && { $lte: maxPrice }) };
       if (isDonation !== undefined) filter['isDonation'] = isDonation;
       if (status)                 filter['status'] = status;
       if (after)                  filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
-      const docs = await MarketplaceItemModel.find(filter).limit(limit + 1).sort({ _id: -1 });
+      const sortBy: Record<string, 1 | -1> = sort === 'PRICE_ASC' ? { sellingPrice: 1 } : sort === 'PRICE_DESC' ? { sellingPrice: -1 } : sort === 'POPULAR' ? { isPromoted: -1, createdAt: -1 } : { createdAt: -1 };
+      const docs = await MarketplaceItemModel.find(filter).limit(limit + 1).sort(sortBy);
       const hasNextPage = docs.length > limit;
       const edges = docs.slice(0, limit).map(mapItem);
       return { edges, hasNextPage, endCursor: edges.length > 0 ? edges[edges.length - 1].id : null };
@@ -87,8 +107,12 @@ export const marketplaceResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      if (input.organisationId && !canAccessOrganisation(ctx.auth, input.organisationId, ['master_admin', 'site_admin', 'classifieds_manager'])) {
+        throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
+      }
       const doc = await MarketplaceItemModel.create({
         createdBy:    ctx.auth.firebaseUid,
+        organisationId: input.organisationId ? new mongoose.Types.ObjectId(input.organisationId) : null,
         title:        input.title,
         description:  input.description,
         category:     input.category,
@@ -159,7 +183,7 @@ export const marketplaceResolvers = {
       const doc = await MarketplaceItemModel.findById(id);
       return doc ? mapItem(doc) : null;
     },
-    seller: (item: { seller: { id: string } }) => item.seller,
+    seller: (item: { seller: { firebaseUid: string } }) => item.seller,
   },
 
   User: {
@@ -171,4 +195,14 @@ export const marketplaceResolvers = {
     jobApplications: () => [],
     savedJobs: () => [],
   },
+  Organisation: {
+    marketplaceListings: async ({ id }: { id: string }) => {
+      const docs = await MarketplaceItemModel.find({ organisationId: new mongoose.Types.ObjectId(id) }).sort({ createdAt: -1 });
+      return docs.map(mapItem);
+    },
+  },
 };
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

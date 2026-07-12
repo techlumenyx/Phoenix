@@ -18,7 +18,8 @@
     "gateway": "nx serve gateway",
     "cl": "nx serve christian-listing",
     "cl-admin": "nx serve cl-admin",
-    "frontend": "concurrently -n cl,cl-admin -c blue,red npm:cl npm:cl-admin"
+    "frontend": "concurrently -n cl,cl-admin -c blue,red npm:cl npm:cl-admin",
+    "seed:local": "node tools/scripts/seed-local-mongo.js"
   },
   "dependencies": {
     "@apollo/client": "^3.14.1",

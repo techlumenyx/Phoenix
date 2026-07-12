@@ -1,316 +1,45 @@
-import { useState } from 'react';
+import { gql, useQuery } from '@apollo/client';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SearchIcon, ArrowRightIcon, LocationMarkerIcon } from '../components/layout/icons';
 import MarketplaceCard from '../components/cards/MarketplaceCard';
+import { ArrowRightIcon, SearchIcon } from '../components/layout/icons';
+import { formatPrice, usePreferredRegion } from '../lib/discovery';
+import { useAuthStore } from '../store/authStore';
 
-// ─── shared ──────────────────────────────────────────────────────────────────
+const MARKETPLACE_HOME = gql`
+  query MarketplaceHome($region: String, $search: String) {
+    promoted: marketplaceItems(region: $region, search: $search, status: AVAILABLE, sort: POPULAR, limit: 8) { edges { ...HomeListing } }
+    newest: marketplaceItems(region: $region, search: $search, status: AVAILABLE, sort: NEWEST, limit: 20) { edges { ...HomeListing } }
+    donations: marketplaceItems(region: $region, search: $search, status: AVAILABLE, isDonation: true, sort: NEWEST, limit: 8) { edges { ...HomeListing } }
+  }
+  fragment HomeListing on MarketplaceItem { id title description price currency condition category region imageUrls isDonation isPromoted seller { id isVerified } }
+`;
 
-const FILTER_TABS = ['Trending', 'Theology', 'Music', 'Worship', 'Movies / Films'] as const;
-
-function FilterTabs({ active, onChange }: { active: string; onChange: (t: string) => void }) {
-  return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {FILTER_TABS.map((t) => (
-        <button
-          key={t}
-          onClick={() => onChange(t)}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-            active === t ? 'bg-dark text-white' : 'bg-gray-100 text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          {t}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-const SAMPLE_CARD = {
-  badge: 'FOR SALE' as const,
-  title: 'Ford Sierra 2012 Petrol',
-  description: 'Used 2012 Model for Sale in Lagos',
-  price: '₦ 40,000 NGN',
-  location: 'Lagos City, Nigeria',
-  imageSrc: '/assets/car-ford.png',
-  verified: true,
-};
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-
-function MarketplaceHero() {
-  return (
-    <section
-      className="relative w-full flex items-center justify-center overflow-hidden"
-      style={{ minHeight: '420px', background: '#1A1A10' }}
-    >
-      {/* Background image */}
-      <img
-        src="/assets/org-cta.png"
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
-      />
-      {/* Vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.7) 100%)',
-        }}
-      />
-
-      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-xl mx-auto gap-6 py-24">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white leading-tight">
-          Discover what you're<br />looking for
-        </h1>
-        <div className="w-full flex items-center bg-white rounded-full shadow-lg overflow-hidden">
-          <SearchIcon className="w-5 h-5 text-gray-400 ml-4 shrink-0" />
-          <input
-            type="text"
-            placeholder="Search listings, goods or categories..."
-            className="flex-1 px-3 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none bg-transparent"
-          />
-          <button className="m-1 px-6 py-2.5 rounded-full bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors shrink-0">
-            Explore
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Discover your Listing ────────────────────────────────────────────────────
-
-const DISCOVER_CATS = [
-  { label: 'Used Goods',  color: '#2C2018', img: '/assets/car-ford.png' },
-  { label: 'Donations',   color: '#1A2418', img: '/assets/spotlight-ad.jpg' },
-  { label: 'New & Packed', color: '#18181E', img: '/assets/event-theology.png' },
-] as const;
-
-function DiscoverSection() {
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-12">
-      <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark mb-6">
-        Discover your Listing
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {DISCOVER_CATS.map(({ label, color, img }) => (
-          <div
-            key={label}
-            className="relative rounded-2xl overflow-hidden h-52 flex flex-col justify-end"
-            style={{ background: color }}
-          >
-            <img
-              src={img}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover opacity-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="relative z-10 p-5 flex flex-col gap-2">
-              <p className="text-white font-serif font-bold text-xl">{label}</p>
-              <button className="self-start flex items-center gap-1.5 text-xs font-semibold text-white/80 border border-white/30 hover:border-white/60 rounded-full px-4 py-1.5 transition-colors">
-                DISCOVER
-                <ArrowRightIcon className="w-3 h-3 rotate-90" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Trending Categories ──────────────────────────────────────────────────────
-
-const CATEGORIES = [
-  { label: 'Home & Living',   gradient: 'from-amber-800 to-amber-600',   emoji: '🏠' },
-  { label: 'Electronics',     gradient: 'from-slate-700 to-slate-500',    emoji: '📱' },
-  { label: 'Family & Kids',   gradient: 'from-pink-700 to-rose-500',      emoji: '👨‍👩‍👧' },
-  { label: 'Clothing',        gradient: 'from-emerald-800 to-emerald-600', emoji: '👗' },
-  { label: 'Books',           gradient: 'from-stone-700 to-amber-700',    emoji: '📚' },
-  { label: 'Transport',       gradient: 'from-gray-800 to-gray-600',      emoji: '🚗' },
-  { label: 'Sports & Outdoor', gradient: 'from-green-800 to-green-600',   emoji: '⚽' },
-  { label: 'Food / Produce',  gradient: 'from-yellow-700 to-orange-600',  emoji: '🍎' },
-] as const;
-
-function TrendingCategories() {
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-8 border-t border-gray-50">
-      <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark mb-6">
-        Trending Categories
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {CATEGORIES.map(({ label, gradient, emoji }) => (
-          <button
-            key={label}
-            className={`relative rounded-2xl overflow-hidden h-28 flex flex-col items-start justify-end p-4 bg-gradient-to-br ${gradient} hover:scale-[1.02] transition-transform`}
-          >
-            <span className="absolute top-3 right-3 text-2xl">{emoji}</span>
-            <p className="text-white font-semibold text-sm text-left leading-snug">{label}</p>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Card grid section ────────────────────────────────────────────────────────
-
-function CardGrid({ cols = 4 }: { cols?: number }) {
-  return (
-    <div
-      className={`grid gap-4 ${
-        cols === 4
-          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-      }`}
-    >
-      {Array.from({ length: cols }).map((_, i) => (
-        <MarketplaceCard key={i} {...SAMPLE_CARD} />
-      ))}
-    </div>
-  );
-}
-
-// ─── Based on your Interests ──────────────────────────────────────────────────
-
-function BasedOnInterests() {
-  const [tab, setTab] = useState('Trending');
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-12 border-t border-gray-50">
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
-        <div>
-          <p className="text-xs font-medium text-dark/40 tracking-wider uppercase mb-1">Personalised for You</p>
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">Based on your Interests</h2>
-        </div>
-        <Link to="/marketplace" className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-      <FilterTabs active={tab} onChange={setTab} />
-      <div className="mt-5">
-        <CardGrid cols={4} />
-      </div>
-    </section>
-  );
-}
-
-// ─── Saved Listings ───────────────────────────────────────────────────────────
-
-function SavedListings() {
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-12 border-t border-gray-50">
-      <div className="flex items-end justify-between mb-5">
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">Saved Listings</h2>
-        <Link to="/marketplace" className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW MORE <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-      <CardGrid cols={4} />
-    </section>
-  );
-}
-
-// ─── Generic featured section ─────────────────────────────────────────────────
-
-function FeaturedListingsSection({ title = 'Featured Listings', viewAllTo = '/marketplace', cols = 4 }: {
-  title?: string;
-  viewAllTo?: string;
-  cols?: number;
-}) {
-  const [tab, setTab] = useState('Trending');
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-12 border-t border-gray-50">
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">{title}</h2>
-        <Link to={viewAllTo} className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-      <div className="mb-5">
-        <FilterTabs active={tab} onChange={setTab} />
-      </div>
-      <CardGrid cols={cols} />
-    </section>
-  );
-}
-
-// ─── Scripture quote banner ───────────────────────────────────────────────────
-
-function ScriptureBanner() {
-  return (
-    <section className="relative w-full overflow-hidden">
-      <img
-        src="/assets/org-cta.png"
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-black/70" />
-      <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-10 py-16 text-center flex flex-col gap-4 items-center">
-        <p className="font-serif text-white text-xl md:text-2xl leading-relaxed italic">
-          "One who is gracious to a poor man lends to the Lord,
-          <br className="hidden md:block" />
-          And He will repay him for his good deed."
-        </p>
-        <span className="text-white/50 text-xs tracking-wider">Proverbs 19:17</span>
-      </div>
-    </section>
-  );
-}
-
-// ─── All Listings ─────────────────────────────────────────────────────────────
-
-function AllListings() {
-  const [tab, setTab] = useState('Trending');
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-12 border-t border-gray-50">
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">All Listings</h2>
-        <Link to="/marketplace" className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-      <div className="mb-5">
-        <FilterTabs active={tab} onChange={setTab} />
-      </div>
-
-      {/* Row 1 */}
-      <CardGrid cols={4} />
-
-      {/* Row 2 */}
-      <div className="mt-4">
-        <CardGrid cols={4} />
-      </div>
-
-      {/* Load more / pagination */}
-      <div className="flex justify-center mt-8">
-        <button className="px-8 py-2.5 rounded-full border border-dark/20 text-dark text-sm font-medium hover:border-dark/40 transition-colors">
-          Load More
-        </button>
-      </div>
-    </section>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+interface HomeListing { id: string; title: string; description: string; price: number; currency: string; condition: string; category: string; region: string; imageUrls: string[]; isDonation: boolean; isPromoted: boolean; seller: { id: string; isVerified: boolean } }
+interface HomeData { promoted: { edges: HomeListing[] }; newest: { edges: HomeListing[] }; donations: { edges: HomeListing[] } }
+const CATEGORIES = [['FURNITURE', 'Home & Living', '⌂'], ['ELECTRONICS', 'Electronics', '▣'], ['BABY_AND_KIDS', 'Family & Kids', '♧'], ['CLOTHING', 'Clothing', '♢'], ['BOOKS', 'Books', '▤'], ['OTHER', 'Transport', '◇'], ['OTHER', 'Sports & Outdoor', '○'], ['FOOD', 'Food / Produce', '♨']] as const;
 
 export default function MarketplacePage() {
-  return (
-    <>
-      <MarketplaceHero />
-      <DiscoverSection />
-      <TrendingCategories />
-      <BasedOnInterests />
-      <SavedListings />
-      <FeaturedListingsSection title="Featured Listings" />
-      <ScriptureBanner />
-      <FeaturedListingsSection title="Featured Listings" />
-      <FeaturedListingsSection title="Featured Listings" />
-      <FeaturedListingsSection title="Featured Listings" />
-      <FeaturedListingsSection title="Featured Listings" />
-      <AllListings />
-    </>
-  );
+  const { region } = usePreferredRegion();
+  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? []);
+  const [input, setInput] = useState('');
+  const [search, setSearch] = useState('');
+  const { data, loading, error } = useQuery<HomeData>(MARKETPLACE_HOME, { variables: { region: region || null, search: search || null }, fetchPolicy: 'cache-and-network' });
+  const newest = data?.newest.edges ?? [];
+  const submit = (event: FormEvent) => { event.preventDefault(); setSearch(input.trim()); };
+  const interestListings = useMemo(() => preferences.includes('Marketplace Deals') ? newest : newest.filter((listing) => ['BOOKS', 'CHARITY_ITEMS', 'FURNITURE'].includes(listing.category)), [newest, preferences]);
+
+  return <>
+    <section className="relative flex min-h-[440px] items-center justify-center overflow-hidden bg-[#312a23] px-6 text-center"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" /><div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/25" /><div className="relative w-full max-w-2xl"><h1 className="font-serif text-4xl font-bold text-white md:text-5xl">Discover what you&apos;re<br />looking for</h1><form onSubmit={submit} className="mx-auto mt-7 flex max-w-xl items-center overflow-hidden rounded-full bg-white shadow-lg"><SearchIcon className="ml-4 h-5 w-5 text-gray-400" /><input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search products, categories or sellers…" className="min-w-0 flex-1 px-3 py-3 text-sm outline-none" /><button className="m-1 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white">Explore</button></form>{region && <p className="mt-3 text-xs text-white/70">Showing listings near {region}</p>}</div></section>
+    {error && <p className="py-10 text-center text-red-700">Marketplace listings are temporarily unavailable.</p>}
+    <section className="px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Discover your Listing</h2><div className="grid gap-4 md:grid-cols-3">{[['Used Goods', 'Find useful pre-owned items', 'GOOD'], ['Donations', 'Community items offered freely', 'donation'], ['New & Packed', 'Browse brand-new products', 'NEW']].map(([title, description, filter]) => <Link key={title} to={filter === 'donation' ? '/marketplace/all?donation=true' : `/marketplace/all?condition=${filter}`} className="relative flex h-56 items-end overflow-hidden rounded-2xl bg-[#222] p-5 text-white"><img src={title === 'Used Goods' ? '/assets/car-ford.png' : '/assets/event-theology.png'} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" /><div className="relative"><h3 className="font-serif text-2xl font-bold">{title}</h3><p className="mt-1 text-xs text-white/75">{description}</p></div></Link>)}</div></section>
+    <section className="px-6 py-10 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Trending Categories</h2><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{CATEGORIES.map(([value, label, icon], index) => <Link key={`${label}-${index}`} to={`/marketplace/all?category=${value}`} className="relative flex h-32 items-end overflow-hidden rounded-2xl bg-gradient-to-br from-[#1b2420] to-[#6d826e] p-4 text-white"><span className="absolute right-4 top-3 text-3xl">{icon}</span><strong>{label}</strong></Link>)}</div></section>
+    <ListingSection title="Based on your Interests" listings={(interestListings.length ? interestListings : newest).slice(0, 4)} loading={loading} />
+    <ListingSection title="Community Gives" listings={data?.donations.edges ?? []} loading={loading} />
+    <ListingSection title="Featured Listings" listings={data?.promoted.edges ?? []} loading={loading} />
+    <section className="relative overflow-hidden bg-[#2e2820] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“One who is gracious to those in need lends to the Lord.”</p><Link to="/marketplace/all?donation=true" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">Browse donations</Link></div></section>
+    <ListingSection title="All Listings" listings={newest.slice(0, 16)} loading={loading} viewAll />
+  </>;
 }
+
+function ListingSection({ title, listings, loading, viewAll = false }: { title: string; listings: HomeListing[]; loading: boolean; viewAll?: boolean }) { return <section className="px-6 py-12 md:px-10 lg:px-16"><div className="mb-6 flex items-end justify-between"><h2 className="font-serif text-3xl font-bold">{title}</h2><Link to="/marketplace/all" className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-500">View all <ArrowRightIcon className="h-3.5 w-3.5 -rotate-45" /></Link></div>{loading && listings.length === 0 ? <p className="text-gray-500">Loading listings…</p> : listings.length === 0 ? <p className="text-gray-500">No listings are available in this section.</p> : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{listings.map((listing) => <MarketplaceCard key={listing.id} badge={listing.isDonation ? 'Community Gives' : listing.condition.replaceAll('_', ' ')} title={listing.title} description={listing.description} price={listing.isDonation ? 'Free donation' : formatPrice(listing.price, listing.currency)} location={listing.region} imageSrc={listing.imageUrls[0]} verified={listing.seller.isVerified} href={`/marketplace/${listing.id}`} />)}</div>}{viewAll && listings.length > 0 && <div className="mt-8 text-center"><Link to="/marketplace/all" className="rounded-full border px-8 py-3 text-sm">Browse all listings</Link></div>}</section>; }

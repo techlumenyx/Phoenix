@@ -3,10 +3,11 @@ import mongoose, { type HydratedDocument } from 'mongoose';
 import { type IJobListing } from '../models/job-listing.model';
 import { JobListingModel } from '../models';
 import type { GraphQLContext } from '../context';
+import { canAccessOrganisation, getOrganisationAccess } from '@christian-listings/auth';
 
 type JobDocument = HydratedDocument<IJobListing>;
 
-function mapJob(doc: JobDocument) {
+export function mapJob(doc: JobDocument) {
   const salaryRange =
     doc.salaryMin != null && doc.salaryMax != null && doc.salaryCurrency
       ? { min: doc.salaryMin, max: doc.salaryMax, currency: doc.salaryCurrency }
@@ -16,7 +17,7 @@ function mapJob(doc: JobDocument) {
     id:                  doc._id.toString(),
     title:               doc.title,
     description:         doc.description,
-    organisation:        { id: doc.organisationId.toString(), name: '', isVerified: false },
+    organisation:        { id: doc.organisationId.toString() },
     roleType:            doc.employmentType,
     workLocation:        doc.workLocation,
     skillsRequired:      doc.skillsRequired ?? [],
@@ -27,6 +28,14 @@ function mapJob(doc: JobDocument) {
     status:              doc.status,
     isPromoted:          doc.isPromoted,
     faithAlignmentTag:   doc.faithAlignmentTag ?? null,
+    responsibilities:    doc.responsibilities ?? [],
+    educationalRequirement: doc.educationalRequirement ?? null,
+    experience:          doc.experience ?? null,
+    certifications:      doc.certifications ?? null,
+    otherSkills:         doc.otherSkills ?? null,
+    faithDescription:    doc.faithDescription ?? null,
+    keyFaithRequirements: doc.keyFaithRequirements ?? [],
+    applicationCount:    doc.applicationCount ?? 0,
     createdAt:           doc.createdAt,
     updatedAt:           doc.updatedAt,
   };
@@ -50,10 +59,14 @@ interface CreateJobInput {
 
 interface JobsArgs {
   region?:       string;
+  search?:       string;
   roleType?:     string;
   workLocation?: string;
   skillTags?:    string[];
+  minSalary?:    number;
+  maxSalary?:    number;
   status?:       string;
+  sort?:         string;
   limit?:        number;
   after?:        string;
 }
@@ -65,15 +78,22 @@ export const jobResolvers = {
       return doc ? mapJob(doc) : null;
     },
 
-    jobListings: async (_: unknown, { region, roleType, workLocation, status, limit = 20, after }: JobsArgs) => {
+    jobListings: async (_: unknown, { region, search, roleType, workLocation, skillTags, minSalary, maxSalary, status, sort = 'NEWEST', limit = 20, after }: JobsArgs) => {
       const filter: Record<string, unknown> = {};
       if (region)       filter['region'] = region;
+      if (search?.trim()) {
+        const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
+        filter['$or'] = [{ title: pattern }, { description: pattern }, { skillsRequired: pattern }];
+      }
       if (roleType)     filter['employmentType'] = roleType;
       if (workLocation) filter['workLocation'] = workLocation;
+      if (skillTags?.length) filter['skillsRequired'] = { $in: skillTags };
+      if (minSalary !== undefined || maxSalary !== undefined) filter['salaryMin'] = { ...(minSalary !== undefined && { $gte: minSalary }), ...(maxSalary !== undefined && { $lte: maxSalary }) };
       if (status)       filter['status'] = status;
       if (after)        filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
-      const docs = await JobListingModel.find(filter).limit(limit + 1).sort({ _id: -1 });
+      const sortBy: Record<string, 1 | -1> = sort === 'DEADLINE' ? { closingDate: 1 } : sort === 'SALARY_ASC' ? { salaryMin: 1 } : sort === 'SALARY_DESC' ? { salaryMin: -1 } : sort === 'POPULAR' ? { isPromoted: -1, applicationCount: -1 } : { createdAt: -1 };
+      const docs = await JobListingModel.find(filter).limit(limit + 1).sort(sortBy);
       const hasNextPage = docs.length > limit;
       const edges = docs.slice(0, limit).map(mapJob);
       return { edges, hasNextPage, endCursor: edges.length > 0 ? edges[edges.length - 1].id : null };
@@ -85,6 +105,7 @@ export const jobResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      if (!canAccessOrganisation(ctx.auth, input.organisationId, ['master_admin', 'site_admin', 'jobs_manager'])) throw new GraphQLError('You cannot create jobs for this organisation', { extensions: { code: 'FORBIDDEN' } });
       const doc = await JobListingModel.create({
         organisationId:   new mongoose.Types.ObjectId(input.organisationId),
         createdBy:        ctx.auth.firebaseUid,
@@ -109,6 +130,8 @@ export const jobResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      const access = getOrganisationAccess(ctx.auth);
+      if (!access || !access.roles.some((role) => ['master_admin', 'site_admin', 'jobs_manager'].includes(role))) throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
       const update: Record<string, unknown> = {};
       if (input.title)           update['title'] = input.title;
       if (input.description)     update['description'] = input.description;
@@ -124,7 +147,7 @@ export const jobResolvers = {
       if (input.externalApplyUrl !== undefined) update['externalApplyUrl'] = input.externalApplyUrl;
 
       const doc = await JobListingModel.findOneAndUpdate(
-        { _id: id, createdBy: ctx.auth.firebaseUid },
+        { _id: id, organisationId: new mongoose.Types.ObjectId(access.orgId) },
         { $set: update },
         { new: true },
       );
@@ -136,8 +159,10 @@ export const jobResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      const access = getOrganisationAccess(ctx.auth);
+      if (!access || !access.roles.some((role) => ['master_admin', 'site_admin', 'jobs_manager'].includes(role))) throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
       const doc = await JobListingModel.findOneAndUpdate(
-        { _id: id, createdBy: ctx.auth.firebaseUid },
+        { _id: id, organisationId: new mongoose.Types.ObjectId(access.orgId) },
         { $set: { status: 'ARCHIVED' } },
         { new: true },
       );
@@ -162,3 +187,7 @@ export const jobResolvers = {
     },
   },
 };
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

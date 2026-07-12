@@ -55,10 +55,14 @@ export const organisationResolvers = {
 
     organisations: async (
       _: unknown,
-      { region, limit = 20, after }: { region?: string; limit?: number; after?: string },
+      { region, search, limit = 20, after }: { region?: string; search?: string; limit?: number; after?: string },
     ) => {
       const filter: Record<string, unknown> = { onboardingCompleted: true };
-      if (region) filter['regionCode'] = region;
+      if (region) filter['region'] = { $regex: escapeRegex(region), $options: 'i' };
+      if (search?.trim()) {
+        const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
+        filter['$or'] = [{ name: pattern }, { description: pattern }];
+      }
       if (after) filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
       const docs = await OrganisationModel().find(filter).limit(limit + 1).sort({ _id: 1 });
@@ -164,3 +168,7 @@ export const organisationResolvers = {
     },
   },
 };
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

@@ -1014,6 +1014,7 @@ function CreateListingForm({ orgId }: { orgId?: string }) {
         variables: {
           input: {
             title:       title.trim(),
+            organisationId: orgId,
             description: description.trim(),
             price:       isDonation ? 0 : parseFloat(price) || 0,
             currency:    CURRENCY_CODE[currency] ?? 'GBP',
@@ -1646,7 +1647,6 @@ export default function OrgOverviewPage() {
       <div className="px-8 py-6 space-y-6">
         <div className="grid grid-cols-3 gap-6 items-start">
           <div className="col-span-2">
-            <MarketplaceMessages />
           </div>
           <NotificationCentre />
         </div>

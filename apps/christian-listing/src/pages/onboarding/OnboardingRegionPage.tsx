@@ -4,7 +4,7 @@ import { useMutation, gql } from '@apollo/client';
 import SceneHeader from '../../components/layout/SceneHeader';
 
 const UPDATE_PROFILE = gql`
-  mutation UpdateProfile($input: UpdateProfileInput!) {
+  mutation UpdateRegionProfile($input: UpdateProfileInput!) {
     updateProfile(input: $input) {
       id
       region

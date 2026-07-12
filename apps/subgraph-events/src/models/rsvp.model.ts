@@ -4,6 +4,7 @@ export const RSVP_STAGES = [
   'INTERESTED',   // soft signal — no commitment
   'SAVED',        // bookmarked — user intends to attend
   'CONFIRMED',    // firm attendance — triggers rsvpCount $inc
+  'WAITLISTED',
 ] as const;
 
 export type RsvpStage = (typeof RSVP_STAGES)[number];

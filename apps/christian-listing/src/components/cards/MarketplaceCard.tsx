@@ -1,4 +1,5 @@
 import { LocationMarkerIcon, ArrowRightIcon } from '../layout/icons';
+import { Link } from 'react-router-dom';
 
 export interface MarketplaceCardProps {
   badge?: string;
@@ -9,6 +10,7 @@ export interface MarketplaceCardProps {
   imageSrc?: string;
   verified?: boolean;
   className?: string;
+  href?: string;
 }
 
 export default function MarketplaceCard({
@@ -20,6 +22,7 @@ export default function MarketplaceCard({
   imageSrc,
   verified = false,
   className = '',
+  href,
 }: MarketplaceCardProps) {
   return (
     <div className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[320px] ${className}`}>
@@ -53,9 +56,7 @@ export default function MarketplaceCard({
         )}
         <div className="flex items-center justify-between mt-1">
           <span className="text-sm font-bold text-dark">{price}</span>
-          <button className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black transition-colors">
-            View <ArrowRightIcon className="w-3.5 h-3.5" />
-          </button>
+          {href ? <Link to={href} className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black transition-colors">View <ArrowRightIcon className="w-3.5 h-3.5" /></Link> : <button className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black transition-colors">View <ArrowRightIcon className="w-3.5 h-3.5" /></button>}
         </div>
       </div>
     </div>

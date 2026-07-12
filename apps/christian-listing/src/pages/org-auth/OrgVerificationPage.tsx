@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, gql } from '@apollo/client';
 import SceneHeader from '../../components/layout/SceneHeader';
+import { getAuth } from 'firebase/auth';
+import { useAuthStore } from '../../store/authStore';
 
 const CREATE_ORGANISATION = gql`
   mutation CreateOrganisation($input: CreateOrganisationInput!) {
@@ -70,6 +72,9 @@ export default function OrgVerificationPage() {
           },
         });
       }
+
+      await getAuth().currentUser?.getIdToken(true);
+      useAuthStore.setState({ accountType: 'organisation' });
 
       navigate('/org/onboarding/success');
     } catch (err: unknown) {

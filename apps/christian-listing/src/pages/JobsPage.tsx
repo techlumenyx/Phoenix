@@ -1,309 +1,44 @@
-import { useState } from 'react';
+import { gql, useQuery } from '@apollo/client';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SearchIcon, ArrowRightIcon } from '../components/layout/icons';
 import JobCard from '../components/cards/JobCard';
-import EventCard from '../components/cards/EventCard';
-import MarketplaceCard from '../components/cards/MarketplaceCard';
+import { ArrowRightIcon, SearchIcon } from '../components/layout/icons';
+import { formatPrice, usePreferredRegion } from '../lib/discovery';
+import { useAuthStore } from '../store/authStore';
 
-// ─── shared ──────────────────────────────────────────────────────────────────
+const JOBS_HOME = gql`
+  query JobsHome($region: String, $search: String) {
+    trending: jobListings(region: $region, search: $search, status: ACTIVE, sort: POPULAR, limit: 8) { edges { ...HomeJob } }
+    newest: jobListings(region: $region, search: $search, status: ACTIVE, sort: NEWEST, limit: 20) { edges { ...HomeJob } }
+    volunteering: jobListings(region: $region, search: $search, status: ACTIVE, roleType: VOLUNTEER, sort: NEWEST, limit: 8) { edges { ...HomeJob } }
+  }
+  fragment HomeJob on JobListing { id title roleType workLocation region skillsRequired salaryRange { min max currency } isPromoted organisation { id name isVerified } }
+`;
 
-const JOB_TABS = ['All Jobs', 'Ministry', 'Church Admin', 'Worship', 'Education', 'Tech & Media'] as const;
-
-function FilterTabs({ active, onChange }: { active: string; onChange: (t: string) => void }) {
-  return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {JOB_TABS.map((t) => (
-        <button
-          key={t}
-          onClick={() => onChange(t)}
-          className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-            active === t ? 'bg-dark text-white' : 'bg-gray-100 text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          {t}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-const SAMPLE_JOB = {
-  badge: 'JOB LISTING' as const,
-  badgeColor: 'green' as const,
-  title: 'Project Coordinator',
-  company: 'Grace Town Ministries',
-  salaryRange: '65k – 85k NGN',
-  location: 'Lagos City, Nigeria',
-  employmentType: 'Full Time Employment',
-  verified: true,
-};
-
-const SAMPLE_EVENT = {
-  badge: 'STUDY/WORSHIP' as const,
-  date: '24 OCT 2026',
-  title: 'Theology of Work: A Masterclass for Professionals',
-  description: 'An evening of peace and calm aimed to help youngsters learn the word of God.',
-  location: 'Lagos City Centre',
-  time: '09:30 AM To 06:00 PM',
-  invites: '3500 Invites',
-  likes: '15K Likes',
-  verified: true,
-  imageSrc: '/assets/event-theology.png',
-};
-
-const SAMPLE_LISTING = {
-  badge: 'FOR SALE' as const,
-  title: 'Ford Sierra 2012 Petrol',
-  description: 'Used 2012 Model for Sale in Lagos',
-  price: '₦ 40,000 NGN',
-  location: 'Lagos City, Nigeria',
-  imageSrc: '/assets/car-ford.png',
-  verified: true,
-};
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-
-function JobsHero() {
-  return (
-    <section
-      className="relative w-full flex items-center justify-center overflow-hidden"
-      style={{ minHeight: '380px', background: '#16191A' }}
-    >
-      <img
-        src="/assets/spotlight-ad.jpg"
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover object-center opacity-30"
-      />
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, rgba(0,0,0,0.8) 100%)',
-        }}
-      />
-      <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-2xl mx-auto gap-6 py-24">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white leading-tight">
-          Search for <em className="italic not-italic">Events</em>,{' '}
-          <em className="italic not-italic">Jobs</em>
-          <br className="hidden md:block" />
-          or <em className="italic not-italic">Listings</em>
-        </h1>
-        <div className="w-full flex items-center bg-white rounded-full shadow-lg overflow-hidden">
-          <SearchIcon className="w-5 h-5 text-gray-400 ml-4 shrink-0" />
-          <input
-            type="text"
-            placeholder="Search for jobs, ministries or companies..."
-            className="flex-1 px-3 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none bg-transparent"
-          />
-          <button className="m-1 px-6 py-2.5 rounded-full bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors shrink-0">
-            Search
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Featured Jobs (large 2-col layout) ──────────────────────────────────────
-
-function FeaturedJobs() {
-  return (
-    <section className="w-full bg-[#F9F9F9] px-6 md:px-10 lg:px-16 py-12">
-      <div className="flex items-end justify-between mb-6">
-        <div>
-          <p className="text-xs font-medium text-dark/40 tracking-wider uppercase mb-1">
-            Handpicked for you
-          </p>
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">Featured Jobs</h2>
-        </div>
-        <Link to="/jobs" className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-
-      {/* 2-col: 1 tall left + 2 stacked right */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="md:col-span-3">
-          <JobCard
-            {...SAMPLE_JOB}
-            title="Senior Worship Pastor"
-            company="New Life Church International"
-            salaryRange="120k – 180k NGN / month"
-            employmentType="Full Time Employment"
-            className="h-[320px] md:h-full"
-          />
-        </div>
-        <div className="md:col-span-2 flex flex-col gap-4">
-          <JobCard {...SAMPLE_JOB} className="flex-1" />
-          <JobCard
-            {...SAMPLE_JOB}
-            badge="VOLUNTEER"
-            badgeColor="blue"
-            title="Sunday School Teacher"
-            company="Grace Community Church"
-            salaryRange="Voluntary Role"
-            className="flex-1"
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Job Category Tiles ───────────────────────────────────────────────────────
-
-const JOB_CATEGORIES = [
-  { label: 'Ministry & Pastoral', gradient: 'from-purple-900 to-purple-700', emoji: '⛪' },
-  { label: 'Church Admin',        gradient: 'from-slate-800 to-slate-600',    emoji: '📋' },
-  { label: 'Worship & Music',     gradient: 'from-amber-800 to-amber-600',    emoji: '🎼' },
-  { label: 'Education',           gradient: 'from-teal-800 to-teal-600',      emoji: '📚' },
-  { label: 'Tech & Media',        gradient: 'from-blue-900 to-blue-700',      emoji: '💻' },
-  { label: 'Outreach',            gradient: 'from-green-800 to-green-600',    emoji: '🌍' },
-  { label: 'Finance',             gradient: 'from-indigo-900 to-indigo-700',  emoji: '💼' },
-  { label: 'Volunteering',        gradient: 'from-rose-800 to-rose-600',      emoji: '🤝' },
-] as const;
-
-function JobCategoryTiles() {
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-10 border-t border-gray-100">
-      <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark mb-6">Browse by Category</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {JOB_CATEGORIES.map(({ label, gradient, emoji }) => (
-          <button
-            key={label}
-            className={`relative rounded-2xl overflow-hidden h-24 flex flex-col items-start justify-end p-4 bg-gradient-to-br ${gradient} hover:scale-[1.02] transition-transform`}
-          >
-            <span className="absolute top-3 right-3 text-2xl">{emoji}</span>
-            <p className="text-white font-semibold text-sm text-left leading-snug">{label}</p>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Generic job section ──────────────────────────────────────────────────────
-
-function JobSection({ title }: { title: string }) {
-  const [tab, setTab] = useState('All Jobs');
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-10 border-t border-gray-100">
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">{title}</h2>
-        <Link to="/jobs" className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-      <div className="mb-5">
-        <FilterTabs active={tab} onChange={setTab} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[0, 1, 2, 3].map((i) => (
-          <JobCard key={i} {...SAMPLE_JOB} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Mixed content section (events + listings cross-promo) ───────────────────
-
-function MixedResultsSection() {
-  return (
-    <section className="w-full bg-[#F9F9F9] px-6 md:px-10 lg:px-16 py-10 border-t border-gray-100">
-      <div className="flex items-end justify-between mb-6">
-        <div>
-          <p className="text-xs font-medium text-dark/40 tracking-wider uppercase mb-1">
-            Also on Christian Listings
-          </p>
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">Events &amp; Listings Near You</h2>
-        </div>
-      </div>
-
-      <p className="text-xs font-semibold uppercase tracking-wider text-dark/40 mb-3">Events</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {[0, 1, 2].map((i) => (
-          <EventCard key={i} {...SAMPLE_EVENT} className="h-[240px]" />
-        ))}
-      </div>
-
-      <p className="text-xs font-semibold uppercase tracking-wider text-dark/40 mb-3">Marketplace Listings</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[0, 1, 2, 3].map((i) => (
-          <MarketplaceCard key={i} {...SAMPLE_LISTING} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ─── Scripture banner ─────────────────────────────────────────────────────────
-
-function ScriptureBanner() {
-  return (
-    <section className="relative w-full overflow-hidden">
-      <img src="/assets/org-cta.png" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-black/70" />
-      <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-10 py-16 text-center flex flex-col gap-3 items-center">
-        <p className="font-serif text-white text-xl md:text-2xl leading-relaxed italic">
-          "Whatever you do, work at it with all your heart,
-          <br className="hidden md:block" />
-          as working for the Lord, not for human masters."
-        </p>
-        <span className="text-white/40 text-xs tracking-wider">Colossians 3:23</span>
-      </div>
-    </section>
-  );
-}
-
-// ─── All Jobs grid ────────────────────────────────────────────────────────────
-
-function AllJobs() {
-  const [tab, setTab] = useState('All Jobs');
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-12 border-t border-gray-100">
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
-        <h2 className="text-2xl md:text-3xl font-serif font-bold text-dark">All Jobs</h2>
-        <Link to="/jobs" className="text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 shrink-0">
-          VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-      <div className="mb-5">
-        <FilterTabs active={tab} onChange={setTab} />
-      </div>
-      <div className="flex flex-col gap-4">
-        {[0, 1, 2].map((row) => (
-          <div key={row} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[0, 1, 2, 3].map((i) => (
-              <JobCard key={i} {...SAMPLE_JOB} />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-center mt-8">
-        <button className="px-8 py-2.5 rounded-full border border-dark/20 text-dark text-sm font-medium hover:border-dark/40 transition-colors">
-          Load More
-        </button>
-      </div>
-    </section>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+interface HomeJob { id: string; title: string; roleType: string; workLocation: string; region: string; skillsRequired: string[]; salaryRange?: { min: number; max: number; currency: string } | null; isPromoted: boolean; organisation: { id: string; name: string; isVerified: boolean } }
+interface HomeData { trending: { edges: HomeJob[] }; newest: { edges: HomeJob[] }; volunteering: { edges: HomeJob[] } }
+const SECTORS = [['Social Media', 'Technology', '▣'], ['Project Management', 'Operations', '⌘'], ['Teaching', 'Education', '☆'], ['Counselling', 'Health & Care', '♡']] as const;
 
 export default function JobsPage() {
-  return (
-    <>
-      <JobsHero />
-      <FeaturedJobs />
-      <JobCategoryTiles />
-      <JobSection title="Ministry & Pastoral Roles" />
-      <JobSection title="Church Admin & Operations" />
-      <MixedResultsSection />
-      <ScriptureBanner />
-      <JobSection title="Worship & Creative Arts" />
-      <JobSection title="Tech, Media & Communications" />
-      <AllJobs />
-    </>
-  );
+  const { region } = usePreferredRegion();
+  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? []);
+  const [input, setInput] = useState('');
+  const [search, setSearch] = useState('');
+  const { data, loading, error } = useQuery<HomeData>(JOBS_HOME, { variables: { region: region || null, search: search || null }, fetchPolicy: 'cache-and-network' });
+  const newest = data?.newest.edges ?? [];
+  const submit = (event: FormEvent) => { event.preventDefault(); setSearch(input.trim()); };
+  const interests = useMemo(() => preferences.includes('Career & Volunteering') ? newest : newest.filter((job) => job.roleType === 'VOLUNTEER'), [newest, preferences]);
+
+  return <>
+    <section className="relative flex min-h-[440px] items-center justify-center overflow-hidden bg-[#2d302d] px-6 text-center"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20" /><div className="relative w-full max-w-2xl"><h1 className="font-serif text-4xl font-bold text-white md:text-5xl">Find Opportunities<br />that grow your Career</h1><form onSubmit={submit} className="mx-auto mt-7 flex max-w-xl items-center overflow-hidden rounded-full bg-white shadow-lg"><SearchIcon className="ml-4 h-5 w-5 text-gray-400" /><input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search jobs, skills or organisations…" className="min-w-0 flex-1 px-3 py-3 text-sm outline-none" /><button className="m-1 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white">Explore</button></form>{region && <p className="mt-3 text-xs text-white/70">Showing opportunities near {region}</p>}</div></section>
+    {error && <p className="py-10 text-center text-red-700">Jobs are temporarily unavailable.</p>}
+    <section className="px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Search by Sector</h2><div className="grid grid-cols-2 gap-4 md:grid-cols-4">{SECTORS.map(([skill, label, icon]) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className="relative flex h-44 items-end overflow-hidden rounded-2xl bg-gradient-to-br from-[#292f35] to-[#8d7c79] p-5 text-white"><span className="absolute right-4 top-4 text-3xl">{icon}</span><strong className="font-serif text-xl">{label}</strong></Link>)}</div><div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">{['Accounting', 'Delivery Driver', 'Community Outreach', 'Social Media', 'Counselling', 'Project Management', 'Administration', 'Event Planning'].map((skill) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className="rounded-lg bg-[#b9b8ff] px-4 py-2 text-xs">{skill} Jobs →</Link>)}</div></section>
+    <JobSection title="Based on your Interests" jobs={(interests.length ? interests : newest).slice(0, 4)} loading={loading} />
+    <JobSection title="Volunteer Opportunities" jobs={data?.volunteering.edges ?? []} loading={loading} />
+    <JobSection title="Trending Opportunities" jobs={data?.trending.edges ?? []} loading={loading} />
+    <section className="relative overflow-hidden bg-[#26221e] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“Use your gifts to serve one another as faithful stewards.”</p><Link to="/jobs/all" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">Browse all jobs</Link></div></section>
+    <JobSection title="All Available Jobs" jobs={newest.slice(0, 12)} loading={loading} viewAll />
+  </>;
 }
+
+function JobSection({ title, jobs, loading, viewAll = false }: { title: string; jobs: HomeJob[]; loading: boolean; viewAll?: boolean }) { return <section className="px-6 py-12 md:px-10 lg:px-16"><div className="mb-6 flex items-end justify-between"><h2 className="font-serif text-3xl font-bold">{title}</h2><Link to="/jobs/all" className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-500">View all jobs <ArrowRightIcon className="h-3.5 w-3.5 -rotate-45" /></Link></div>{loading && jobs.length === 0 ? <p className="text-gray-500">Loading jobs…</p> : jobs.length === 0 ? <p className="text-gray-500">No opportunities are available in this section.</p> : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{jobs.map((job) => <JobCard key={job.id} badge={job.roleType.replaceAll('_', ' ')} badgeColor="blue" title={job.title} company={job.organisation.name || 'Christian Listings organisation'} salaryRange={job.salaryRange ? `${formatPrice(job.salaryRange.min, job.salaryRange.currency)} – ${formatPrice(job.salaryRange.max, job.salaryRange.currency)}` : undefined} employmentType={job.workLocation.replaceAll('_', ' ')} location={job.region} verified={job.organisation.isVerified} href={`/jobs/${job.id}`} />)}</div>}{viewAll && jobs.length > 0 && <div className="mt-8 text-center"><Link to="/jobs/all" className="rounded-full border px-8 py-3 text-sm">Browse all jobs</Link></div>}</section>; }

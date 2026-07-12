@@ -19,10 +19,13 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'My Listings', href: '/dashboard/listings' },
+          { label: 'My Applications', href: '/dashboard/applications' },
           { label: 'Saved Items', href: '/dashboard/saved' },
+          { label: 'Following', href: '/dashboard/following' },
+          { label: 'Messages', href: '/dashboard/messages' },
+          { label: 'Browse Opportunities', href: '/jobs/all' },
           { label: 'My Profile', href: '/profile' },
         ].map(({ label, href }) => (
           <Link

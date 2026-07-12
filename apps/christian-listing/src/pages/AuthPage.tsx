@@ -45,7 +45,7 @@ export default function AuthPage() {
       if (tab === 'signup') {
         const { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password);
         await updateProfile(user, { displayName: name });
-        navigate('/onboarding/region', { replace: true });
+        navigate(from.startsWith('/org/invite/') ? from : '/onboarding/region', { replace: true });
       } else {
         await signInWithEmailAndPassword(firebaseAuth, email, password);
         navigate(from, { replace: true });
@@ -62,7 +62,7 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
-      navigate(tab === 'signup' ? '/onboarding/region' : from, { replace: true });
+      navigate(tab === 'signup' && !from.startsWith('/org/invite/') ? '/onboarding/region' : from, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Google sign in failed.');
     } finally {

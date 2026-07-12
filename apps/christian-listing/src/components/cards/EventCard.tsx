@@ -1,4 +1,5 @@
 import { LocationMarkerIcon, ClockIcon, UsersIcon, HeartIcon, ArrowRightIcon } from '../layout/icons';
+import { Link } from 'react-router-dom';
 
 export interface EventCardProps {
   badge?: string;
@@ -13,6 +14,7 @@ export interface EventCardProps {
   imageSrc?: string;
   ctaLabel?: string;
   className?: string;
+  href?: string;
 }
 
 export default function EventCard({
@@ -28,6 +30,7 @@ export default function EventCard({
   imageSrc,
   ctaLabel = 'RSVP Now',
   className = '',
+  href,
 }: EventCardProps) {
   return (
     <div className={`relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${className}`}>
@@ -88,10 +91,15 @@ export default function EventCard({
               </span>
             )}
           </div>
-          <button className="flex items-center gap-1 text-xs font-semibold text-white hover:text-white/80 transition-colors">
-            {ctaLabel}
-            <ArrowRightIcon className="w-3.5 h-3.5" />
-          </button>
+          {href ? (
+            <Link to={href} className="flex items-center gap-1 text-xs font-semibold text-white hover:text-white/80 transition-colors">
+              {ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <button className="flex items-center gap-1 text-xs font-semibold text-white hover:text-white/80 transition-colors">
+              {ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

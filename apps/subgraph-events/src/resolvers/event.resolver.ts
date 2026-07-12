@@ -3,10 +3,13 @@ import mongoose, { type HydratedDocument } from 'mongoose';
 import { type IEvent } from '../models/event.model';
 import { EventModel, RsvpModel } from '../models';
 import type { GraphQLContext } from '../context';
+import { canAccessOrganisation, getOrganisationAccess } from '@christian-listings/auth';
 
 type EventDocument = HydratedDocument<IEvent>;
 
-function mapEvent(doc: EventDocument) {
+interface EventCounts { interested: number; saved: number; confirmed: number; waitlisted: number }
+
+function mapEvent(doc: EventDocument, counts?: EventCounts) {
   return {
     id:             doc._id.toString(),
     title:          doc.title,
@@ -24,11 +27,11 @@ function mapEvent(doc: EventDocument) {
     hosts:          [{ id: doc.organisationId.toString() }],
     region:         doc.region ?? '',
     rsvpCount:      doc.rsvpCount,
-    interestedCount: 0,
-    savedCount:     0,
-    confirmedCount: doc.rsvpCount,
+    interestedCount: counts?.interested ?? 0,
+    savedCount:     counts?.saved ?? 0,
+    confirmedCount: counts?.confirmed ?? doc.rsvpCount,
     capacityLimit:  doc.capacity ?? null,
-    waitlistCount:  0,
+    waitlistCount:  counts?.waitlisted ?? 0,
     status:         doc.status,
     imageUrls:      doc.imageUrls ?? [],
     isPromoted:     doc.isPromoted,
@@ -63,9 +66,15 @@ interface CreateEventInput {
 
 interface EventsArgs {
   region?:         string;
+  search?:         string;
   category?:       string;
   organisationId?: string;
   status?:         string;
+  dateFrom?:       string;
+  dateTo?:         string;
+  locationType?:   string;
+  ticketed?:       boolean;
+  sort?:           string;
   limit?:          number;
   after?:          string;
 }
@@ -74,20 +83,34 @@ export const eventResolvers = {
   Query: {
     event: async (_: unknown, { id }: { id: string }) => {
       const doc = await EventModel.findById(id);
-      return doc ? mapEvent(doc) : null;
+      if (!doc) return null;
+      const grouped = await RsvpModel.aggregate<{ _id: string; count: number }>([
+        { $match: { eventId: doc._id } },
+        { $group: { _id: '$stage', count: { $sum: 1 } } },
+      ]);
+      const count = (stage: string) => grouped.find((entry) => entry._id === stage)?.count ?? 0;
+      return mapEvent(doc, { interested: count('INTERESTED'), saved: count('SAVED'), confirmed: count('CONFIRMED'), waitlisted: count('WAITLISTED') });
     },
 
-    events: async (_: unknown, { region, category, organisationId, status, limit = 20, after }: EventsArgs) => {
+    events: async (_: unknown, { region, search, category, organisationId, status, dateFrom, dateTo, locationType, ticketed, sort = 'DATE_ASC', limit = 20, after }: EventsArgs) => {
       const filter: Record<string, unknown> = {};
       if (region)         filter['region'] = region;
+      if (search?.trim()) {
+        const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
+        filter['$or'] = [{ title: pattern }, { description: pattern }];
+      }
       if (category)       filter['category'] = category;
       if (organisationId) filter['organisationId'] = new mongoose.Types.ObjectId(organisationId);
       if (status)         filter['status'] = status;
+      if (dateFrom || dateTo) filter['startDate'] = { ...(dateFrom && { $gte: new Date(dateFrom) }), ...(dateTo && { $lte: new Date(dateTo) }) };
+      if (locationType)   filter['eventType'] = locationType;
+      if (ticketed !== undefined) filter['isTicketed'] = ticketed;
       if (after)          filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
-      const docs = await EventModel.find(filter).limit(limit + 1).sort({ startDate: -1 });
+      const sortBy: Record<string, 1 | -1> = sort === 'NEWEST' ? { createdAt: -1 } : sort === 'POPULAR' ? { rsvpCount: -1 } : { startDate: 1 };
+      const docs = await EventModel.find(filter).limit(limit + 1).sort(sortBy);
       const hasNextPage = docs.length > limit;
-      const edges = docs.slice(0, limit).map(mapEvent);
+      const edges = docs.slice(0, limit).map((doc) => mapEvent(doc));
       return { edges, hasNextPage, endCursor: edges.length > 0 ? edges[edges.length - 1].id : null };
     },
 
@@ -95,7 +118,7 @@ export const eventResolvers = {
       const filter: Record<string, unknown> = { isPromoted: true, status: 'PUBLISHED' };
       if (region) filter['region'] = region;
       const docs = await EventModel.find(filter).limit(10).sort({ startDate: 1 });
-      return docs.map(mapEvent);
+      return docs.map((doc) => mapEvent(doc));
     },
 
     myRsvps: async (_: unknown, { stage }: { stage?: string }, ctx: GraphQLContext) => {
@@ -122,6 +145,9 @@ export const eventResolvers = {
       if (!input.hostOrganisationIds[0]) {
         throw new GraphQLError('hostOrganisationIds must contain at least one ID', { extensions: { code: 'BAD_REQUEST' } });
       }
+      if (!canAccessOrganisation(ctx.auth, input.hostOrganisationIds[0], ['master_admin', 'site_admin', 'events_manager'])) {
+        throw new GraphQLError('You cannot create events for this organisation', { extensions: { code: 'FORBIDDEN' } });
+      }
 
       const doc = await EventModel.create({
         organisationId:  new mongoose.Types.ObjectId(input.hostOrganisationIds[0]),
@@ -142,6 +168,7 @@ export const eventResolvers = {
         capacity:        input.capacityLimit ?? null,
         imageUrls:       input.imageUrls ?? [],
         ticketUrl:       input.externalTicketUrl ?? null,
+        isTicketed:      Boolean(input.externalTicketUrl),
         status:          'PUBLISHED',
       });
 
@@ -152,8 +179,10 @@ export const eventResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      const access = getOrganisationAccess(ctx.auth);
+      if (!access || !access.roles.some((role) => ['master_admin', 'site_admin', 'events_manager'].includes(role))) throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
       const doc = await EventModel.findOneAndUpdate(
-        { _id: id, createdBy: ctx.auth.firebaseUid },
+        { _id: id, organisationId: new mongoose.Types.ObjectId(access.orgId) },
         { $set: { ...(input.title && { title: input.title }), ...(input.description && { description: input.description }) } },
         { new: true },
       );
@@ -165,7 +194,9 @@ export const eventResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const result = await EventModel.deleteOne({ _id: id, createdBy: ctx.auth.firebaseUid });
+      const access = getOrganisationAccess(ctx.auth);
+      if (!access || !access.roles.some((role) => ['master_admin', 'site_admin', 'events_manager'].includes(role))) throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
+      const result = await EventModel.deleteOne({ _id: id, organisationId: new mongoose.Types.ObjectId(access.orgId) });
       return result.deletedCount > 0;
     },
 
@@ -173,11 +204,31 @@ export const eventResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const rsvp = await RsvpModel.findOneAndUpdate(
-        { eventId: new mongoose.Types.ObjectId(eventId), userFirebaseUid: ctx.auth.firebaseUid },
-        { $set: { stage } },
-        { upsert: true, new: true },
-      );
+      const event = await EventModel.findById(eventId);
+      if (!event || event.status !== 'PUBLISHED') throw new GraphQLError('Event is not accepting RSVPs', { extensions: { code: 'BAD_USER_INPUT' } });
+      const existing = await RsvpModel.findOne({ eventId: event._id, userFirebaseUid: ctx.auth.firebaseUid });
+      let resolvedStage = stage;
+      const wasConfirmed = existing?.stage === 'CONFIRMED';
+      let reservedConfirmedPlace = false;
+      if (stage === 'CONFIRMED' && !wasConfirmed) {
+        const capacityFilter = event.capacity == null ? { _id: event._id } : { _id: event._id, $expr: { $lt: ['$rsvpCount', '$capacity'] } };
+        const reservedEvent = await EventModel.findOneAndUpdate(capacityFilter, { $inc: { rsvpCount: 1 } }, { new: true });
+        if (reservedEvent) reservedConfirmedPlace = true;
+        else resolvedStage = 'WAITLISTED';
+      }
+
+      let rsvp;
+      try {
+        rsvp = await RsvpModel.findOneAndUpdate(
+          { eventId: new mongoose.Types.ObjectId(eventId), userFirebaseUid: ctx.auth.firebaseUid },
+          { $set: { stage: resolvedStage } },
+          { upsert: true, new: true },
+        );
+      } catch (error) {
+        if (reservedConfirmedPlace) await EventModel.updateOne({ _id: event._id }, { $inc: { rsvpCount: -1 } });
+        throw error;
+      }
+      if (wasConfirmed && resolvedStage !== 'CONFIRMED') await EventModel.updateOne({ _id: event._id }, { $inc: { rsvpCount: -1 } });
       return {
         id:        rsvp._id.toString(),
         event:     { id: eventId },
@@ -192,10 +243,16 @@ export const eventResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      const eventObjectId = new mongoose.Types.ObjectId(eventId);
+      const existing = await RsvpModel.findOne({ eventId: eventObjectId, userFirebaseUid: ctx.auth.firebaseUid });
       const result = await RsvpModel.deleteOne({
-        eventId: new mongoose.Types.ObjectId(eventId),
+        eventId: eventObjectId,
         userFirebaseUid: ctx.auth.firebaseUid,
       });
+      if (result.deletedCount > 0 && existing?.stage === 'CONFIRMED') {
+        const promoted = await RsvpModel.findOneAndUpdate({ eventId: eventObjectId, stage: 'WAITLISTED' }, { $set: { stage: 'CONFIRMED' } }, { sort: { createdAt: 1 }, new: true });
+        if (!promoted) await EventModel.updateOne({ _id: eventObjectId }, { $inc: { rsvpCount: -1 } });
+      }
       return result.deletedCount > 0;
     },
   },
@@ -207,7 +264,7 @@ export const eventResolvers = {
       if (after) filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
       const docs = await EventModel.find(filter).limit(limit + 1).sort({ startDate: -1 });
       const hasNextPage = docs.length > limit;
-      const edges = docs.slice(0, limit).map(mapEvent);
+      const edges = docs.slice(0, limit).map((doc) => mapEvent(doc));
       return { edges, hasNextPage, endCursor: edges.length > 0 ? edges[edges.length - 1].id : null };
     },
   },
@@ -227,3 +284,7 @@ export const eventResolvers = {
     user: ({ user }: { user: { id: string } }) => user,
   },
 };
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

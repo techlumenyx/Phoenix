@@ -1,6 +1,6 @@
 import { getAuth } from 'firebase-admin/auth';
 import { GraphQLError } from 'graphql';
-import { OrganisationModel } from '../models';
+import { OrganisationModel, UserModel } from '../models';
 import type { GraphQLContext } from '../context';
 
 export async function createOrganisation(
@@ -20,12 +20,11 @@ export async function createOrganisation(
       existing.name = args.input.name;
       await existing.save();
     }
+    await setOrganisationAccess(firebaseUid, existing._id.toString());
     return existing;
   }
 
-  await getAuth().setCustomUserClaims(firebaseUid, { accountType: 'organisation' });
-
-  return OrganisationModel.create({
+  const organisation = await OrganisationModel.create({
     createdBy: firebaseUid,
     name: args.input.name,
     region: args.input.region ?? null,
@@ -34,4 +33,12 @@ export async function createOrganisation(
     onboardingCompleted: false,
     followerCount: 0,
   });
+  await setOrganisationAccess(firebaseUid, organisation._id.toString());
+  return organisation;
+}
+
+async function setOrganisationAccess(firebaseUid: string, orgId: string) {
+  const roles = ['master_admin'];
+  await getAuth().setCustomUserClaims(firebaseUid, { accountType: 'organisation', orgId, roles });
+  await UserModel.updateOne({ firebaseUid }, { $set: { orgId, roles, orgJoinedAt: new Date() } });
 }

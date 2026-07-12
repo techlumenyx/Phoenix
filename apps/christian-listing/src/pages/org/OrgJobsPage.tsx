@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from '@apollo/client';
 import { MY_ORG_JOB_LISTINGS } from '../../graphql/mutations';
 
 interface JobListing {
@@ -24,6 +24,30 @@ const STATUS_STYLE: Record<string, string> = {
 };
 const PAGE_SIZE = 10;
 
+const ORG_APPLICATIONS = gql`
+  query OrganisationApplicationsInbox($organisationId: ID!) {
+    organisationJobApplications(organisationId: $organisationId) {
+      id status fullName email phoneNumber gender dateOfBirth experience yearsOfExperience
+      currentSalary expectedSalary portfolioUrl linkedInProfile createdAt
+      education { highestQualification institutionName yearOfEnrollment yearOfCompletion marksGrades degreeType }
+      listing { id title }
+    }
+  }
+`;
+
+const UPDATE_APPLICATION_STATUS = gql`
+  mutation UpdateOrganisationApplicationStatus($id: ID!, $status: ApplicationStatus!) {
+    updateJobApplicationStatus(id: $id, status: $status) { id status }
+  }
+`;
+
+interface JobApplication {
+  id: string; status: string; fullName: string; email: string; phoneNumber?: string | null; gender?: string | null; dateOfBirth?: string | null;
+  experience?: string | null; yearsOfExperience?: number | null; currentSalary?: string | null; expectedSalary?: string | null;
+  portfolioUrl?: string | null; linkedInProfile?: string | null; createdAt: string; listing: { id: string; title: string };
+  education: Array<{ highestQualification?: string | null; institutionName?: string | null; yearOfEnrollment?: number | null; yearOfCompletion?: number | null; marksGrades?: string | null; degreeType?: string | null }>;
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
@@ -45,8 +69,13 @@ export default function OrgJobsPage() {
   const [sortKey, setSortKey] = useState<SortKey>('applicationDeadline');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(0);
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
 
   const { data, loading, error } = useQuery(MY_ORG_JOB_LISTINGS);
+  const organisationId = data?.myOrganisations?.[0]?.id as string | undefined;
+  const { data: applicationsData, loading: applicationsLoading, error: applicationsError, refetch: refetchApplications } = useQuery<{ organisationJobApplications: JobApplication[] }>(ORG_APPLICATIONS, { variables: { organisationId }, skip: !organisationId });
+  const [updateApplicationStatus, { loading: updatingStatus }] = useMutation(UPDATE_APPLICATION_STATUS);
+  const applications = applicationsData?.organisationJobApplications ?? [];
   const allJobs: JobListing[] = (data?.myOrganisations ?? []).flatMap(
     (org: { jobListings: JobListing[] }) => org.jobListings ?? [],
   );
@@ -77,6 +106,30 @@ export default function OrgJobsPage() {
     setPage(0);
   }
   function handleTabChange(tab: string) { setActiveTab(tab); setPage(0); }
+
+  async function changeApplicationStatus(application: JobApplication, status: string) {
+    await updateApplicationStatus({ variables: { id: application.id, status } });
+    setSelectedApplication((current) => current?.id === application.id ? { ...current, status } : current);
+    await refetchApplications();
+  }
+
+  function downloadApplicationsCsv() {
+    const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const rows = applications.map((application) => [
+      application.fullName, application.email, application.phoneNumber, application.listing.title,
+      application.status, application.yearsOfExperience, application.currentSalary,
+      application.expectedSalary, application.portfolioUrl, application.linkedInProfile,
+      new Date(application.createdAt).toISOString(),
+    ]);
+    const csv = [['Candidate', 'Email', 'Phone', 'Job', 'Status', 'Years experience', 'Current salary', 'Expected salary', 'Portfolio', 'LinkedIn', 'Applied at'], ...rows]
+      .map((row) => row.map(escape).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `job-applications-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   const startRow = sorted.length === 0 ? 0 : page * PAGE_SIZE + 1;
   const endRow = Math.min((page + 1) * PAGE_SIZE, sorted.length);
@@ -114,18 +167,14 @@ export default function OrgJobsPage() {
           ))}
         </div>
 
-        {/* Applications placeholder */}
         {activeTab === 'Applications' && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-12 h-12 rounded-full bg-[#FAF6ED] flex items-center justify-center">
-              <svg className="w-6 h-6 text-[#C9A96E]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-gray-700">Applications inbox coming soon</p>
-            <p className="text-xs text-gray-400 text-center max-w-xs">
-              Candidate applications will appear here once inbound apply is enabled for your listings.
-            </p>
+          <div>
+            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3"><p className="text-sm text-gray-500">{applications.length} application{applications.length === 1 ? '' : 's'}</p><button type="button" disabled={applications.length === 0} onClick={downloadApplicationsCsv} className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-40">Download CSV</button></div>
+            <div className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-gray-200 bg-[#FAF6ED] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500"><span>Candidate</span><span>Job</span><span>Email</span><span>Applied</span><span>Status</span><span>Details</span></div>
+            {applicationsLoading && <div className="py-16 text-center text-sm text-gray-400">Loading applications…</div>}
+            {applicationsError && <div className="py-16 text-center text-sm text-red-500">{applicationsError.message}</div>}
+            {!applicationsLoading && !applicationsError && applications.length === 0 && <div className="py-16 text-center"><p className="text-sm font-semibold text-gray-600">No applications yet</p><p className="mt-1 text-xs text-gray-400">New candidate applications will appear here.</p></div>}
+            {applications.map((application) => <div key={application.id} className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] items-center gap-4 border-b border-gray-100 px-6 py-4 text-[13px]"><strong>{application.fullName}</strong><span className="truncate text-gray-600">{application.listing.title}</span><a href={`mailto:${application.email}`} className="truncate text-gray-500 hover:underline">{application.email}</a><span className="text-gray-500">{formatDate(application.createdAt)}</span><span className="rounded-full bg-blue-50 px-2 py-1 text-center text-[11px] font-semibold text-blue-700">{application.status.replaceAll('_', ' ')}</span><button onClick={() => setSelectedApplication(application)} className="rounded-lg border px-3 py-1.5 text-xs hover:bg-gray-50">View</button></div>)}
           </div>
         )}
 
@@ -229,6 +278,85 @@ export default function OrgJobsPage() {
           </>
         )}
       </div>
+      {selectedApplication && <ApplicationDrawer application={selectedApplication} updating={updatingStatus} onClose={() => setSelectedApplication(null)} onStatusChange={(status) => changeApplicationStatus(selectedApplication, status)} />}
     </div>
   );
+}
+
+function ApplicationDrawer({
+  application,
+  updating,
+  onClose,
+  onStatusChange,
+}: {
+  application: JobApplication;
+  updating: boolean;
+  onClose: () => void;
+  onStatusChange: (status: string) => void;
+}) {
+  const actions = [
+    { status: 'UNDER_REVIEW', label: 'Review', style: 'border-amber-300 text-amber-800 hover:bg-amber-50' },
+    { status: 'SHORTLISTED', label: 'Shortlist', style: 'border-blue-300 text-blue-700 hover:bg-blue-50' },
+    { status: 'HIRED', label: 'Mark hired', style: 'border-green-300 text-green-700 hover:bg-green-50' },
+    { status: 'REJECTED', label: 'Reject', style: 'border-red-300 text-red-700 hover:bg-red-50' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/35" role="dialog" aria-modal="true" aria-labelledby="application-title" onMouseDown={onClose}>
+      <aside className="h-full w-full max-w-xl overflow-y-auto bg-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-start justify-between border-b bg-white px-6 py-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Application for {application.listing.title}</p>
+            <h2 id="application-title" className="mt-1 text-2xl font-serif font-bold text-[#1B1B1B]">{application.fullName}</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close application" className="rounded-full p-2 text-xl text-gray-500 hover:bg-gray-100">&times;</button>
+        </div>
+
+        <div className="space-y-7 px-6 py-6 text-sm">
+          <section>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Contact</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Detail label="Email"><a className="hover:underline" href={`mailto:${application.email}`}>{application.email}</a></Detail>
+              <Detail label="Phone">{application.phoneNumber || 'Not provided'}</Detail>
+              <Detail label="Date of birth">{application.dateOfBirth ? formatDate(application.dateOfBirth) : 'Not provided'}</Detail>
+              <Detail label="Gender">{application.gender || 'Not provided'}</Detail>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Experience</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Detail label="Years">{application.yearsOfExperience ?? 'Not provided'}</Detail>
+              <Detail label="Current / expected salary">{[application.currentSalary, application.expectedSalary].filter(Boolean).join(' / ') || 'Not provided'}</Detail>
+            </div>
+            <p className="mt-4 whitespace-pre-wrap leading-6 text-gray-700">{application.experience || 'No experience summary provided.'}</p>
+          </section>
+
+          {application.education.length > 0 && <section>
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Education</h3>
+            <div className="space-y-3">{application.education.map((item, index) => <div key={index} className="rounded-lg border border-gray-200 p-4"><strong>{item.highestQualification || item.degreeType || 'Qualification'}</strong><p className="mt-1 text-gray-600">{item.institutionName || 'Institution not provided'}</p><p className="mt-1 text-xs text-gray-400">{[item.yearOfEnrollment, item.yearOfCompletion].filter(Boolean).join(' - ')}{item.marksGrades ? ` · ${item.marksGrades}` : ''}</p></div>)}</div>
+          </section>}
+
+          {(application.portfolioUrl || application.linkedInProfile) && <section className="flex flex-wrap gap-3">
+            {application.portfolioUrl && <ExternalLink href={application.portfolioUrl}>Portfolio</ExternalLink>}
+            {application.linkedInProfile && <ExternalLink href={application.linkedInProfile}>LinkedIn</ExternalLink>}
+          </section>}
+        </div>
+
+        <div className="sticky bottom-0 border-t bg-white px-6 py-4">
+          <p className="mb-3 text-xs text-gray-500">Current status: <strong>{application.status.replaceAll('_', ' ')}</strong></p>
+          <div className="flex flex-wrap gap-2">{actions.map((action) => <button key={action.status} type="button" disabled={updating || application.status === action.status} onClick={() => onStatusChange(action.status)} className={`rounded-lg border px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${action.style}`}>{action.label}</button>)}</div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><p className="text-xs text-gray-400">{label}</p><div className="mt-1 break-words font-medium text-gray-800">{children}</div></div>;
+}
+
+function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const safeHref = /^https?:\/\//i.test(href) ? href : `https://${href}`;
+  return <a href={safeHref} target="_blank" rel="noreferrer" className="rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50">{children} &rarr;</a>;
 }

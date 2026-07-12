@@ -29,6 +29,13 @@ enum RsvpStage {
   INTERESTED
   SAVED
   CONFIRMED
+  WAITLISTED
+}
+
+enum EventSort {
+  NEWEST
+  DATE_ASC
+  POPULAR
 }
 
 enum LocationType {
@@ -105,9 +112,15 @@ type Query {
   event(id: ID!): Event
   events(
     region: String
+    search: String
     category: EventCategory
     organisationId: ID
     status: EventStatus
+    dateFrom: DateTime
+    dateTo: DateTime
+    locationType: LocationType
+    ticketed: Boolean
+    sort: EventSort
     limit: Int
     after: String
   ): EventConnection!

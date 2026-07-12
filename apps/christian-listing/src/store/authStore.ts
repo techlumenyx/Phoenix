@@ -15,7 +15,10 @@ const ME_QUERY = gql`
       avatarUrl
       isVerified
       onboardingCompleted
+      region
       preferences
+      roles
+      orgId
     }
   }
 `;
@@ -27,7 +30,10 @@ export interface DbUser {
   avatarUrl: string | null;
   isVerified: boolean;
   onboardingCompleted: boolean;
+  region: string;
   preferences: string[];
+  roles: string[];
+  orgId: string | null;
 }
 
 interface AuthState {

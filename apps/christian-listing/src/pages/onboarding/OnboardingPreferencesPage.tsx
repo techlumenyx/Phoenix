@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import SceneHeader from '../../components/layout/SceneHeader';
 
 const UPDATE_PROFILE = gql`
-  mutation UpdateProfile($input: UpdateProfileInput!) {
+  mutation UpdatePreferencesProfile($input: UpdateProfileInput!) {
     updateProfile(input: $input) {
       id
       preferences

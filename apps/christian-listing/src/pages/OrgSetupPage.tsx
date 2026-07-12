@@ -34,7 +34,7 @@ export default function OrgSetupPage() {
       await createOrganisation({ variables: { input: { name: orgName.trim() } } });
       await getAuth().currentUser?.getIdToken(true);
       useAuthStore.setState({ accountType: 'organisation' });
-      navigate('/dashboard', { replace: true });
+      navigate('/org', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Setup failed — please try again.');
     } finally {

@@ -5,6 +5,8 @@ export const APPLICATION_STATUSES = [
   'SHORTLISTED',
   'UNDER_REVIEW',
   'REJECTED',
+  'HIRED',
+  'WITHDRAWN',
 ] as const;
 
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];

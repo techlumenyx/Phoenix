@@ -99,6 +99,13 @@ export type EventLocationInput = {
   virtualLink?: InputMaybe<Scalars['String']['input']>;
 };
 
+export const EventSort = {
+  DateAsc: 'DATE_ASC',
+  Newest: 'NEWEST',
+  Popular: 'POPULAR'
+} as const;
+
+export type EventSort = typeof EventSort[keyof typeof EventSort];
 export const EventStatus = {
   Cancelled: 'CANCELLED',
   Draft: 'DRAFT',
@@ -179,10 +186,16 @@ export type QueryEventArgs = {
 export type QueryEventsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   category?: InputMaybe<EventCategory>;
+  dateFrom?: InputMaybe<Scalars['DateTime']['input']>;
+  dateTo?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  locationType?: InputMaybe<LocationType>;
   organisationId?: InputMaybe<Scalars['ID']['input']>;
   region?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<EventSort>;
   status?: InputMaybe<EventStatus>;
+  ticketed?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -208,7 +221,8 @@ export type Rsvp = {
 export const RsvpStage = {
   Confirmed: 'CONFIRMED',
   Interested: 'INTERESTED',
-  Saved: 'SAVED'
+  Saved: 'SAVED',
+  Waitlisted: 'WAITLISTED'
 } as const;
 
 export type RsvpStage = typeof RsvpStage[keyof typeof RsvpStage];
@@ -324,6 +338,7 @@ export type ResolversTypes = ResolversObject<{
   EventConnection: ResolverTypeWrapper<EventConnection>;
   EventLocation: ResolverTypeWrapper<EventLocation>;
   EventLocationInput: EventLocationInput;
+  EventSort: EventSort;
   EventStatus: EventStatus;
   LocationType: LocationType;
   Mutation: ResolverTypeWrapper<{}>;

@@ -1,4 +1,5 @@
 import { LocationMarkerIcon, BriefcaseIcon, ArrowRightIcon } from '../layout/icons';
+import { Link } from 'react-router-dom';
 
 export interface JobCardProps {
   badge?: string;
@@ -11,6 +12,7 @@ export interface JobCardProps {
   verified?: boolean;
   ctaLabel?: string;
   className?: string;
+  href?: string;
 }
 
 export default function JobCard({
@@ -24,6 +26,7 @@ export default function JobCard({
   verified = false,
   ctaLabel = 'Apply Now',
   className = '',
+  href,
 }: JobCardProps) {
   const badgeStyles: Record<string, string> = {
     green:  'bg-green-100 text-green-700',
@@ -63,10 +66,7 @@ export default function JobCard({
         )}
       </div>
 
-      <button className="mt-2 flex items-center gap-1 text-xs font-semibold text-dark hover:text-black transition-colors self-start">
-        {ctaLabel}
-        <ArrowRightIcon className="w-3.5 h-3.5" />
-      </button>
+      {href ? <Link to={href} className="mt-2 flex items-center gap-1 text-xs font-semibold text-dark hover:text-black transition-colors self-start">{ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" /></Link> : <button className="mt-2 flex items-center gap-1 text-xs font-semibold text-dark hover:text-black transition-colors self-start">{ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" /></button>}
     </div>
   );
 }
