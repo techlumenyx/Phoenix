@@ -55,8 +55,8 @@ type Documents = {
     "mutation ReadThread($id: ID!) { markThreadRead(threadId: $id) }": typeof types.ReadThreadDocument,
     "mutation ArchiveMessageThread($id: ID!) { archiveThread(threadId: $id) { id status } }": typeof types.ArchiveMessageThreadDocument,
     "\n  query MyApplications {\n    me {\n      id\n      jobApplications {\n        id\n        status\n        createdAt\n        updatedAt\n        listing {\n          id\n          title\n          organisation { id name isVerified }\n        }\n      }\n    }\n  }\n": typeof types.MyApplicationsDocument,
-    "query OrganisationInvitation($token: String!) { organisationInvite(token: $token) { id email roles status expiresAt organisation { id name logoUrl } } }": typeof types.OrganisationInvitationDocument,
-    "mutation AcceptOrganisationInvitation($token: String!) { acceptOrganisationInvite(token: $token) { id name } }": typeof types.AcceptOrganisationInvitationDocument,
+    "\n  query OrganisationInvitation($token: String!) {\n    organisationInvite(token: $token) {\n      id\n      email\n      roles\n      status\n      expiresAt\n      organisation {\n        id\n        name\n        logoUrl\n      }\n    }\n  }\n": typeof types.OrganisationInvitationDocument,
+    "\n  mutation AcceptOrganisationInvitation($token: String!) {\n    acceptOrganisationInvite(token: $token) {\n      id\n      name\n    }\n  }\n": typeof types.AcceptOrganisationInvitationDocument,
     "\n  query PublicOrganisationProfile($id: ID!) {\n    organisation(id: $id) {\n      id name description logoUrl region isVerified verificationTier followerCount websiteUrl createdAt\n      socialLinks { whatsapp instagram facebook twitter website }\n      events(limit: 8) { edges { id title description category date region rsvpCount imageUrls status } }\n      jobListings { id title roleType workLocation region salaryRange { min max currency } status isPromoted }\n      marketplaceListings { id title description price currency region imageUrls status isDonation isPromoted }\n    }\n    isFollowingOrganisation(organisationId: $id)\n  }\n": typeof types.PublicOrganisationProfileDocument,
     "mutation FollowPublicOrganisation($id: ID!) { followOrganisation(organisationId: $id) { id followerCount } }": typeof types.FollowPublicOrganisationDocument,
     "mutation UnfollowPublicOrganisation($id: ID!) { unfollowOrganisation(organisationId: $id) { id followerCount } }": typeof types.UnfollowPublicOrganisationDocument,
@@ -71,13 +71,13 @@ type Documents = {
     "\n  mutation UpdateOrganisationApplicationStatus($id: ID!, $status: ApplicationStatus!) {\n    updateJobApplicationStatus(id: $id, status: $status) { id status }\n  }\n": typeof types.UpdateOrganisationApplicationStatusDocument,
     "\n  query OrganisationNotifications {\n    myOrganisations { id name }\n  }\n": typeof types.OrganisationNotificationsDocument,
     "\n  query ApplicationNotifications($organisationId: ID!) {\n    organisationJobApplications(organisationId: $organisationId) {\n      id fullName status createdAt\n      listing { id title }\n    }\n  }\n": typeof types.ApplicationNotificationsDocument,
-    "query OrganisationTeamPage($id: ID!) { organisationTeam(organisationId: $id) { user { id name email avatarUrl } roles joinedAt } organisationInvites(organisationId: $id) { id email roles status token expiresAt createdAt } }": typeof types.OrganisationTeamPageDocument,
-    "mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) { inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) { id email token status expiresAt roles } }": typeof types.InviteTeamMemberDocument,
-    "mutation RevokeTeamInvite($id: ID!) { revokeOrganisationInvite(id: $id) { id status } }": typeof types.RevokeTeamInviteDocument,
-    "mutation ResendTeamInvite($id: ID!) { resendOrganisationInvite(id: $id) { id token status expiresAt } }": typeof types.ResendTeamInviteDocument,
-    "mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) { updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) { roles user { id } } }": typeof types.UpdateTeamRolesDocument,
-    "mutation RemoveTeamMember($orgId: ID!, $userId: ID!) { removeOrganisationMember(organisationId: $orgId, userId: $userId) }": typeof types.RemoveTeamMemberDocument,
-    "query TeamOrgId { myOrganisations { id } }": typeof types.TeamOrgIdDocument,
+    "\n  query OrganisationTeamPage($id: ID!) {\n    organisationTeam(organisationId: $id) {\n      user {\n        id\n        name\n        email\n        avatarUrl\n      }\n      roles\n      joinedAt\n    }\n    organisationInvites(organisationId: $id) {\n      id\n      email\n      roles\n      status\n      token\n      expiresAt\n      createdAt\n    }\n  }\n": typeof types.OrganisationTeamPageDocument,
+    "\n  mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) {\n    inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) {\n      id\n      email\n      token\n      status\n      expiresAt\n      roles\n    }\n  }\n": typeof types.InviteTeamMemberDocument,
+    "\n  mutation RevokeTeamInvite($id: ID!) {\n    revokeOrganisationInvite(id: $id) {\n      id\n      status\n    }\n  }\n": typeof types.RevokeTeamInviteDocument,
+    "\n  mutation ResendTeamInvite($id: ID!) {\n    resendOrganisationInvite(id: $id) {\n      id\n      token\n      status\n      expiresAt\n    }\n  }\n": typeof types.ResendTeamInviteDocument,
+    "\n  mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) {\n    updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) {\n      roles\n      user {\n        id\n      }\n    }\n  }\n": typeof types.UpdateTeamRolesDocument,
+    "\n  mutation RemoveTeamMember($orgId: ID!, $userId: ID!) {\n    removeOrganisationMember(organisationId: $orgId, userId: $userId)\n  }\n": typeof types.RemoveTeamMemberDocument,
+    "\n    query TeamOrgId {\n      myOrganisations {\n        id\n      }\n    }\n  ": typeof types.TeamOrgIdDocument,
     "\n  query Me {\n    me {\n      id\n      name\n      email\n      avatarUrl\n      isVerified\n      onboardingCompleted\n      region\n      preferences\n      roles\n      orgId\n    }\n  }\n": typeof types.MeDocument,
 };
 const documents: Documents = {
@@ -122,8 +122,8 @@ const documents: Documents = {
     "mutation ReadThread($id: ID!) { markThreadRead(threadId: $id) }": types.ReadThreadDocument,
     "mutation ArchiveMessageThread($id: ID!) { archiveThread(threadId: $id) { id status } }": types.ArchiveMessageThreadDocument,
     "\n  query MyApplications {\n    me {\n      id\n      jobApplications {\n        id\n        status\n        createdAt\n        updatedAt\n        listing {\n          id\n          title\n          organisation { id name isVerified }\n        }\n      }\n    }\n  }\n": types.MyApplicationsDocument,
-    "query OrganisationInvitation($token: String!) { organisationInvite(token: $token) { id email roles status expiresAt organisation { id name logoUrl } } }": types.OrganisationInvitationDocument,
-    "mutation AcceptOrganisationInvitation($token: String!) { acceptOrganisationInvite(token: $token) { id name } }": types.AcceptOrganisationInvitationDocument,
+    "\n  query OrganisationInvitation($token: String!) {\n    organisationInvite(token: $token) {\n      id\n      email\n      roles\n      status\n      expiresAt\n      organisation {\n        id\n        name\n        logoUrl\n      }\n    }\n  }\n": types.OrganisationInvitationDocument,
+    "\n  mutation AcceptOrganisationInvitation($token: String!) {\n    acceptOrganisationInvite(token: $token) {\n      id\n      name\n    }\n  }\n": types.AcceptOrganisationInvitationDocument,
     "\n  query PublicOrganisationProfile($id: ID!) {\n    organisation(id: $id) {\n      id name description logoUrl region isVerified verificationTier followerCount websiteUrl createdAt\n      socialLinks { whatsapp instagram facebook twitter website }\n      events(limit: 8) { edges { id title description category date region rsvpCount imageUrls status } }\n      jobListings { id title roleType workLocation region salaryRange { min max currency } status isPromoted }\n      marketplaceListings { id title description price currency region imageUrls status isDonation isPromoted }\n    }\n    isFollowingOrganisation(organisationId: $id)\n  }\n": types.PublicOrganisationProfileDocument,
     "mutation FollowPublicOrganisation($id: ID!) { followOrganisation(organisationId: $id) { id followerCount } }": types.FollowPublicOrganisationDocument,
     "mutation UnfollowPublicOrganisation($id: ID!) { unfollowOrganisation(organisationId: $id) { id followerCount } }": types.UnfollowPublicOrganisationDocument,
@@ -138,13 +138,13 @@ const documents: Documents = {
     "\n  mutation UpdateOrganisationApplicationStatus($id: ID!, $status: ApplicationStatus!) {\n    updateJobApplicationStatus(id: $id, status: $status) { id status }\n  }\n": types.UpdateOrganisationApplicationStatusDocument,
     "\n  query OrganisationNotifications {\n    myOrganisations { id name }\n  }\n": types.OrganisationNotificationsDocument,
     "\n  query ApplicationNotifications($organisationId: ID!) {\n    organisationJobApplications(organisationId: $organisationId) {\n      id fullName status createdAt\n      listing { id title }\n    }\n  }\n": types.ApplicationNotificationsDocument,
-    "query OrganisationTeamPage($id: ID!) { organisationTeam(organisationId: $id) { user { id name email avatarUrl } roles joinedAt } organisationInvites(organisationId: $id) { id email roles status token expiresAt createdAt } }": types.OrganisationTeamPageDocument,
-    "mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) { inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) { id email token status expiresAt roles } }": types.InviteTeamMemberDocument,
-    "mutation RevokeTeamInvite($id: ID!) { revokeOrganisationInvite(id: $id) { id status } }": types.RevokeTeamInviteDocument,
-    "mutation ResendTeamInvite($id: ID!) { resendOrganisationInvite(id: $id) { id token status expiresAt } }": types.ResendTeamInviteDocument,
-    "mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) { updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) { roles user { id } } }": types.UpdateTeamRolesDocument,
-    "mutation RemoveTeamMember($orgId: ID!, $userId: ID!) { removeOrganisationMember(organisationId: $orgId, userId: $userId) }": types.RemoveTeamMemberDocument,
-    "query TeamOrgId { myOrganisations { id } }": types.TeamOrgIdDocument,
+    "\n  query OrganisationTeamPage($id: ID!) {\n    organisationTeam(organisationId: $id) {\n      user {\n        id\n        name\n        email\n        avatarUrl\n      }\n      roles\n      joinedAt\n    }\n    organisationInvites(organisationId: $id) {\n      id\n      email\n      roles\n      status\n      token\n      expiresAt\n      createdAt\n    }\n  }\n": types.OrganisationTeamPageDocument,
+    "\n  mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) {\n    inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) {\n      id\n      email\n      token\n      status\n      expiresAt\n      roles\n    }\n  }\n": types.InviteTeamMemberDocument,
+    "\n  mutation RevokeTeamInvite($id: ID!) {\n    revokeOrganisationInvite(id: $id) {\n      id\n      status\n    }\n  }\n": types.RevokeTeamInviteDocument,
+    "\n  mutation ResendTeamInvite($id: ID!) {\n    resendOrganisationInvite(id: $id) {\n      id\n      token\n      status\n      expiresAt\n    }\n  }\n": types.ResendTeamInviteDocument,
+    "\n  mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) {\n    updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) {\n      roles\n      user {\n        id\n      }\n    }\n  }\n": types.UpdateTeamRolesDocument,
+    "\n  mutation RemoveTeamMember($orgId: ID!, $userId: ID!) {\n    removeOrganisationMember(organisationId: $orgId, userId: $userId)\n  }\n": types.RemoveTeamMemberDocument,
+    "\n    query TeamOrgId {\n      myOrganisations {\n        id\n      }\n    }\n  ": types.TeamOrgIdDocument,
     "\n  query Me {\n    me {\n      id\n      name\n      email\n      avatarUrl\n      isVerified\n      onboardingCompleted\n      region\n      preferences\n      roles\n      orgId\n    }\n  }\n": types.MeDocument,
 };
 
@@ -329,11 +329,11 @@ export function gql(source: "\n  query MyApplications {\n    me {\n      id\n   
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "query OrganisationInvitation($token: String!) { organisationInvite(token: $token) { id email roles status expiresAt organisation { id name logoUrl } } }"): (typeof documents)["query OrganisationInvitation($token: String!) { organisationInvite(token: $token) { id email roles status expiresAt organisation { id name logoUrl } } }"];
+export function gql(source: "\n  query OrganisationInvitation($token: String!) {\n    organisationInvite(token: $token) {\n      id\n      email\n      roles\n      status\n      expiresAt\n      organisation {\n        id\n        name\n        logoUrl\n      }\n    }\n  }\n"): (typeof documents)["\n  query OrganisationInvitation($token: String!) {\n    organisationInvite(token: $token) {\n      id\n      email\n      roles\n      status\n      expiresAt\n      organisation {\n        id\n        name\n        logoUrl\n      }\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "mutation AcceptOrganisationInvitation($token: String!) { acceptOrganisationInvite(token: $token) { id name } }"): (typeof documents)["mutation AcceptOrganisationInvitation($token: String!) { acceptOrganisationInvite(token: $token) { id name } }"];
+export function gql(source: "\n  mutation AcceptOrganisationInvitation($token: String!) {\n    acceptOrganisationInvite(token: $token) {\n      id\n      name\n    }\n  }\n"): (typeof documents)["\n  mutation AcceptOrganisationInvitation($token: String!) {\n    acceptOrganisationInvite(token: $token) {\n      id\n      name\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -393,31 +393,31 @@ export function gql(source: "\n  query ApplicationNotifications($organisationId:
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "query OrganisationTeamPage($id: ID!) { organisationTeam(organisationId: $id) { user { id name email avatarUrl } roles joinedAt } organisationInvites(organisationId: $id) { id email roles status token expiresAt createdAt } }"): (typeof documents)["query OrganisationTeamPage($id: ID!) { organisationTeam(organisationId: $id) { user { id name email avatarUrl } roles joinedAt } organisationInvites(organisationId: $id) { id email roles status token expiresAt createdAt } }"];
+export function gql(source: "\n  query OrganisationTeamPage($id: ID!) {\n    organisationTeam(organisationId: $id) {\n      user {\n        id\n        name\n        email\n        avatarUrl\n      }\n      roles\n      joinedAt\n    }\n    organisationInvites(organisationId: $id) {\n      id\n      email\n      roles\n      status\n      token\n      expiresAt\n      createdAt\n    }\n  }\n"): (typeof documents)["\n  query OrganisationTeamPage($id: ID!) {\n    organisationTeam(organisationId: $id) {\n      user {\n        id\n        name\n        email\n        avatarUrl\n      }\n      roles\n      joinedAt\n    }\n    organisationInvites(organisationId: $id) {\n      id\n      email\n      roles\n      status\n      token\n      expiresAt\n      createdAt\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) { inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) { id email token status expiresAt roles } }"): (typeof documents)["mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) { inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) { id email token status expiresAt roles } }"];
+export function gql(source: "\n  mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) {\n    inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) {\n      id\n      email\n      token\n      status\n      expiresAt\n      roles\n    }\n  }\n"): (typeof documents)["\n  mutation InviteTeamMember($id: ID!, $email: String!, $roles: [String!]!) {\n    inviteOrganisationMember(organisationId: $id, email: $email, roles: $roles) {\n      id\n      email\n      token\n      status\n      expiresAt\n      roles\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "mutation RevokeTeamInvite($id: ID!) { revokeOrganisationInvite(id: $id) { id status } }"): (typeof documents)["mutation RevokeTeamInvite($id: ID!) { revokeOrganisationInvite(id: $id) { id status } }"];
+export function gql(source: "\n  mutation RevokeTeamInvite($id: ID!) {\n    revokeOrganisationInvite(id: $id) {\n      id\n      status\n    }\n  }\n"): (typeof documents)["\n  mutation RevokeTeamInvite($id: ID!) {\n    revokeOrganisationInvite(id: $id) {\n      id\n      status\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "mutation ResendTeamInvite($id: ID!) { resendOrganisationInvite(id: $id) { id token status expiresAt } }"): (typeof documents)["mutation ResendTeamInvite($id: ID!) { resendOrganisationInvite(id: $id) { id token status expiresAt } }"];
+export function gql(source: "\n  mutation ResendTeamInvite($id: ID!) {\n    resendOrganisationInvite(id: $id) {\n      id\n      token\n      status\n      expiresAt\n    }\n  }\n"): (typeof documents)["\n  mutation ResendTeamInvite($id: ID!) {\n    resendOrganisationInvite(id: $id) {\n      id\n      token\n      status\n      expiresAt\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) { updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) { roles user { id } } }"): (typeof documents)["mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) { updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) { roles user { id } } }"];
+export function gql(source: "\n  mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) {\n    updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) {\n      roles\n      user {\n        id\n      }\n    }\n  }\n"): (typeof documents)["\n  mutation UpdateTeamRoles($orgId: ID!, $userId: ID!, $roles: [String!]!) {\n    updateOrganisationMemberRoles(organisationId: $orgId, userId: $userId, roles: $roles) {\n      roles\n      user {\n        id\n      }\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "mutation RemoveTeamMember($orgId: ID!, $userId: ID!) { removeOrganisationMember(organisationId: $orgId, userId: $userId) }"): (typeof documents)["mutation RemoveTeamMember($orgId: ID!, $userId: ID!) { removeOrganisationMember(organisationId: $orgId, userId: $userId) }"];
+export function gql(source: "\n  mutation RemoveTeamMember($orgId: ID!, $userId: ID!) {\n    removeOrganisationMember(organisationId: $orgId, userId: $userId)\n  }\n"): (typeof documents)["\n  mutation RemoveTeamMember($orgId: ID!, $userId: ID!) {\n    removeOrganisationMember(organisationId: $orgId, userId: $userId)\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "query TeamOrgId { myOrganisations { id } }"): (typeof documents)["query TeamOrgId { myOrganisations { id } }"];
+export function gql(source: "\n    query TeamOrgId {\n      myOrganisations {\n        id\n      }\n    }\n  "): (typeof documents)["\n    query TeamOrgId {\n      myOrganisations {\n        id\n      }\n    }\n  "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

@@ -427,10 +427,8 @@ export type MutationUpdateMarketplaceItemStatusArgs = {
 export type Organisation = {
   __typename?: 'Organisation';
   id: Scalars['ID']['output'];
-  isVerified: Scalars['Boolean']['output'];
   jobListings: Array<JobListing>;
   marketplaceListings: Array<MarketplaceItem>;
-  name: Scalars['String']['output'];
 };
 
 export type Query = {
@@ -953,10 +951,8 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
 export type OrganisationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Organisation'] = ResolversParentTypes['Organisation']> = ResolversObject<{
   __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['Organisation']>, { __typename: 'Organisation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
 
-
   jobListings?: Resolver<Array<ResolversTypes['JobListing']>, { __typename: 'Organisation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
   marketplaceListings?: Resolver<Array<ResolversTypes['MarketplaceItem']>, { __typename: 'Organisation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

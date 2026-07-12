@@ -68,8 +68,6 @@ type User @key(fields: "id") @key(fields: "firebaseUid") @extends {
 
 type Organisation @key(fields: "id") @extends {
   id: ID! @external
-  name: String! @external
-  isVerified: Boolean! @external
   jobListings: [JobListing!]!
   marketplaceListings: [MarketplaceItem!]!
 }
