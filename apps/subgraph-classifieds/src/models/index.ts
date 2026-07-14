@@ -6,6 +6,7 @@ import { JobApplicationSchema, type IJobApplication } from './job-application.mo
 import { SavedClassifiedSchema, type ISavedClassified } from './saved-classified.model';
 import { MessageThreadSchema, type IMessageThread } from './message-thread.model';
 import { MessageSchema, type IMessage } from './message.model';
+import { ClassifiedOrganisationNotificationSchema, type IClassifiedOrganisationNotification } from './organisation-notification.model';
 
 export let MarketplaceItemModel: mongoose.Model<IMarketplaceItem>;
 export let JobListingModel: mongoose.Model<IJobListing>;
@@ -13,6 +14,7 @@ export let JobApplicationModel: mongoose.Model<IJobApplication>;
 export let SavedClassifiedModel: mongoose.Model<ISavedClassified>;
 export let MessageThreadModel: mongoose.Model<IMessageThread>;
 export let MessageModel: mongoose.Model<IMessage>;
+export let ClassifiedOrganisationNotificationModel: mongoose.Model<IClassifiedOrganisationNotification>;
 
 export function setupModels(conn: Connection) {
   MarketplaceItemModel = conn.model<IMarketplaceItem>('MarketplaceItem', MarketplaceItemSchema);
@@ -21,4 +23,5 @@ export function setupModels(conn: Connection) {
   SavedClassifiedModel = conn.model<ISavedClassified>('SavedClassified', SavedClassifiedSchema);
   MessageThreadModel = conn.model<IMessageThread>('MessageThread', MessageThreadSchema);
   MessageModel = conn.model<IMessage>('Message', MessageSchema);
+  ClassifiedOrganisationNotificationModel = conn.model<IClassifiedOrganisationNotification>('OrganisationNotification', ClassifiedOrganisationNotificationSchema);
 }

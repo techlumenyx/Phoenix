@@ -29,6 +29,18 @@ export const ApplicationStatus = {
 } as const;
 
 export type ApplicationStatus = typeof ApplicationStatus[keyof typeof ApplicationStatus];
+export type ClassifiedOrganisationNotification = {
+  __typename?: 'ClassifiedOrganisationNotification';
+  createdAt: Scalars['DateTime']['output'];
+  href?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  readAt?: Maybe<Scalars['DateTime']['output']>;
+  sourceId?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type ConvertedPrice = {
   __typename?: 'ConvertedPrice';
   converted: Scalars['Float']['output'];
@@ -312,6 +324,8 @@ export type Mutation = {
   createJobListing: JobListing;
   createMarketplaceItem: MarketplaceItem;
   deleteMarketplaceItem: Scalars['Boolean']['output'];
+  markAllClassifiedOrganisationNotificationsRead: Scalars['Boolean']['output'];
+  markClassifiedOrganisationNotificationRead: ClassifiedOrganisationNotification;
   markThreadRead: Scalars['Boolean']['output'];
   reportListing: Scalars['Boolean']['output'];
   saveJob: Scalars['Boolean']['output'];
@@ -349,6 +363,16 @@ export type MutationCreateMarketplaceItemArgs = {
 
 
 export type MutationDeleteMarketplaceItemArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationMarkAllClassifiedOrganisationNotificationsReadArgs = {
+  organisationId: Scalars['ID']['input'];
+};
+
+
+export type MutationMarkClassifiedOrganisationNotificationReadArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -433,6 +457,8 @@ export type Organisation = {
 
 export type Query = {
   __typename?: 'Query';
+  classifiedOrganisationNotifications: Array<ClassifiedOrganisationNotification>;
+  classifiedOrganisationUnreadCount: Scalars['Int']['output'];
   communityGives: Array<MarketplaceItem>;
   isJobSaved: Scalars['Boolean']['output'];
   isMarketplaceItemSaved: Scalars['Boolean']['output'];
@@ -447,6 +473,18 @@ export type Query = {
   mySavedMarketplaceItems: Array<MarketplaceItem>;
   organisationJobApplications: Array<JobApplication>;
   unreadMessageCount: Scalars['Int']['output'];
+};
+
+
+export type QueryClassifiedOrganisationNotificationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  organisationId: Scalars['ID']['input'];
+  unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryClassifiedOrganisationUnreadCountArgs = {
+  organisationId: Scalars['ID']['input'];
 };
 
 
@@ -579,11 +617,14 @@ export type UpdateJobListingInput = {
 };
 
 export type UpdateMarketplaceItemInput = {
+  category?: InputMaybe<MarketplaceCategory>;
   condition?: InputMaybe<ItemCondition>;
+  currency?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   isDonation?: InputMaybe<Scalars['Boolean']['input']>;
   price?: InputMaybe<Scalars['Float']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -687,12 +728,13 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
   ApplicationStatus: ApplicationStatus;
+  ClassifiedOrganisationNotification: ResolverTypeWrapper<ClassifiedOrganisationNotification>;
+  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   ConvertedPrice: ResolverTypeWrapper<ConvertedPrice>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
-  String: ResolverTypeWrapper<Scalars['String']['output']>;
   CreateJobListingInput: CreateJobListingInput;
-  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   CreateMarketplaceItemInput: CreateMarketplaceItemInput;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   EducationEntry: ResolverTypeWrapper<EducationEntry>;
@@ -732,12 +774,13 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
+  ClassifiedOrganisationNotification: ClassifiedOrganisationNotification;
+  String: Scalars['String']['output'];
+  ID: Scalars['ID']['output'];
   ConvertedPrice: ConvertedPrice;
   Float: Scalars['Float']['output'];
   Boolean: Scalars['Boolean']['output'];
-  String: Scalars['String']['output'];
   CreateJobListingInput: CreateJobListingInput;
-  ID: Scalars['ID']['output'];
   CreateMarketplaceItemInput: CreateMarketplaceItemInput;
   DateTime: Scalars['DateTime']['output'];
   EducationEntry: EducationEntry;
@@ -761,6 +804,18 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateJobListingInput: UpdateJobListingInput;
   UpdateMarketplaceItemInput: UpdateMarketplaceItemInput;
   User: User;
+}>;
+
+export type ClassifiedOrganisationNotificationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ClassifiedOrganisationNotification'] = ResolversParentTypes['ClassifiedOrganisationNotification']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  href?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  readAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  sourceId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ConvertedPriceResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ConvertedPrice'] = ResolversParentTypes['ConvertedPrice']> = ResolversObject<{
@@ -933,6 +988,8 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   createJobListing?: Resolver<ResolversTypes['JobListing'], ParentType, ContextType, RequireFields<MutationCreateJobListingArgs, 'input'>>;
   createMarketplaceItem?: Resolver<ResolversTypes['MarketplaceItem'], ParentType, ContextType, RequireFields<MutationCreateMarketplaceItemArgs, 'input'>>;
   deleteMarketplaceItem?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteMarketplaceItemArgs, 'id'>>;
+  markAllClassifiedOrganisationNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkAllClassifiedOrganisationNotificationsReadArgs, 'organisationId'>>;
+  markClassifiedOrganisationNotificationRead?: Resolver<ResolversTypes['ClassifiedOrganisationNotification'], ParentType, ContextType, RequireFields<MutationMarkClassifiedOrganisationNotificationReadArgs, 'id'>>;
   markThreadRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkThreadReadArgs, 'threadId'>>;
   reportListing?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationReportListingArgs, 'itemId' | 'reason'>>;
   saveJob?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSaveJobArgs, 'id'>>;
@@ -957,6 +1014,8 @@ export type OrganisationResolvers<ContextType = GraphQLContext, ParentType exten
 }>;
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  classifiedOrganisationNotifications?: Resolver<Array<ResolversTypes['ClassifiedOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryClassifiedOrganisationNotificationsArgs, 'organisationId'>>;
+  classifiedOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryClassifiedOrganisationUnreadCountArgs, 'organisationId'>>;
   communityGives?: Resolver<Array<ResolversTypes['MarketplaceItem']>, ParentType, ContextType, Partial<QueryCommunityGivesArgs>>;
   isJobSaved?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryIsJobSavedArgs, 'id'>>;
   isMarketplaceItemSaved?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryIsMarketplaceItemSavedArgs, 'id'>>;
@@ -991,6 +1050,7 @@ export type UserResolvers<ContextType = GraphQLContext, ParentType extends Resol
 }>;
 
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
+  ClassifiedOrganisationNotification?: ClassifiedOrganisationNotificationResolvers<ContextType>;
   ConvertedPrice?: ConvertedPriceResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   EducationEntry?: EducationEntryResolvers<ContextType>;

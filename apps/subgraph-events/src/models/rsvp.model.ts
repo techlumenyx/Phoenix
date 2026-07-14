@@ -14,6 +14,8 @@ export interface IRsvp {
   eventId:         mongoose.Types.ObjectId;
   userFirebaseUid: string;
   stage:           RsvpStage;
+  source:          'OCCURRENCE' | 'SERIES';
+  seriesRsvpId:    mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +31,8 @@ export const RsvpSchema = new Schema<IRsvp>(
       enum:     RSVP_STAGES,
       required: true,
     },
+    source: { type: String, enum: ['OCCURRENCE', 'SERIES'], default: 'OCCURRENCE' },
+    seriesRsvpId: { type: Schema.Types.ObjectId, default: null },
   },
   { timestamps: true },
 );

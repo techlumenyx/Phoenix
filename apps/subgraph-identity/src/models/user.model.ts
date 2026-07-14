@@ -44,6 +44,17 @@ export interface ISocialLinks {
   website:   string | null;
 }
 
+export const PROFILE_VISIBILITIES = ['PUBLIC', 'MEMBERS_ONLY', 'PRIVATE'] as const;
+export type ProfileVisibility = (typeof PROFILE_VISIBILITIES)[number];
+
+export interface IProfilePrivacySettings {
+  profileVisibility: ProfileVisibility;
+  showAvatar: boolean;
+  showRegion: boolean;
+  showBio: boolean;
+  showSocialLinks: boolean;
+}
+
 export interface IUser {
   _id: mongoose.Types.ObjectId;
   firebaseUid: string;
@@ -52,6 +63,7 @@ export interface IUser {
   avatarUrl:   string | null;
   bio:         string | null;
   socialLinks: ISocialLinks | null;
+  privacySettings: IProfilePrivacySettings;
   isVerified:  boolean;          // platform-level trust badge, set by admins
   region:     string | null;   // display — "London, UK" — set in onboarding step 1
   regionCode: string | null;   // filter  — "GB-LND"    — set in onboarding step 1
@@ -83,6 +95,17 @@ const SocialLinksSchema = new Schema<ISocialLinks>(
   { _id: false },
 );
 
+const ProfilePrivacySettingsSchema = new Schema<IProfilePrivacySettings>(
+  {
+    profileVisibility: { type: String, enum: PROFILE_VISIBILITIES, default: 'MEMBERS_ONLY' },
+    showAvatar: { type: Boolean, default: true },
+    showRegion: { type: Boolean, default: true },
+    showBio: { type: Boolean, default: true },
+    showSocialLinks: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
 export const UserSchema = new Schema<IUser>(
   {
     firebaseUid:         { type: String,  required: true, unique: true },
@@ -91,6 +114,7 @@ export const UserSchema = new Schema<IUser>(
     avatarUrl:           { type: String,  default: null },
     bio:                 { type: String,  default: null },
     socialLinks:         { type: SocialLinksSchema, default: null },
+    privacySettings:     { type: ProfilePrivacySettingsSchema, default: () => ({}) },
     isVerified:          { type: Boolean, default: false },
     region:              { type: String,  default: null },
     regionCode:          { type: String,  default: null },

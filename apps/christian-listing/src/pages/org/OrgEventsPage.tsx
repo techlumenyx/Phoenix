@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
-import { MY_ORG_EVENTS } from '../../graphql/mutations';
+import { useMutation, useQuery } from '@apollo/client';
+import { useNavigate } from 'react-router-dom';
+import { CANCEL_EVENT, MY_ORG_EVENTS, UPDATE_MANAGED_EVENT } from '../../graphql/mutations';
+import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
+import { useToast } from '../../components/ui/ToastProvider';
 
 interface EventLocation { type: string; city?: string | null; country?: string | null; }
 interface OrgEvent {
   id: string;
   title: string;
+  description: string;
   category: string;
   date: string;
   location: EventLocation;
@@ -13,6 +17,10 @@ interface OrgEvent {
   capacityLimit: number | null;
   status: string;
   isRecurring: boolean;
+  seriesId?: string | null;
+  occurrenceNumber?: number | null;
+  isSeriesException: boolean;
+  series?: { recurrence: { frequency: 'WEEKLY' | 'MONTHLY'; interval: number; timezone: string } } | null;
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -46,13 +54,54 @@ function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
 }
 
 export default function OrgEventsPage() {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Active Events');
   const tabs = ['Active Events', 'Draft Events', 'Recurring Events'];
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
 
-  const { data, loading, error } = useQuery(MY_ORG_EVENTS);
+  const { data, loading, error, refetch } = useQuery(MY_ORG_EVENTS);
+  const [cancelEvent, { loading: cancelling }] = useMutation(CANCEL_EVENT);
+  const [updateEvent, { loading: updating }] = useMutation(UPDATE_MANAGED_EVENT);
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<{ event: OrgEvent; scope: 'THIS_OCCURRENCE' | 'THIS_AND_FUTURE' | 'ENTIRE_SERIES' } | null>(null);
+  const [editTarget, setEditTarget] = useState<{ event: OrgEvent; scope: 'THIS_OCCURRENCE' | 'THIS_AND_FUTURE' | 'ENTIRE_SERIES' } | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  function openEdit(event: OrgEvent) {
+    setEditTitle(event.title);
+    setEditDescription(event.description);
+    setEditTarget({ event, scope: 'THIS_OCCURRENCE' });
+    setMenuId(null);
+  }
+
+  async function saveEdit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editTarget || !editTitle.trim() || !editDescription.trim()) return;
+    try {
+      await updateEvent({ variables: { id: editTarget.event.id, scope: editTarget.scope, input: { title: editTitle.trim(), description: editDescription.trim() } } });
+      await refetch();
+      showToast('Event details updated.', 'success');
+      setEditTarget(null);
+    } catch (updateError) {
+      showToast(updateError instanceof Error ? updateError.message : 'Event could not be updated.', 'error');
+    }
+  }
+
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    try {
+      await cancelEvent({ variables: { id: cancelTarget.event.id, scope: cancelTarget.scope } });
+      await refetch();
+      showToast('Event schedule updated.', 'success');
+      setCancelTarget(null);
+    } catch (cancelError) {
+      showToast(cancelError instanceof Error ? cancelError.message : 'Event could not be cancelled.', 'error');
+    }
+  }
 
   const allEvents: OrgEvent[] = (data?.myOrganisations ?? []).flatMap(
     (org: { events: { edges: OrgEvent[] } }) => org.events?.edges ?? [],
@@ -92,7 +141,7 @@ export default function OrgEventsPage() {
   const startRow = sorted.length === 0 ? 0 : page * PAGE_SIZE + 1;
   const endRow = Math.min((page + 1) * PAGE_SIZE, sorted.length);
 
-  function ColHeader({ label, sortable, sk }: { label: string; sortable?: SortKey; sk?: SortKey }) {
+  function ColHeader({ label, sortable }: { label: string; sortable?: SortKey }) {
     if (!sortable) return <div className="text-[11px] font-bold text-gray-500 tracking-wider uppercase">{label}</div>;
     return (
       <button
@@ -172,17 +221,17 @@ export default function OrgEventsPage() {
                   </div>
                 </div>
                 <div className="text-[13px] text-gray-500">{CATEGORY_LABEL[item.category] ?? item.category}</div>
-                <div className="text-[13px] text-gray-500">{item.isRecurring ? 'Recurring' : 'One-time'}</div>
+                <div className="text-[13px] text-gray-500">{item.isRecurring ? `${item.series?.recurrence.frequency === 'MONTHLY' ? 'Monthly' : 'Weekly'}${item.series?.recurrence.interval && item.series.recurrence.interval > 1 ? ` / ${item.series.recurrence.interval}` : ''}` : 'One-time'}</div>
                 <div className="text-[13px] text-gray-500">{formatDate(item.date)}</div>
                 <div className="text-[13px] text-gray-500">{item.capacityLimit ? `${item.capacityLimit} PAX` : '—'}</div>
                 <div className="text-[13px] text-gray-500">
                   <strong className="text-[#1B1B1B] font-bold">{formatCount(item.rsvpCount)}</strong> RSVPs
                 </div>
-                <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100">
+                <div className="relative"><button onClick={() => setMenuId((current) => current === item.id ? null : item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                   </svg>
-                </button>
+                </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => navigate(`/events/${item.id}`)} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View occurrence</button><button onClick={() => openEdit(item)} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit event or series</button><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_OCCURRENCE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this occurrence</button>{item.isRecurring && <><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_AND_FUTURE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this and future</button><button onClick={() => { setCancelTarget({ event: item, scope: 'ENTIRE_SERIES' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-700 hover:bg-red-50">Cancel entire series</button></>}</div>}</div>
               </div>
             ))}
           </div>
@@ -224,6 +273,8 @@ export default function OrgEventsPage() {
           </div>
         )}
       </div>
+      {editTarget && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => event.target === event.currentTarget && !updating && setEditTarget(null)}><form onSubmit={saveEdit} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><h2 className="font-serif text-2xl font-bold">Edit event</h2><p className="mt-2 text-xs leading-5 text-gray-500">Individual edits become occurrence exceptions. Series edits preserve existing individual exceptions.</p><label className="mt-5 block text-sm font-semibold">Apply changes to<select value={editTarget.scope} onChange={(event) => setEditTarget((current) => current ? { ...current, scope: event.target.value as typeof current.scope } : current)} disabled={!editTarget.event.isRecurring} className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm disabled:bg-gray-100"><option value="THIS_OCCURRENCE">This occurrence</option>{editTarget.event.isRecurring && <><option value="THIS_AND_FUTURE">This and future occurrences</option><option value="ENTIRE_SERIES">Entire series (future dates)</option></>}</select></label><label className="mt-4 block text-sm font-semibold">Title<input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className="mt-2 w-full rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none" /></label><label className="mt-4 block text-sm font-semibold">Description<textarea rows={5} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} className="mt-2 w-full resize-none rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none" /></label><div className="mt-6 flex justify-end gap-3"><button type="button" disabled={updating} onClick={() => setEditTarget(null)} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="submit" disabled={updating || !editTitle.trim() || !editDescription.trim()} className="rounded-lg bg-[#302D2E] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{updating ? 'Saving…' : 'Save changes'}</button></div></form></div>}
+      <ConfirmationDialog open={Boolean(cancelTarget)} title={cancelTarget?.scope === 'THIS_OCCURRENCE' ? 'Cancel this occurrence?' : cancelTarget?.scope === 'THIS_AND_FUTURE' ? 'Cancel this and future occurrences?' : 'Cancel the entire series?'} description="Cancelled occurrences remain in the event history and existing RSVP records are retained." confirmLabel="Cancel event" tone="danger" busy={cancelling} onClose={() => setCancelTarget(null)} onConfirm={confirmCancel} />
     </div>
   );
 }

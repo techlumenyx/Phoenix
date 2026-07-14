@@ -39,6 +39,18 @@ export type FollowRelationship = {
   organisation: Organisation;
 };
 
+export type IdentityOrganisationNotification = {
+  __typename?: 'IdentityOrganisationNotification';
+  createdAt: Scalars['DateTime']['output'];
+  href?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  readAt?: Maybe<Scalars['DateTime']['output']>;
+  sourceId?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   acceptOrganisationInvite: Organisation;
@@ -46,9 +58,12 @@ export type Mutation = {
   createUser: User;
   followOrganisation: Organisation;
   inviteOrganisationMember: OrganisationInvite;
+  markAllIdentityOrganisationNotificationsRead: Scalars['Boolean']['output'];
+  markIdentityOrganisationNotificationRead: IdentityOrganisationNotification;
   removeOrganisationMember: Scalars['Boolean']['output'];
   resendOrganisationInvite: OrganisationInvite;
   revokeOrganisationInvite: OrganisationInvite;
+  setOrganisationActive: Organisation;
   signUp: SignUpPayload;
   submitVerification: VerificationRequest;
   unfollowOrganisation: Organisation;
@@ -85,6 +100,16 @@ export type MutationInviteOrganisationMemberArgs = {
 };
 
 
+export type MutationMarkAllIdentityOrganisationNotificationsReadArgs = {
+  organisationId: Scalars['ID']['input'];
+};
+
+
+export type MutationMarkIdentityOrganisationNotificationReadArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRemoveOrganisationMemberArgs = {
   organisationId: Scalars['ID']['input'];
   userId: Scalars['ID']['input'];
@@ -98,6 +123,12 @@ export type MutationResendOrganisationInviteArgs = {
 
 export type MutationRevokeOrganisationInviteArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationSetOrganisationActiveArgs = {
+  active: Scalars['Boolean']['input'];
+  organisationId: Scalars['ID']['input'];
 };
 
 
@@ -136,13 +167,17 @@ export type MutationUpdateProfileArgs = {
 
 export type Organisation = {
   __typename?: 'Organisation';
+  contactEmail?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  deactivatedAt?: Maybe<Scalars['DateTime']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   followerCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
   isVerified: Scalars['Boolean']['output'];
   logoUrl?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  phoneNumber?: Maybe<Scalars['String']['output']>;
   region?: Maybe<Scalars['String']['output']>;
   socialLinks?: Maybe<SocialLinks>;
   updatedAt: Scalars['DateTime']['output'];
@@ -176,8 +211,34 @@ export type OrganisationTeamMember = {
   user: User;
 };
 
+export type ProfilePrivacySettings = {
+  __typename?: 'ProfilePrivacySettings';
+  profileVisibility: ProfileVisibility;
+  showAvatar: Scalars['Boolean']['output'];
+  showBio: Scalars['Boolean']['output'];
+  showRegion: Scalars['Boolean']['output'];
+  showSocialLinks: Scalars['Boolean']['output'];
+};
+
+export type ProfilePrivacySettingsInput = {
+  profileVisibility?: InputMaybe<ProfileVisibility>;
+  showAvatar?: InputMaybe<Scalars['Boolean']['input']>;
+  showBio?: InputMaybe<Scalars['Boolean']['input']>;
+  showRegion?: InputMaybe<Scalars['Boolean']['input']>;
+  showSocialLinks?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export const ProfileVisibility = {
+  MembersOnly: 'MEMBERS_ONLY',
+  Private: 'PRIVATE',
+  Public: 'PUBLIC'
+} as const;
+
+export type ProfileVisibility = typeof ProfileVisibility[keyof typeof ProfileVisibility];
 export type Query = {
   __typename?: 'Query';
+  identityOrganisationNotifications: Array<IdentityOrganisationNotification>;
+  identityOrganisationUnreadCount: Scalars['Int']['output'];
   isFollowingOrganisation: Scalars['Boolean']['output'];
   me?: Maybe<User>;
   myFollowingOrganisations: Array<Organisation>;
@@ -188,6 +249,18 @@ export type Query = {
   organisationTeam: Array<OrganisationTeamMember>;
   organisations: OrganisationConnection;
   user?: Maybe<User>;
+};
+
+
+export type QueryIdentityOrganisationNotificationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  organisationId: Scalars['ID']['input'];
+  unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryIdentityOrganisationUnreadCountArgs = {
+  organisationId: Scalars['ID']['input'];
 };
 
 
@@ -257,9 +330,11 @@ export type SocialLinksInput = {
 };
 
 export type UpdateOrganisationInput = {
+  contactEmail?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   logoUrl?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  phoneNumber?: InputMaybe<Scalars['String']['input']>;
   region?: InputMaybe<Scalars['String']['input']>;
   socialLinks?: InputMaybe<SocialLinksInput>;
   websiteUrl?: InputMaybe<Scalars['String']['input']>;
@@ -271,6 +346,7 @@ export type UpdateProfileInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   onboardingCompleted?: InputMaybe<Scalars['Boolean']['input']>;
   preferences?: InputMaybe<Array<Scalars['String']['input']>>;
+  privacySettings?: InputMaybe<ProfilePrivacySettingsInput>;
   region?: InputMaybe<Scalars['String']['input']>;
   socialLinks?: InputMaybe<SocialLinksInput>;
 };
@@ -288,6 +364,7 @@ export type User = {
   onboardingCompleted: Scalars['Boolean']['output'];
   orgId?: Maybe<Scalars['ID']['output']>;
   preferences: Array<Scalars['String']['output']>;
+  privacySettings: ProfilePrivacySettings;
   region: Scalars['String']['output'];
   roles: Array<Scalars['String']['output']>;
   socialLinks?: Maybe<SocialLinks>;
@@ -416,6 +493,7 @@ export type ResolversTypes = ResolversObject<{
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   FollowRelationship: ResolverTypeWrapper<FollowRelationship>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  IdentityOrganisationNotification: ResolverTypeWrapper<IdentityOrganisationNotification>;
   Mutation: ResolverTypeWrapper<{}>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   Organisation: ResolverTypeWrapper<Organisation>;
@@ -423,6 +501,9 @@ export type ResolversTypes = ResolversObject<{
   OrganisationConnection: ResolverTypeWrapper<OrganisationConnection>;
   OrganisationInvite: ResolverTypeWrapper<OrganisationInvite>;
   OrganisationTeamMember: ResolverTypeWrapper<OrganisationTeamMember>;
+  ProfilePrivacySettings: ResolverTypeWrapper<ProfilePrivacySettings>;
+  ProfilePrivacySettingsInput: ProfilePrivacySettingsInput;
+  ProfileVisibility: ProfileVisibility;
   Query: ResolverTypeWrapper<{}>;
   SignUpInput: SignUpInput;
   SignUpPayload: ResolverTypeWrapper<SignUpPayload>;
@@ -445,6 +526,7 @@ export type ResolversParentTypes = ResolversObject<{
   DateTime: Scalars['DateTime']['output'];
   FollowRelationship: FollowRelationship;
   ID: Scalars['ID']['output'];
+  IdentityOrganisationNotification: IdentityOrganisationNotification;
   Mutation: {};
   Boolean: Scalars['Boolean']['output'];
   Organisation: Organisation;
@@ -452,6 +534,8 @@ export type ResolversParentTypes = ResolversObject<{
   OrganisationConnection: OrganisationConnection;
   OrganisationInvite: OrganisationInvite;
   OrganisationTeamMember: OrganisationTeamMember;
+  ProfilePrivacySettings: ProfilePrivacySettings;
+  ProfilePrivacySettingsInput: ProfilePrivacySettingsInput;
   Query: {};
   SignUpInput: SignUpInput;
   SignUpPayload: SignUpPayload;
@@ -477,15 +561,30 @@ export type FollowRelationshipResolvers<ContextType = GraphQLContext, ParentType
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type IdentityOrganisationNotificationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['IdentityOrganisationNotification'] = ResolversParentTypes['IdentityOrganisationNotification']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  href?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  readAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  sourceId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
   acceptOrganisationInvite?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationAcceptOrganisationInviteArgs, 'token'>>;
   createOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationCreateOrganisationArgs, 'input'>>;
   createUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'input'>>;
   followOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationFollowOrganisationArgs, 'organisationId'>>;
   inviteOrganisationMember?: Resolver<ResolversTypes['OrganisationInvite'], ParentType, ContextType, RequireFields<MutationInviteOrganisationMemberArgs, 'email' | 'organisationId' | 'roles'>>;
+  markAllIdentityOrganisationNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkAllIdentityOrganisationNotificationsReadArgs, 'organisationId'>>;
+  markIdentityOrganisationNotificationRead?: Resolver<ResolversTypes['IdentityOrganisationNotification'], ParentType, ContextType, RequireFields<MutationMarkIdentityOrganisationNotificationReadArgs, 'id'>>;
   removeOrganisationMember?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRemoveOrganisationMemberArgs, 'organisationId' | 'userId'>>;
   resendOrganisationInvite?: Resolver<ResolversTypes['OrganisationInvite'], ParentType, ContextType, RequireFields<MutationResendOrganisationInviteArgs, 'id'>>;
   revokeOrganisationInvite?: Resolver<ResolversTypes['OrganisationInvite'], ParentType, ContextType, RequireFields<MutationRevokeOrganisationInviteArgs, 'id'>>;
+  setOrganisationActive?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationSetOrganisationActiveArgs, 'active' | 'organisationId'>>;
   signUp?: Resolver<ResolversTypes['SignUpPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
   submitVerification?: Resolver<ResolversTypes['VerificationRequest'], ParentType, ContextType, RequireFields<MutationSubmitVerificationArgs, 'documentUrls' | 'organisationId'>>;
   unfollowOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationUnfollowOrganisationArgs, 'organisationId'>>;
@@ -496,13 +595,17 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
 
 export type OrganisationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Organisation'] = ResolversParentTypes['Organisation']> = ResolversObject<{
   __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['Organisation']>, { __typename: 'Organisation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  contactEmail?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  deactivatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   followerCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isVerified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   logoUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  phoneNumber?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   region?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   socialLinks?: Resolver<Maybe<ResolversTypes['SocialLinks']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
@@ -537,7 +640,18 @@ export type OrganisationTeamMemberResolvers<ContextType = GraphQLContext, Parent
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ProfilePrivacySettingsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ProfilePrivacySettings'] = ResolversParentTypes['ProfilePrivacySettings']> = ResolversObject<{
+  profileVisibility?: Resolver<ResolversTypes['ProfileVisibility'], ParentType, ContextType>;
+  showAvatar?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  showBio?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  showRegion?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  showSocialLinks?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  identityOrganisationNotifications?: Resolver<Array<ResolversTypes['IdentityOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryIdentityOrganisationNotificationsArgs, 'organisationId'>>;
+  identityOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryIdentityOrganisationUnreadCountArgs, 'organisationId'>>;
   isFollowingOrganisation?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryIsFollowingOrganisationArgs, 'organisationId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   myFollowingOrganisations?: Resolver<Array<ResolversTypes['Organisation']>, ParentType, ContextType>;
@@ -577,6 +691,7 @@ export type UserResolvers<ContextType = GraphQLContext, ParentType extends Resol
   onboardingCompleted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   orgId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   preferences?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  privacySettings?: Resolver<ResolversTypes['ProfilePrivacySettings'], ParentType, ContextType>;
   region?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   roles?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   socialLinks?: Resolver<Maybe<ResolversTypes['SocialLinks']>, ParentType, ContextType>;
@@ -606,11 +721,13 @@ export type VerificationRequestResolvers<ContextType = GraphQLContext, ParentTyp
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   FollowRelationship?: FollowRelationshipResolvers<ContextType>;
+  IdentityOrganisationNotification?: IdentityOrganisationNotificationResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Organisation?: OrganisationResolvers<ContextType>;
   OrganisationConnection?: OrganisationConnectionResolvers<ContextType>;
   OrganisationInvite?: OrganisationInviteResolvers<ContextType>;
   OrganisationTeamMember?: OrganisationTeamMemberResolvers<ContextType>;
+  ProfilePrivacySettings?: ProfilePrivacySettingsResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   SignUpPayload?: SignUpPayloadResolvers<ContextType>;
   SocialLinks?: SocialLinksResolvers<ContextType>;

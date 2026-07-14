@@ -19,11 +19,83 @@ export const DISCOVERY_QUERY = gql`
   }
 `;
 
+export const GLOBAL_SEARCH_QUERY = gql`
+  query GlobalSearch(
+    $region: String
+    $search: String
+    $limit: Int
+    $eventAfter: String
+    $eventCategory: EventCategory
+    $eventDateFrom: DateTime
+    $jobAfter: String
+    $jobRoleType: RoleType
+    $jobWorkLocation: WorkLocation
+    $listingAfter: String
+    $listingCategory: MarketplaceCategory
+    $listingCondition: ItemCondition
+    $organisationAfter: String
+  ) {
+    events(
+      region: $region
+      search: $search
+      status: PUBLISHED
+      category: $eventCategory
+      dateFrom: $eventDateFrom
+      sort: DATE_ASC
+      limit: $limit
+      after: $eventAfter
+    ) {
+      edges { id title description category date region rsvpCount imageUrls location { city country type } }
+      hasNextPage
+      endCursor
+    }
+    jobListings(
+      region: $region
+      search: $search
+      status: ACTIVE
+      roleType: $jobRoleType
+      workLocation: $jobWorkLocation
+      sort: NEWEST
+      limit: $limit
+      after: $jobAfter
+    ) {
+      edges { id title roleType workLocation region skillsRequired salaryRange { min max currency } organisation { id name isVerified } }
+      hasNextPage
+      endCursor
+    }
+    marketplaceItems(
+      region: $region
+      search: $search
+      status: AVAILABLE
+      category: $listingCategory
+      condition: $listingCondition
+      sort: NEWEST
+      limit: $limit
+      after: $listingAfter
+    ) {
+      edges { id title description price currency condition region area imageUrls isDonation seller { id isVerified } }
+      hasNextPage
+      endCursor
+    }
+    organisations(region: $region, search: $search, limit: $limit, after: $organisationAfter) {
+      edges { id name description region logoUrl isVerified }
+      hasNextPage
+      endCursor
+    }
+  }
+`;
+
+export interface DiscoveryConnection<T> {
+  edges: T[];
+  hasNextPage?: boolean;
+  endCursor?: string | null;
+}
+
 export interface DiscoveryData {
-  events: { edges: Array<{ id: string; title: string; description: string; category: string; date: string; region: string; rsvpCount: number; imageUrls: string[]; location: { city?: string | null; country?: string | null; type: string } }> };
-  jobListings: { edges: Array<{ id: string; title: string; roleType: string; workLocation: string; region: string; skillsRequired: string[]; salaryRange?: { min: number; max: number; currency: string } | null; organisation: { id: string; name: string; isVerified: boolean } }> };
-  marketplaceItems: { edges: Array<{ id: string; title: string; description: string; price: number; currency: string; condition: string; region: string; area?: string | null; imageUrls: string[]; isDonation: boolean; seller: { id: string; isVerified: boolean } }> };
-  organisations: { edges: Array<{ id: string; name: string; description?: string | null; region?: string | null; logoUrl?: string | null; isVerified: boolean }> };
+  events: DiscoveryConnection<{ id: string; title: string; description: string; category: string; date: string; region: string; rsvpCount: number; imageUrls: string[]; location: { city?: string | null; country?: string | null; type: string } }>;
+  jobListings: DiscoveryConnection<{ id: string; title: string; roleType: string; workLocation: string; region: string; skillsRequired: string[]; salaryRange?: { min: number; max: number; currency: string } | null; organisation: { id: string; name: string; isVerified: boolean } }>;
+  marketplaceItems: DiscoveryConnection<{ id: string; title: string; description: string; price: number; currency: string; condition: string; region: string; area?: string | null; imageUrls: string[]; isDonation: boolean; seller: { id: string; isVerified: boolean } }>;
+  organisations: DiscoveryConnection<{ id: string; name: string; description?: string | null; region?: string | null; logoUrl?: string | null; isVerified: boolean }>;
 }
 
 const REGION_KEY = 'cl-preferred-region';

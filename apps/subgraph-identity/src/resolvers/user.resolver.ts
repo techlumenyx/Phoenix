@@ -6,21 +6,40 @@ import type { GraphQLContext } from '../context';
 
 function UserModel() { return _UserModel; }
 
-function mapUser(doc: HydratedDocument<IUser>) {
+const DEFAULT_PRIVACY = {
+  profileVisibility: 'MEMBERS_ONLY' as const,
+  showAvatar: true,
+  showRegion: true,
+  showBio: true,
+  showSocialLinks: false,
+};
+
+function mapUser(doc: HydratedDocument<IUser>, ctx?: GraphQLContext, enforcePrivacy = false) {
+  const privacy = {
+    profileVisibility: doc.privacySettings?.profileVisibility ?? DEFAULT_PRIVACY.profileVisibility,
+    showAvatar: doc.privacySettings?.showAvatar ?? DEFAULT_PRIVACY.showAvatar,
+    showRegion: doc.privacySettings?.showRegion ?? DEFAULT_PRIVACY.showRegion,
+    showBio: doc.privacySettings?.showBio ?? DEFAULT_PRIVACY.showBio,
+    showSocialLinks: doc.privacySettings?.showSocialLinks ?? DEFAULT_PRIVACY.showSocialLinks,
+  };
+  const isSelf = Boolean(ctx?.auth.firebaseUid && ctx.auth.firebaseUid === doc.firebaseUid);
+  const canViewExtended = !enforcePrivacy || isSelf || privacy.profileVisibility === 'PUBLIC' ||
+    (privacy.profileVisibility === 'MEMBERS_ONLY' && Boolean(ctx?.auth.isAuthenticated));
   return {
     id: doc._id.toString(),
     firebaseUid: doc.firebaseUid,
     email: doc.email,
     name: doc.name,
-    avatarUrl: doc.avatarUrl ?? null,
-    bio: doc.bio ?? null,
-    socialLinks: doc.socialLinks ?? null,
+    avatarUrl: canViewExtended && privacy.showAvatar ? doc.avatarUrl ?? null : null,
+    bio: canViewExtended && privacy.showBio ? doc.bio ?? null : null,
+    socialLinks: canViewExtended && privacy.showSocialLinks ? doc.socialLinks ?? null : null,
+    privacySettings: privacy,
     isVerified: doc.isVerified ?? false,
     onboardingCompleted: doc.onboardingCompleted ?? false,
     preferences: doc.preferences ?? [],
     roles: doc.roles ?? [],
     orgId: doc.orgId?.toString() ?? null,
-    region: doc.region ?? '',
+    region: canViewExtended && privacy.showRegion ? doc.region ?? '' : '',
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -46,9 +65,9 @@ export const userResolvers = {
       return mapUser(created);
     },
 
-    user: async (_: unknown, { id }: { id: string }) => {
+    user: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       const doc = await UserModel().findById(id);
-      return doc ? mapUser(doc) : null;
+      return doc ? mapUser(doc, ctx, true) : null;
     },
   },
 
@@ -72,9 +91,9 @@ export const userResolvers = {
   },
 
   User: {
-    __resolveReference: async ({ id, firebaseUid }: { id?: string; firebaseUid?: string }) => {
+    __resolveReference: async ({ id, firebaseUid }: { id?: string; firebaseUid?: string }, ctx: GraphQLContext) => {
       const doc = firebaseUid ? await UserModel().findOne({ firebaseUid }) : await UserModel().findById(id);
-      return doc ? mapUser(doc) : null;
+      return doc ? mapUser(doc, ctx, true) : null;
     },
   },
 };

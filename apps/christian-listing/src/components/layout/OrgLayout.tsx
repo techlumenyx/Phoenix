@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MY_ORGANISATIONS } from '../../graphql/mutations';
 import { useAuthStore } from '../../store/authStore';
@@ -29,9 +29,12 @@ const NAV_ITEMS = [
   { label: 'Listings Manager', icon: ListBulletIcon, path: '/org/listings' },
   { label: 'Hiring & Jobs',    icon: BriefcaseIcon,  path: '/org/jobs' },
   { label: 'Messages',         icon: ChatBubbleIcon, path: '/org/messages' },
+  { label: 'Notifications',    icon: ChatBubbleIcon, path: '/org/notifications' },
   { label: 'Team & Roles',     icon: ChatBubbleIcon, path: '/org/team' },
   { label: 'Settings',         icon: CogIcon,        path: '/org/settings' },
 ] as const;
+
+const ORG_NOTIFICATION_COUNTS = gql`query OrganisationSidebarNotificationCounts($organisationId: ID!) { identityOrganisationUnreadCount(organisationId: $organisationId) eventOrganisationUnreadCount(organisationId: $organisationId) classifiedOrganisationUnreadCount(organisationId: $organisationId) }`;
 
 function OrgUserMenu() {
   const [open, setOpen] = useState(false);
@@ -131,6 +134,9 @@ export default function OrgLayout() {
 
   const { data: orgData } = useQuery<{ myOrganisations: { id: string; name: string | null }[] }>(MY_ORGANISATIONS);
   const orgName = orgData?.myOrganisations?.[0]?.name ?? 'Organisation';
+  const organisationId = orgData?.myOrganisations?.[0]?.id;
+  const { data: notificationData } = useQuery<{ identityOrganisationUnreadCount: number; eventOrganisationUnreadCount: number; classifiedOrganisationUnreadCount: number }>(ORG_NOTIFICATION_COUNTS, { variables: { organisationId }, skip: !organisationId, pollInterval: 30000 });
+  const unreadNotifications = (notificationData?.identityOrganisationUnreadCount ?? 0) + (notificationData?.eventOrganisationUnreadCount ?? 0) + (notificationData?.classifiedOrganisationUnreadCount ?? 0);
   const orgInitials = orgName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
@@ -191,6 +197,7 @@ export default function OrgLayout() {
                     {label}
                   </span>
                 )}
+                {label === 'Notifications' && unreadNotifications > 0 && <span className="ml-auto rounded-full bg-[#302D2E] px-2 py-0.5 text-[10px] font-bold text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}
               </button>
             );
           })}

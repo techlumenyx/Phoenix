@@ -7,9 +7,9 @@ import { usePreferredRegion } from '../lib/discovery';
 import { useAuthStore } from '../store/authStore';
 
 const EVENTS_HOME = gql`
-  query EventsHome($region: String, $search: String) {
-    trending: events(region: $region, search: $search, status: PUBLISHED, sort: POPULAR, limit: 6) { edges { ...HomeEvent } }
-    upcoming: events(region: $region, search: $search, status: PUBLISHED, sort: DATE_ASC, limit: 20) { edges { ...HomeEvent } }
+  query EventsHome($region: String, $search: String, $dateFrom: DateTime) {
+    trending: events(region: $region, search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: POPULAR, limit: 6, collapseSeries: true) { edges { ...HomeEvent } }
+    upcoming: events(region: $region, search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: DATE_ASC, limit: 20, collapseSeries: true) { edges { ...HomeEvent } }
   }
   fragment HomeEvent on Event {
     id title description category date region rsvpCount imageUrls isPromoted
@@ -30,7 +30,7 @@ export default function EventsPage() {
   const preferences = useAuthStore((state) => state.dbUser?.preferences ?? []);
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
-  const { data, loading, error } = useQuery<HomeData>(EVENTS_HOME, { variables: { region: region || null, search: search || null }, fetchPolicy: 'cache-and-network' });
+  const { data, loading, error } = useQuery<HomeData>(EVENTS_HOME, { variables: { region: region || null, search: search || null, dateFrom: new Date().toISOString() }, fetchPolicy: 'cache-and-network' });
   const upcoming = data?.upcoming.edges ?? [];
   const submit = (event: FormEvent) => { event.preventDefault(); setSearch(input.trim()); };
   const interestEvents = useMemo(() => {

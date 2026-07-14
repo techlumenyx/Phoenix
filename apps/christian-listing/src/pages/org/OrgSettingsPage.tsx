@@ -1,269 +1,333 @@
-import React, { useState, useEffect, FormEvent } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
-import { MY_ORGANISATIONS, UPDATE_ORGANISATION } from '../../graphql/mutations';
+import { FormEvent, useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@apollo/client';
+import { Link } from 'react-router-dom';
+import {
+  MY_ORGANISATIONS,
+  SET_ORGANISATION_ACTIVE,
+  UPDATE_ORGANISATION,
+} from '../../graphql/mutations';
+import { useAuthStore } from '../../store/authStore';
+import { useToast } from '../../components/ui/ToastProvider';
+import DirectoryState from '../../components/ui/DirectoryState';
+import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
+
+interface SocialLinks {
+  whatsapp?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  twitter?: string | null;
+  website?: string | null;
+}
 
 interface OrgData {
   id: string;
   name: string;
-  description: string | null;
-  region: string | null;
-  websiteUrl: string | null;
-  socialLinks: {
-    whatsapp?: string | null;
-    instagram?: string | null;
-    facebook?: string | null;
-    twitter?: string | null;
-    website?: string | null;
-  } | null;
+  description?: string | null;
+  region?: string | null;
+  websiteUrl?: string | null;
+  logoUrl?: string | null;
+  contactEmail?: string | null;
+  phoneNumber?: string | null;
+  socialLinks?: SocialLinks | null;
+  isActive: boolean;
+  deactivatedAt?: string | null;
 }
 
+const fieldClass =
+  'mt-2 w-full rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none focus:ring-2 focus:ring-[#C9A96E]/40';
+
 export default function OrgSettingsPage() {
-  const { data } = useQuery(MY_ORGANISATIONS);
+  const { showToast } = useToast();
+  const signedInEmail = useAuthStore((state) => state.user?.email);
+  const { data, loading, error, refetch } = useQuery(MY_ORGANISATIONS);
   const org: OrgData | null = data?.myOrganisations?.[0] ?? null;
-
-  const [name, setName]           = useState('');
-  const [region, setRegion]       = useState('');
-  const [description, setDesc]    = useState('');
-  const [websiteUrl, setWebsite]  = useState('');
-  const [saving, setSaving]       = useState(false);
-  const [saved, setSaved]         = useState(false);
-  const [saveError, setSaveError] = useState('');
-
-  useEffect(() => {
-    if (org) {
-      setName(org.name ?? '');
-      setRegion(org.region ?? '');
-      setDesc(org.description ?? '');
-      setWebsite(org.websiteUrl ?? '');
-    }
-  }, [org]);
-
-  const [updateOrg] = useMutation(UPDATE_ORGANISATION, {
+  const [updateOrg, { loading: saving }] = useMutation(UPDATE_ORGANISATION, {
     refetchQueries: [{ query: MY_ORGANISATIONS }],
   });
+  const [setOrganisationActive, { loading: changingStatus }] = useMutation(
+    SET_ORGANISATION_ACTIVE,
+    { refetchQueries: [{ query: MY_ORGANISATIONS }] },
+  );
+  const [showLifecycleDialog, setShowLifecycleDialog] = useState(false);
+  const [logoPreviewFailed, setLogoPreviewFailed] = useState(false);
+  const [name, setName] = useState('');
+  const [region, setRegion] = useState('');
+  const [description, setDescription] = useState('');
+  const [websiteUrl, setWebsite] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [social, setSocial] = useState<Record<keyof SocialLinks, string>>({
+    whatsapp: '',
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    website: '',
+  });
 
-  async function handleUpdateProfile(e: FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
     if (!org) return;
-    setSaveError(''); setSaving(true); setSaved(false);
+    setName(org.name ?? '');
+    setRegion(org.region ?? '');
+    setDescription(org.description ?? '');
+    setWebsite(org.websiteUrl ?? '');
+    setLogoUrl(org.logoUrl ?? '');
+    setContactEmail(org.contactEmail ?? '');
+    setPhoneNumber(org.phoneNumber ?? '');
+    setSocial({
+      whatsapp: org.socialLinks?.whatsapp ?? '',
+      instagram: org.socialLinks?.instagram ?? '',
+      facebook: org.socialLinks?.facebook ?? '',
+      twitter: org.socialLinks?.twitter ?? '',
+      website: org.socialLinks?.website ?? '',
+    });
+    setLogoPreviewFailed(false);
+  }, [org]);
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (!org || !name.trim()) {
+      showToast('Organisation name is required.', 'error');
+      return;
+    }
     try {
       await updateOrg({
         variables: {
           id: org.id,
           input: {
-            name:        name.trim() || undefined,
-            description: description.trim() || undefined,
-            region:      region.trim() || undefined,
-            websiteUrl:  websiteUrl.trim() || undefined,
+            name: name.trim(),
+            region: region.trim(),
+            description: description.trim(),
+            websiteUrl: websiteUrl.trim(),
+            logoUrl: logoUrl.trim(),
+            contactEmail: contactEmail.trim(),
+            phoneNumber: phoneNumber.trim(),
+            socialLinks: Object.fromEntries(
+              Object.entries(social).map(([key, value]) => [key, value.trim()]),
+            ),
           },
         },
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err: unknown) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save changes.');
-    } finally {
-      setSaving(false);
+      showToast('Organisation settings saved.', 'success');
+    } catch (saveError) {
+      showToast(
+        saveError instanceof Error ? saveError.message : 'Settings could not be saved.',
+        'error',
+      );
     }
   }
 
-  return (
-    <div className="font-sans w-full max-w-5xl mx-auto p-6 text-[#1B1B1B]">
+  async function changeLifecycleStatus() {
+    if (!org) return;
+    try {
+      await setOrganisationActive({
+        variables: { organisationId: org.id, active: !org.isActive },
+      });
+      setShowLifecycleDialog(false);
+      showToast(
+        org.isActive
+          ? 'Organisation deactivated. Your data and team access have been retained.'
+          : 'Organisation reactivated and visible publicly again.',
+        'success',
+      );
+    } catch (statusError) {
+      showToast(
+        statusError instanceof Error
+          ? statusError.message
+          : 'Organisation status could not be changed.',
+        'error',
+      );
+    }
+  }
 
-      {/* Page Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-serif font-bold">Settings</h1>
+  if (loading && !data) {
+    return <div className="mx-auto max-w-5xl p-6"><DirectoryState kind="loading" /></div>;
+  }
+  if (error) {
+    return (
+      <div className="mx-auto max-w-5xl p-6">
+        <DirectoryState kind="error" title="Settings could not be loaded" onRetry={() => refetch()} />
+      </div>
+    );
+  }
+  if (!org) {
+    return (
+      <div className="mx-auto max-w-5xl p-6">
+        <DirectoryState
+          kind="empty"
+          title="No organisation found"
+          detail="Complete organisation onboarding before editing settings."
+        />
+      </div>
+    );
+  }
+
+  const logoCanPreview = Boolean(logoUrl.trim()) && !logoPreviewFailed;
+
+  return (
+    <main className="mx-auto w-full max-w-5xl p-6 text-[#1B1B1B]">
+      <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <h1 className="font-serif text-4xl font-bold">Settings</h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Manage your public organisation profile, contact channels, and account status.
+          </p>
+        </div>
+        <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${org.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>
+          {org.isActive ? 'Active' : 'Deactivated'}
+        </span>
       </div>
 
-      {/* 1. Profile Details */}
-      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-serif font-bold">Profile Details</h2>
+      {!org.isActive && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
+          This organisation is deactivated. Its public profile and directory entry are hidden, but
+          settings, data, and authorised team access are retained.
         </div>
-        <form onSubmit={handleUpdateProfile}>
-          <div className="p-6 flex flex-col md:flex-row gap-8">
-            {/* Avatar Side */}
-            <div className="shrink-0 flex flex-col items-center">
-              <div className="relative w-28 h-28 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm">
-                <div className="w-full h-full flex items-center justify-center bg-[#EAEAF5] text-[#1B1B1B] text-3xl font-bold">
-                  {(org?.name ?? 'O').charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <p className="text-[11px] text-gray-400 mt-2">Logo upload coming soon</p>
+      )}
+
+      <form onSubmit={save} className="space-y-6">
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h2 className="font-serif text-xl font-bold">Profile details</h2>
+          </div>
+          <div className="grid gap-5 p-6 md:grid-cols-2">
+            <label className="text-sm font-bold">
+              Display name
+              <input required value={name} onChange={(event) => setName(event.target.value)} className={fieldClass} />
+            </label>
+            <label className="text-sm font-bold">
+              Region
+              <input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="London, United Kingdom" className={fieldClass} />
+            </label>
+            <label className="text-sm font-bold md:col-span-2">
+              About the organisation
+              <textarea rows={4} maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} className={`${fieldClass} resize-none`} />
+              <span className="mt-1 block text-right text-[11px] font-normal text-gray-400">{description.length}/1000</span>
+            </label>
+            <label className="text-sm font-bold md:col-span-2">
+              Primary website
+              <input type="url" value={websiteUrl} onChange={(event) => setWebsite(event.target.value)} placeholder="https://organisation.org" className={fieldClass} />
+            </label>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h2 className="font-serif text-xl font-bold">Organisation logo</h2>
+            <p className="mt-1 text-xs text-gray-500">Use a square image served over HTTPS for the best result.</p>
+          </div>
+          <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-[#EAEAF5] text-3xl font-bold">
+              {logoCanPreview ? (
+                <img src={logoUrl} alt={`${name} logo preview`} onError={() => setLogoPreviewFailed(true)} className="h-full w-full object-cover" />
+              ) : (
+                name.charAt(0).toUpperCase()
+              )}
             </div>
-
-            {/* Form Side */}
-            <div className="flex-1 space-y-5">
-              {saveError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2.5">{saveError}</p>}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-[13px] font-bold mb-1.5">Display Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#F4F0F5] text-gray-700 text-[13px] px-4 py-2.5 rounded-md outline-none focus:ring-2 focus:ring-[#C9A96E]/40"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-bold mb-1.5">Region</label>
-                  <input
-                    type="text"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    placeholder="e.g. Lagos, Nigeria"
-                    className="w-full bg-[#F4F0F5] text-gray-700 text-[13px] px-4 py-2.5 rounded-md outline-none focus:ring-2 focus:ring-[#C9A96E]/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-bold mb-1.5">About Us</label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDesc(e.target.value)}
-                  className="w-full bg-[#F4F0F5] text-gray-600 text-[12px] leading-relaxed px-4 py-3 rounded-md outline-none resize-none focus:ring-2 focus:ring-[#C9A96E]/40"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-bold mb-1.5">Website URL</label>
+            <div className="flex-1">
+              <label className="text-sm font-bold">
+                Logo image URL
                 <input
-                  type="text"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  placeholder="https://yourorg.com"
-                  className="w-full bg-[#F4F0F5] text-gray-700 text-[13px] px-4 py-2.5 rounded-md outline-none focus:ring-2 focus:ring-[#C9A96E]/40"
+                  type="url"
+                  value={logoUrl}
+                  onChange={(event) => { setLogoUrl(event.target.value); setLogoPreviewFailed(false); }}
+                  placeholder="https://cdn.example.org/logo.png"
+                  className={fieldClass}
                 />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                {saved && <span className="text-xs text-green-600 font-medium">Saved!</span>}
-                <button
-                  type="submit"
-                  disabled={saving || !org}
-                  className="bg-[#302D2E] text-white px-5 py-2 rounded-md text-[13px] font-medium hover:bg-gray-800 transition-colors disabled:opacity-60"
-                >
-                  {saving ? 'Saving...' : 'Update Profile'}
+              </label>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button type="button" disabled={!logoUrl} onClick={() => { setLogoUrl(''); setLogoPreviewFailed(false); }} className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+                  Remove logo
                 </button>
+                {logoPreviewFailed && <span className="text-xs text-red-600">This image could not be previewed. Check that the URL is public.</span>}
               </div>
+              <p className="mt-3 text-xs leading-5 text-gray-500">Direct file upload will be added with the separate Cloudinary media feature. The browser does not upload to Cloudinary directly.</p>
             </div>
           </div>
-        </form>
-      </section>
+        </section>
 
-      {/* 2. Account & Access */}
-      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-serif font-bold">Account & Access</h2>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-            <div>
-              <label className="block text-[13px] font-bold mb-1.5">Email Address</label>
-              <input type="text" readOnly defaultValue="—" className="w-full bg-[#F4F0F5] text-gray-500 text-[13px] px-4 py-2.5 rounded-md outline-none" />
-            </div>
-            <div>
-              <label className="block text-[13px] font-bold mb-1.5">Password</label>
-              <button className="w-full bg-[#F4F0F5] text-gray-700 text-[13px] px-4 py-2.5 rounded-md flex items-center justify-between hover:bg-[#EAE5EC] transition-colors">
-                Change Password
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-              </button>
-            </div>
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h2 className="font-serif text-xl font-bold">Contact details</h2>
+            <p className="mt-1 text-xs text-gray-500">Public contact channels for enquiries about your organisation.</p>
           </div>
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between border-t border-gray-100 pt-6 gap-4">
-            <div>
-              <h4 className="text-[13px] font-bold text-[#D32F2F]">Critical Actions</h4>
-              <p className="text-[12px] text-gray-500 mt-0.5">These actions are permanent and cannot be undone.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="px-6 py-2 border border-gray-300 rounded-md text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                Deactivate
-              </button>
-              <button className="px-6 py-2 bg-[#C62828] text-white rounded-md text-[13px] font-medium hover:bg-red-800 transition-colors">
-                Delete Permanently
-              </button>
-            </div>
+          <div className="grid gap-5 p-6 md:grid-cols-2">
+            <label className="text-sm font-bold">
+              Contact email
+              <input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} placeholder="hello@organisation.org" className={fieldClass} />
+            </label>
+            <label className="text-sm font-bold">
+              Contact phone
+              <input type="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} placeholder="+44 20 1234 5678" className={fieldClass} />
+            </label>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* 3. Team & Role Management */}
-      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-serif font-bold">Team & Role Management</h2>
-        </div>
-
-        <div className="flex flex-col items-center justify-center py-14 gap-3">
-          <div className="w-11 h-11 rounded-full bg-[#FAF6ED] flex items-center justify-center">
-            <svg className="w-5 h-5 text-[#C9A96E]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h2 className="font-serif text-xl font-bold">Social links</h2>
+            <p className="mt-1 text-xs text-gray-500">These links appear on the public organisation profile.</p>
           </div>
-          <p className="text-sm font-semibold text-gray-700">Team management coming soon</p>
-          <p className="text-xs text-gray-400">Invite members and assign roles in a future update.</p>
-        </div>
-      </section>
-
-      {/* 4. Site Preferences & Personalization */}
-      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-serif font-bold">Site Preferences & Personalization</h2>
-        </div>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="space-y-5">
-            {[{ label: 'Region', value: 'Lagos, Nigeria' }, { label: 'Currency', value: 'USD $ - US Dollar' }, { label: 'Time Zone', value: '(GMT +00:00) UTC' }].map(({ label, value }) => (
-              <div key={label}>
-                <label className="block text-[13px] font-bold mb-1.5">{label}</label>
-                <div className="relative">
-                  <select className="w-full bg-[#F4F0F5] text-gray-700 text-[13px] px-4 py-2.5 rounded-md outline-none appearance-none cursor-pointer">
-                    <option>{value}</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                  </div>
-                </div>
-              </div>
+          <div className="grid gap-5 p-6 md:grid-cols-2">
+            {Object.entries(social).map(([key, value]) => (
+              <label key={key} className="text-sm font-bold capitalize">
+                {key === 'twitter' ? 'X / Twitter' : key}
+                <input
+                  type={key === 'whatsapp' ? 'tel' : 'url'}
+                  value={value}
+                  onChange={(event) => setSocial((current) => ({ ...current, [key]: event.target.value }))}
+                  placeholder={key === 'whatsapp' ? '+44 7700 900000' : `https://${key}.com/your-organisation`}
+                  className={`${fieldClass} normal-case`}
+                />
+              </label>
             ))}
           </div>
+        </section>
 
-          <div>
-            <h3 className="text-[14px] font-bold mb-3">Enable Email Notifications</h3>
-            <div className="space-y-2.5">
-              {['Messaging & Chat', 'Events & RSVP', 'Job Board Alerts', 'Market Place Offers'].map((label) => (
-                <div key={label} className="flex items-center justify-between bg-[#F4F0F5] px-4 py-2.5 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    <span className="text-[13px] text-gray-700 font-medium">{label}</span>
-                  </div>
-                  <div className="w-5 h-5 bg-[#302D2E] rounded-md flex items-center justify-center cursor-pointer">
-                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-200 px-6 py-4"><h2 className="font-serif text-xl font-bold">Account and team access</h2></div>
+          <div className="grid gap-5 p-6 md:grid-cols-2">
+            <div><p className="text-xs font-bold uppercase tracking-wide text-gray-400">Signed-in email</p><p className="mt-2 text-sm text-gray-700">{signedInEmail ?? '—'}</p></div>
+            <div className="flex items-center justify-start md:justify-end"><Link to="/org/team" className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold hover:bg-gray-50">Manage team and roles →</Link></div>
           </div>
+        </section>
+
+        <div className="flex justify-end">
+          <button type="submit" disabled={saving} className="rounded-lg bg-[#302D2E] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {saving ? 'Saving…' : 'Save settings'}
+          </button>
+        </div>
+      </form>
+
+      <section className="mt-8 overflow-hidden rounded-xl border border-red-200 bg-white">
+        <div className="border-b border-red-100 px-6 py-4"><h2 className="font-serif text-xl font-bold text-red-800">Organisation lifecycle</h2></div>
+        <div className="flex flex-col justify-between gap-5 p-6 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-sm font-semibold">{org.isActive ? 'Deactivate organisation' : 'Reactivate organisation'}</p>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-gray-500">
+              {org.isActive
+                ? 'Hide the public organisation profile and directory entry while retaining its data, settings, and team access.'
+                : 'Restore the organisation profile and make it discoverable to members again.'}
+            </p>
+          </div>
+          <button type="button" onClick={() => setShowLifecycleDialog(true)} className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold ${org.isActive ? 'border border-red-300 text-red-700 hover:bg-red-50' : 'bg-[#302D2E] text-white hover:bg-black'}`}>
+            {org.isActive ? 'Deactivate' : 'Reactivate'}
+          </button>
         </div>
       </section>
 
-      {/* 5. Privacy & Security */}
-      <section className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-serif font-bold">Privacy & Security</h2>
-        </div>
-        <div className="p-6 space-y-3">
-          {['Community Guidelines', 'Privacy Policy', 'Terms of Service'].map((label) => (
-            <button key={label} className="w-full flex items-center justify-between bg-[#F4F0F5] px-5 py-3.5 rounded-md hover:bg-[#EAE5EC] transition-colors text-left">
-              <span className="text-[13px] font-bold text-gray-800">{label}</span>
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-            </button>
-          ))}
-        </div>
-      </section>
-
-    </div>
+      <ConfirmationDialog
+        open={showLifecycleDialog}
+        title={org.isActive ? 'Deactivate organisation?' : 'Reactivate organisation?'}
+        description={org.isActive
+          ? 'The public organisation profile and directory entry will be hidden. Existing data and team access will remain available so the organisation can be restored later.'
+          : 'The organisation profile will become public and discoverable again.'}
+        confirmLabel={org.isActive ? 'Deactivate organisation' : 'Reactivate organisation'}
+        tone={org.isActive ? 'danger' : 'default'}
+        busy={changingStatus}
+        onClose={() => setShowLifecycleDialog(false)}
+        onConfirm={changeLifecycleStatus}
+      />
+    </main>
   );
 }

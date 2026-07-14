@@ -30,6 +30,7 @@ export type CreateEventInput = {
   imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   isRecurring?: InputMaybe<Scalars['Boolean']['input']>;
   location: EventLocationInput;
+  recurrence?: InputMaybe<RecurrenceRuleInput>;
   region: Scalars['String']['input'];
   title: Scalars['String']['input'];
 };
@@ -50,10 +51,15 @@ export type Event = {
   interestedCount: Scalars['Int']['output'];
   isPromoted: Scalars['Boolean']['output'];
   isRecurring: Scalars['Boolean']['output'];
+  isSeriesException: Scalars['Boolean']['output'];
   location: EventLocation;
+  mySeriesRsvp?: Maybe<SeriesRsvp>;
+  occurrenceNumber?: Maybe<Scalars['Int']['output']>;
+  originalDate?: Maybe<Scalars['DateTime']['output']>;
   region: Scalars['String']['output'];
   rsvpCount: Scalars['Int']['output'];
   savedCount: Scalars['Int']['output'];
+  series?: Maybe<EventSeries>;
   seriesId?: Maybe<Scalars['String']['output']>;
   status: EventStatus;
   title: Scalars['String']['output'];
@@ -99,6 +105,35 @@ export type EventLocationInput = {
   virtualLink?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type EventOrganisationNotification = {
+  __typename?: 'EventOrganisationNotification';
+  createdAt: Scalars['DateTime']['output'];
+  href?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  readAt?: Maybe<Scalars['DateTime']['output']>;
+  sourceId?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
+export type EventSeries = {
+  __typename?: 'EventSeries';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  occurrences: EventConnection;
+  recurrence: RecurrenceRule;
+  status: EventStatus;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+
+export type EventSeriesOccurrencesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export const EventSort = {
   DateAsc: 'DATE_ASC',
   Newest: 'NEWEST',
@@ -114,6 +149,13 @@ export const EventStatus = {
 } as const;
 
 export type EventStatus = typeof EventStatus[keyof typeof EventStatus];
+export const EventUpdateScope = {
+  EntireSeries: 'ENTIRE_SERIES',
+  ThisAndFuture: 'THIS_AND_FUTURE',
+  ThisOccurrence: 'THIS_OCCURRENCE'
+} as const;
+
+export type EventUpdateScope = typeof EventUpdateScope[keyof typeof EventUpdateScope];
 export const LocationType = {
   Hybrid: 'HYBRID',
   Physical: 'PHYSICAL',
@@ -123,16 +165,32 @@ export const LocationType = {
 export type LocationType = typeof LocationType[keyof typeof LocationType];
 export type Mutation = {
   __typename?: 'Mutation';
+  cancelEvent: Scalars['Boolean']['output'];
   cancelRsvp: Scalars['Boolean']['output'];
+  cancelSeriesRsvp: Scalars['Boolean']['output'];
   createEvent: Event;
   deleteEvent: Scalars['Boolean']['output'];
+  markAllEventOrganisationNotificationsRead: Scalars['Boolean']['output'];
+  markEventOrganisationNotificationRead: EventOrganisationNotification;
   rsvpToEvent: Rsvp;
+  rsvpToSeries: SeriesRsvp;
   updateEvent: Event;
+};
+
+
+export type MutationCancelEventArgs = {
+  id: Scalars['ID']['input'];
+  scope?: InputMaybe<EventUpdateScope>;
 };
 
 
 export type MutationCancelRsvpArgs = {
   eventId: Scalars['ID']['input'];
+};
+
+
+export type MutationCancelSeriesRsvpArgs = {
+  seriesId: Scalars['ID']['input'];
 };
 
 
@@ -146,8 +204,24 @@ export type MutationDeleteEventArgs = {
 };
 
 
+export type MutationMarkAllEventOrganisationNotificationsReadArgs = {
+  organisationId: Scalars['ID']['input'];
+};
+
+
+export type MutationMarkEventOrganisationNotificationReadArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRsvpToEventArgs = {
   eventId: Scalars['ID']['input'];
+  stage: RsvpStage;
+};
+
+
+export type MutationRsvpToSeriesArgs = {
+  seriesId: Scalars['ID']['input'];
   stage: RsvpStage;
 };
 
@@ -155,6 +229,7 @@ export type MutationRsvpToEventArgs = {
 export type MutationUpdateEventArgs = {
   id: Scalars['ID']['input'];
   input: UpdateEventInput;
+  scope?: InputMaybe<EventUpdateScope>;
 };
 
 export type Organisation = {
@@ -172,9 +247,13 @@ export type OrganisationEventsArgs = {
 export type Query = {
   __typename?: 'Query';
   event?: Maybe<Event>;
+  eventOrganisationNotifications: Array<EventOrganisationNotification>;
+  eventOrganisationUnreadCount: Scalars['Int']['output'];
+  eventSeries?: Maybe<EventSeries>;
   events: EventConnection;
   featuredEvents: Array<Event>;
   myRsvps: Array<Rsvp>;
+  mySeriesRsvp?: Maybe<SeriesRsvp>;
 };
 
 
@@ -183,9 +262,27 @@ export type QueryEventArgs = {
 };
 
 
+export type QueryEventOrganisationNotificationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  organisationId: Scalars['ID']['input'];
+  unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryEventOrganisationUnreadCountArgs = {
+  organisationId: Scalars['ID']['input'];
+};
+
+
+export type QueryEventSeriesArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type QueryEventsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   category?: InputMaybe<EventCategory>;
+  collapseSeries?: InputMaybe<Scalars['Boolean']['input']>;
   dateFrom?: InputMaybe<Scalars['DateTime']['input']>;
   dateTo?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -208,6 +305,11 @@ export type QueryMyRsvpsArgs = {
   stage?: InputMaybe<RsvpStage>;
 };
 
+
+export type QueryMySeriesRsvpArgs = {
+  seriesId: Scalars['ID']['input'];
+};
+
 export type Rsvp = {
   __typename?: 'RSVP';
   createdAt: Scalars['DateTime']['output'];
@@ -218,6 +320,33 @@ export type Rsvp = {
   user: User;
 };
 
+export const RecurrenceFrequency = {
+  Monthly: 'MONTHLY',
+  Weekly: 'WEEKLY'
+} as const;
+
+export type RecurrenceFrequency = typeof RecurrenceFrequency[keyof typeof RecurrenceFrequency];
+export type RecurrenceRule = {
+  __typename?: 'RecurrenceRule';
+  dayOfMonth?: Maybe<Scalars['Int']['output']>;
+  daysOfWeek: Array<Scalars['Int']['output']>;
+  endsAt?: Maybe<Scalars['DateTime']['output']>;
+  frequency: RecurrenceFrequency;
+  interval: Scalars['Int']['output'];
+  occurrenceCount?: Maybe<Scalars['Int']['output']>;
+  timezone: Scalars['String']['output'];
+};
+
+export type RecurrenceRuleInput = {
+  dayOfMonth?: InputMaybe<Scalars['Int']['input']>;
+  daysOfWeek?: InputMaybe<Array<Scalars['Int']['input']>>;
+  endsAt?: InputMaybe<Scalars['DateTime']['input']>;
+  frequency: RecurrenceFrequency;
+  interval?: InputMaybe<Scalars['Int']['input']>;
+  occurrenceCount?: InputMaybe<Scalars['Int']['input']>;
+  timezone: Scalars['String']['input'];
+};
+
 export const RsvpStage = {
   Confirmed: 'CONFIRMED',
   Interested: 'INTERESTED',
@@ -226,6 +355,17 @@ export const RsvpStage = {
 } as const;
 
 export type RsvpStage = typeof RsvpStage[keyof typeof RsvpStage];
+export type SeriesRsvp = {
+  __typename?: 'SeriesRSVP';
+  createdAt: Scalars['DateTime']['output'];
+  excludedEventIds: Array<Scalars['ID']['output']>;
+  id: Scalars['ID']['output'];
+  series: EventSeries;
+  stage: RsvpStage;
+  updatedAt: Scalars['DateTime']['output'];
+  user: User;
+};
+
 export type UpdateEventInput = {
   capacityLimit?: InputMaybe<Scalars['Int']['input']>;
   category?: InputMaybe<EventCategory>;
@@ -241,6 +381,7 @@ export type UpdateEventInput = {
 
 export type User = {
   __typename?: 'User';
+  firebaseUid: Scalars['String']['output'];
   id: Scalars['ID']['output'];
 };
 
@@ -338,14 +479,21 @@ export type ResolversTypes = ResolversObject<{
   EventConnection: ResolverTypeWrapper<EventConnection>;
   EventLocation: ResolverTypeWrapper<EventLocation>;
   EventLocationInput: EventLocationInput;
+  EventOrganisationNotification: ResolverTypeWrapper<EventOrganisationNotification>;
+  EventSeries: ResolverTypeWrapper<EventSeries>;
   EventSort: EventSort;
   EventStatus: EventStatus;
+  EventUpdateScope: EventUpdateScope;
   LocationType: LocationType;
   Mutation: ResolverTypeWrapper<{}>;
   Organisation: ResolverTypeWrapper<Organisation>;
   Query: ResolverTypeWrapper<{}>;
   RSVP: ResolverTypeWrapper<Rsvp>;
+  RecurrenceFrequency: RecurrenceFrequency;
+  RecurrenceRule: ResolverTypeWrapper<RecurrenceRule>;
+  RecurrenceRuleInput: RecurrenceRuleInput;
   RsvpStage: RsvpStage;
+  SeriesRSVP: ResolverTypeWrapper<SeriesRsvp>;
   UpdateEventInput: UpdateEventInput;
   User: ResolverTypeWrapper<User>;
 }>;
@@ -362,10 +510,15 @@ export type ResolversParentTypes = ResolversObject<{
   EventConnection: EventConnection;
   EventLocation: EventLocation;
   EventLocationInput: EventLocationInput;
+  EventOrganisationNotification: EventOrganisationNotification;
+  EventSeries: EventSeries;
   Mutation: {};
   Organisation: Organisation;
   Query: {};
   RSVP: Rsvp;
+  RecurrenceRule: RecurrenceRule;
+  RecurrenceRuleInput: RecurrenceRuleInput;
+  SeriesRSVP: SeriesRsvp;
   UpdateEventInput: UpdateEventInput;
   User: User;
 }>;
@@ -390,10 +543,15 @@ export type EventResolvers<ContextType = GraphQLContext, ParentType extends Reso
   interestedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   isPromoted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isRecurring?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isSeriesException?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   location?: Resolver<ResolversTypes['EventLocation'], ParentType, ContextType>;
+  mySeriesRsvp?: Resolver<Maybe<ResolversTypes['SeriesRSVP']>, ParentType, ContextType>;
+  occurrenceNumber?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  originalDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   region?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   rsvpCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   savedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  series?: Resolver<Maybe<ResolversTypes['EventSeries']>, ParentType, ContextType>;
   seriesId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['EventStatus'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -418,12 +576,41 @@ export type EventLocationResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type EventOrganisationNotificationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EventOrganisationNotification'] = ResolversParentTypes['EventOrganisationNotification']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  href?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  readAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  sourceId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EventSeriesResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EventSeries'] = ResolversParentTypes['EventSeries']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['EventSeries']>, { __typename: 'EventSeries' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  occurrences?: Resolver<ResolversTypes['EventConnection'], ParentType, ContextType, Partial<EventSeriesOccurrencesArgs>>;
+  recurrence?: Resolver<ResolversTypes['RecurrenceRule'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['EventStatus'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
+  cancelEvent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCancelEventArgs, 'id' | 'scope'>>;
   cancelRsvp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCancelRsvpArgs, 'eventId'>>;
+  cancelSeriesRsvp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCancelSeriesRsvpArgs, 'seriesId'>>;
   createEvent?: Resolver<ResolversTypes['Event'], ParentType, ContextType, RequireFields<MutationCreateEventArgs, 'input'>>;
   deleteEvent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteEventArgs, 'id'>>;
+  markAllEventOrganisationNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkAllEventOrganisationNotificationsReadArgs, 'organisationId'>>;
+  markEventOrganisationNotificationRead?: Resolver<ResolversTypes['EventOrganisationNotification'], ParentType, ContextType, RequireFields<MutationMarkEventOrganisationNotificationReadArgs, 'id'>>;
   rsvpToEvent?: Resolver<ResolversTypes['RSVP'], ParentType, ContextType, RequireFields<MutationRsvpToEventArgs, 'eventId' | 'stage'>>;
-  updateEvent?: Resolver<ResolversTypes['Event'], ParentType, ContextType, RequireFields<MutationUpdateEventArgs, 'id' | 'input'>>;
+  rsvpToSeries?: Resolver<ResolversTypes['SeriesRSVP'], ParentType, ContextType, RequireFields<MutationRsvpToSeriesArgs, 'seriesId' | 'stage'>>;
+  updateEvent?: Resolver<ResolversTypes['Event'], ParentType, ContextType, RequireFields<MutationUpdateEventArgs, 'id' | 'input' | 'scope'>>;
 }>;
 
 export type OrganisationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Organisation'] = ResolversParentTypes['Organisation']> = ResolversObject<{
@@ -435,9 +622,13 @@ export type OrganisationResolvers<ContextType = GraphQLContext, ParentType exten
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   event?: Resolver<Maybe<ResolversTypes['Event']>, ParentType, ContextType, RequireFields<QueryEventArgs, 'id'>>;
+  eventOrganisationNotifications?: Resolver<Array<ResolversTypes['EventOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryEventOrganisationNotificationsArgs, 'organisationId'>>;
+  eventOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryEventOrganisationUnreadCountArgs, 'organisationId'>>;
+  eventSeries?: Resolver<Maybe<ResolversTypes['EventSeries']>, ParentType, ContextType, RequireFields<QueryEventSeriesArgs, 'id'>>;
   events?: Resolver<ResolversTypes['EventConnection'], ParentType, ContextType, Partial<QueryEventsArgs>>;
   featuredEvents?: Resolver<Array<ResolversTypes['Event']>, ParentType, ContextType, Partial<QueryFeaturedEventsArgs>>;
   myRsvps?: Resolver<Array<ResolversTypes['RSVP']>, ParentType, ContextType, Partial<QueryMyRsvpsArgs>>;
+  mySeriesRsvp?: Resolver<Maybe<ResolversTypes['SeriesRSVP']>, ParentType, ContextType, RequireFields<QueryMySeriesRsvpArgs, 'seriesId'>>;
 }>;
 
 export type RsvpResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['RSVP'] = ResolversParentTypes['RSVP']> = ResolversObject<{
@@ -451,8 +642,32 @@ export type RsvpResolvers<ContextType = GraphQLContext, ParentType extends Resol
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type RecurrenceRuleResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['RecurrenceRule'] = ResolversParentTypes['RecurrenceRule']> = ResolversObject<{
+  dayOfMonth?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  daysOfWeek?: Resolver<Array<ResolversTypes['Int']>, ParentType, ContextType>;
+  endsAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  frequency?: Resolver<ResolversTypes['RecurrenceFrequency'], ParentType, ContextType>;
+  interval?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  occurrenceCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  timezone?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SeriesRsvpResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SeriesRSVP'] = ResolversParentTypes['SeriesRSVP']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['SeriesRSVP']>, { __typename: 'SeriesRSVP' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  excludedEventIds?: Resolver<Array<ResolversTypes['ID']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  series?: Resolver<ResolversTypes['EventSeries'], ParentType, ContextType>;
+  stage?: Resolver<ResolversTypes['RsvpStage'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & (GraphQLRecursivePick<ParentType, {"id":true}> | GraphQLRecursivePick<ParentType, {"firebaseUid":true}>), ContextType>;
+
 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -462,10 +677,14 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Event?: EventResolvers<ContextType>;
   EventConnection?: EventConnectionResolvers<ContextType>;
   EventLocation?: EventLocationResolvers<ContextType>;
+  EventOrganisationNotification?: EventOrganisationNotificationResolvers<ContextType>;
+  EventSeries?: EventSeriesResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Organisation?: OrganisationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RSVP?: RsvpResolvers<ContextType>;
+  RecurrenceRule?: RecurrenceRuleResolvers<ContextType>;
+  SeriesRSVP?: SeriesRsvpResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
 }>;
 

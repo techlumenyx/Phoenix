@@ -58,3 +58,6 @@ npm-debug.log*
 # Apollo Router binary
 router.exe
 router
+
+# Local Rover license and plugin metadata
+.nx/rover/

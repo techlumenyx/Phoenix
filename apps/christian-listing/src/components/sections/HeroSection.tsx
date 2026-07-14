@@ -1,9 +1,10 @@
 import { FormEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { SearchIcon } from '../layout/icons';
 import { useDiscovery, usePreferredRegion } from '../../lib/discovery';
 
 export default function HeroSection() {
+  const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
   const { region, setRegion, isProfileRegion } = usePreferredRegion();
@@ -12,7 +13,11 @@ export default function HeroSection() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    setSearch(input.trim());
+    const query = input.trim();
+    if (!query) return;
+    const params = new URLSearchParams({ q: query });
+    if (region) params.set('region', region);
+    navigate(`/search?${params.toString()}`);
   };
 
   return (
@@ -83,7 +88,11 @@ export default function HeroSection() {
           <input
             type="text"
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setInput(value);
+              setSearch(value.trim().length >= 2 ? value.trim() : '');
+            }}
             placeholder="Search events, jobs or listings..."
             className="flex-1 px-3 py-3 text-sm text-gray-700 placeholder-gray-400 outline-none bg-transparent"
           />
@@ -99,7 +108,10 @@ export default function HeroSection() {
                   <ResultGroup title="Events" path="/events" itemLinks items={data?.events.edges ?? []} />
                   <ResultGroup title="Jobs" path="/jobs" itemLinks items={data?.jobListings.edges ?? []} />
                   <ResultGroup title="Marketplace" path="/marketplace" itemLinks items={data?.marketplaceItems.edges ?? []} />
-                  <ResultGroup title="Organisations" items={data?.organisations.edges ?? []} />
+                  <ResultGroup title="Organisations" path="/organisations" itemLinks items={data?.organisations.edges ?? []} />
+                  <Link to={`/search?q=${encodeURIComponent(search)}${region ? `&region=${encodeURIComponent(region)}` : ''}`} className="mt-2 block rounded-lg border-t border-gray-100 px-3 py-3 text-center text-xs font-bold text-[#1B1B1B] hover:bg-gray-50">
+                    View all results →
+                  </Link>
                 </>
               )}
             </div>

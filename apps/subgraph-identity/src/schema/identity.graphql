@@ -12,6 +12,12 @@ enum VerificationTier {
   NGO
 }
 
+enum ProfileVisibility {
+  PUBLIC
+  MEMBERS_ONLY
+  PRIVATE
+}
+
 # ─── Entities ─────────────────────────────────────────────────────────────────
 
 type User @key(fields: "id") @key(fields: "firebaseUid") {
@@ -28,6 +34,7 @@ type User @key(fields: "id") @key(fields: "firebaseUid") {
   avatarUrl: String
   bio: String
   socialLinks: SocialLinks
+  privacySettings: ProfilePrivacySettings!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -42,7 +49,11 @@ type Organisation @key(fields: "id") {
   verificationTier: VerificationTier!
   followerCount: Int!
   websiteUrl: String
+  contactEmail: String
+  phoneNumber: String
   socialLinks: SocialLinks
+  isActive: Boolean!
+  deactivatedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -55,6 +66,14 @@ type SocialLinks @shareable {
   website: String
 }
 
+type ProfilePrivacySettings {
+  profileVisibility: ProfileVisibility!
+  showAvatar: Boolean!
+  showRegion: Boolean!
+  showBio: Boolean!
+  showSocialLinks: Boolean!
+}
+
 type FollowRelationship @key(fields: "id") {
   id: ID!
   follower: User!
@@ -64,6 +83,7 @@ type FollowRelationship @key(fields: "id") {
 
 type OrganisationTeamMember { user: User! roles: [String!]! joinedAt: DateTime }
 type OrganisationInvite { id: ID! email: String! organisation: Organisation! roles: [String!]! status: String! token: String! expiresAt: DateTime! createdAt: DateTime! }
+type IdentityOrganisationNotification { id: ID! type: String! title: String! message: String! href: String sourceId: String readAt: DateTime createdAt: DateTime! }
 
 type VerificationRequest @key(fields: "id") {
   id: ID!
@@ -94,6 +114,8 @@ type Query {
   organisationTeam(organisationId: ID!): [OrganisationTeamMember!]!
   organisationInvites(organisationId: ID!): [OrganisationInvite!]!
   organisationInvite(token: String!): OrganisationInvite
+  identityOrganisationNotifications(organisationId: ID!, unreadOnly: Boolean, limit: Int): [IdentityOrganisationNotification!]!
+  identityOrganisationUnreadCount(organisationId: ID!): Int!
 }
 
 type UserConnection {
@@ -116,6 +138,7 @@ type Mutation {
   updateProfile(input: UpdateProfileInput!): User!
   createOrganisation(input: CreateOrganisationInput!): Organisation!
   updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
+  setOrganisationActive(organisationId: ID!, active: Boolean!): Organisation!
   submitVerification(organisationId: ID!, documentUrls: [String!]!): VerificationRequest!
   followOrganisation(organisationId: ID!): Organisation!
   unfollowOrganisation(organisationId: ID!): Organisation!
@@ -125,6 +148,8 @@ type Mutation {
   resendOrganisationInvite(id: ID!): OrganisationInvite!
   updateOrganisationMemberRoles(organisationId: ID!, userId: ID!, roles: [String!]!): OrganisationTeamMember!
   removeOrganisationMember(organisationId: ID!, userId: ID!): Boolean!
+  markIdentityOrganisationNotificationRead(id: ID!): IdentityOrganisationNotification!
+  markAllIdentityOrganisationNotificationsRead(organisationId: ID!): Boolean!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────
@@ -135,6 +160,7 @@ input UpdateProfileInput {
   bio: String
   avatarUrl: String
   socialLinks: SocialLinksInput
+  privacySettings: ProfilePrivacySettingsInput
   preferences: [String!]
   onboardingCompleted: Boolean
 }
@@ -175,5 +201,15 @@ input UpdateOrganisationInput {
   logoUrl: String
   region: String
   websiteUrl: String
+  contactEmail: String
+  phoneNumber: String
   socialLinks: SocialLinksInput
+}
+
+input ProfilePrivacySettingsInput {
+  profileVisibility: ProfileVisibility
+  showAvatar: Boolean
+  showRegion: Boolean
+  showBio: Boolean
+  showSocialLinks: Boolean
 }

@@ -44,6 +44,17 @@ enum LocationType {
   HYBRID
 }
 
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+enum EventUpdateScope {
+  THIS_OCCURRENCE
+  THIS_AND_FUTURE
+  ENTIRE_SERIES
+}
+
 # ─── Federation Entity Stubs ──────────────────────────────────────────────────
 
 type Organisation @key(fields: "id") @extends {
@@ -51,8 +62,9 @@ type Organisation @key(fields: "id") @extends {
   events(limit: Int, after: String): EventConnection!
 }
 
-type User @key(fields: "id") @extends {
+type User @key(fields: "id") @key(fields: "firebaseUid") @extends {
   id: ID! @external
+  firebaseUid: String! @external
 }
 
 # ─── Entities ─────────────────────────────────────────────────────────────────
@@ -78,7 +90,42 @@ type Event @key(fields: "id") {
   isPromoted: Boolean!
   isRecurring: Boolean!
   seriesId: String
+  occurrenceNumber: Int
+  originalDate: DateTime
+  isSeriesException: Boolean!
+  series: EventSeries
+  mySeriesRsvp: SeriesRSVP
   externalTicketUrl: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RecurrenceRule {
+  frequency: RecurrenceFrequency!
+  interval: Int!
+  daysOfWeek: [Int!]!
+  dayOfMonth: Int
+  timezone: String!
+  endsAt: DateTime
+  occurrenceCount: Int
+}
+
+type EventSeries @key(fields: "id") {
+  id: ID!
+  title: String!
+  recurrence: RecurrenceRule!
+  status: EventStatus!
+  occurrences(limit: Int, after: String): EventConnection!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SeriesRSVP @key(fields: "id") {
+  id: ID!
+  series: EventSeries!
+  user: User!
+  stage: RsvpStage!
+  excludedEventIds: [ID!]!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -106,6 +153,8 @@ type EventConnection {
   endCursor: String
 }
 
+type EventOrganisationNotification { id: ID! type: String! title: String! message: String! href: String sourceId: String readAt: DateTime createdAt: DateTime! }
+
 # ─── Queries ──────────────────────────────────────────────────────────────────
 
 type Query {
@@ -123,19 +172,29 @@ type Query {
     sort: EventSort
     limit: Int
     after: String
+    collapseSeries: Boolean
   ): EventConnection!
   featuredEvents(region: String): [Event!]!
   myRsvps(stage: RsvpStage): [RSVP!]!
+  eventSeries(id: ID!): EventSeries
+  mySeriesRsvp(seriesId: ID!): SeriesRSVP
+  eventOrganisationNotifications(organisationId: ID!, unreadOnly: Boolean, limit: Int): [EventOrganisationNotification!]!
+  eventOrganisationUnreadCount(organisationId: ID!): Int!
 }
 
 # ─── Mutations ────────────────────────────────────────────────────────────────
 
 type Mutation {
   createEvent(input: CreateEventInput!): Event!
-  updateEvent(id: ID!, input: UpdateEventInput!): Event!
+  updateEvent(id: ID!, input: UpdateEventInput!, scope: EventUpdateScope = THIS_OCCURRENCE): Event!
+  cancelEvent(id: ID!, scope: EventUpdateScope = THIS_OCCURRENCE): Boolean!
   deleteEvent(id: ID!): Boolean!
   rsvpToEvent(eventId: ID!, stage: RsvpStage!): RSVP!
   cancelRsvp(eventId: ID!): Boolean!
+  rsvpToSeries(seriesId: ID!, stage: RsvpStage!): SeriesRSVP!
+  cancelSeriesRsvp(seriesId: ID!): Boolean!
+  markEventOrganisationNotificationRead(id: ID!): EventOrganisationNotification!
+  markAllEventOrganisationNotificationsRead(organisationId: ID!): Boolean!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────
@@ -152,6 +211,7 @@ input CreateEventInput {
   capacityLimit: Int
   imageUrls: [String!]
   isRecurring: Boolean
+  recurrence: RecurrenceRuleInput
   externalTicketUrl: String
 }
 
@@ -166,6 +226,16 @@ input UpdateEventInput {
   imageUrls: [String!]
   status: EventStatus
   externalTicketUrl: String
+}
+
+input RecurrenceRuleInput {
+  frequency: RecurrenceFrequency!
+  interval: Int = 1
+  daysOfWeek: [Int!]
+  dayOfMonth: Int
+  timezone: String!
+  endsAt: DateTime
+  occurrenceCount: Int
 }
 
 input EventLocationInput {

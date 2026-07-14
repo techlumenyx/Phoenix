@@ -44,6 +44,9 @@ function userShape(doc: any) {
     avatarUrl: doc.avatarUrl ?? null,
     bio: doc.bio ?? null,
     socialLinks: doc.socialLinks ?? null,
+    privacySettings: doc.privacySettings ?? {
+      profileVisibility: 'MEMBERS_ONLY', showAvatar: true, showRegion: true, showBio: true, showSocialLinks: false,
+    },
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };

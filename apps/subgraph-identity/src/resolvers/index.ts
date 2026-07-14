@@ -6,6 +6,7 @@ import { createOrganisation as createOrganisationResolver } from './mutation.cre
 import { myOrganisations } from './query.myOrganisations';
 import { followResolvers } from './follow.resolver';
 import { teamResolvers } from './team.resolver';
+import { identityNotificationResolvers } from './notification.resolver';
 
 export const resolvers = {
   Query: {
@@ -14,6 +15,7 @@ export const resolvers = {
     myOrganisations,
     ...followResolvers.Query,
     ...teamResolvers.Query,
+    ...identityNotificationResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -23,6 +25,7 @@ export const resolvers = {
     createOrganisation: createOrganisationResolver,
     ...followResolvers.Mutation,
     ...teamResolvers.Mutation,
+    ...identityNotificationResolvers.Mutation,
   },
   User: userResolvers.User,
   Organisation: organisationResolvers.Organisation,

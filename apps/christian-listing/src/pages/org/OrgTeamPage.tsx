@@ -1,5 +1,30 @@
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { useState } from 'react';
+import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
+import { useToast } from '../../components/ui/ToastProvider';
+
+interface TeamMember {
+  user: { id: string; name: string; email: string; avatarUrl?: string | null };
+  roles: string[];
+  joinedAt?: string | null;
+}
+interface TeamInvite {
+  id: string;
+  email: string;
+  roles: string[];
+  status: string;
+  token: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+const TEAM_ORG = gql`
+  query TeamOrgId {
+    myOrganisations {
+      id
+    }
+  }
+`;
 
 const TEAM = gql`
   query OrganisationTeamPage($id: ID!) {
@@ -78,14 +103,8 @@ const OPTIONS = [
 ] as const;
 
 export default function OrgTeamPage() {
-  const orgQuery = gql`
-    query TeamOrgId {
-      myOrganisations {
-        id
-      }
-    }
-  `;
-  const { data: orgData } = useQuery(orgQuery);
+  const { showToast } = useToast();
+  const { data: orgData } = useQuery(TEAM_ORG);
   const orgId = orgData?.myOrganisations?.[0]?.id as string | undefined;
   const { data, loading, error, refetch } = useQuery(TEAM, {
     variables: { id: orgId },
@@ -95,6 +114,7 @@ export default function OrgTeamPage() {
   const [email, setEmail] = useState('');
   const [selected, setSelected] = useState<string[]>(['events_manager']);
   const [message, setMessage] = useState('');
+  const [pendingRemoval, setPendingRemoval] = useState<TeamMember | null>(null);
   const [invite, { loading: inviting }] = useMutation(INVITE);
   const [revoke] = useMutation(REVOKE);
   const [resend] = useMutation(RESEND);
@@ -110,11 +130,14 @@ export default function OrgTeamPage() {
       const url = link(result.data.inviteOrganisationMember.token);
       await navigator.clipboard.writeText(url);
       setMessage('Invitation created and link copied.');
+      showToast('Invitation created and link copied.', 'success');
       setShowInvite(false);
       setEmail('');
       await refetch();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Invitation failed');
+      const text = err instanceof Error ? err.message : 'Invitation failed';
+      setMessage(text);
+      showToast(text, 'error');
     }
   }
   async function changeRoles(userId: string, roles: string[]) {
@@ -122,16 +145,19 @@ export default function OrgTeamPage() {
     await updateRoles({ variables: { orgId, userId, roles } });
     await refetch();
   }
-  async function removeMember(userId: string) {
+  async function removeMember(userId: string, confirmed = false) {
     if (
       !orgId ||
-      !window.confirm(
-        'Remove this member’s organisation access? Their existing content will be retained.',
-      )
+      (!confirmed &&
+        !window.confirm(
+          'Remove this member’s organisation access? Their existing content will be retained.',
+        ))
     )
       return;
     await remove({ variables: { orgId, userId } });
     await refetch();
+    setPendingRemoval(null);
+    showToast('Team member removed. Their existing content was retained.', 'success');
   }
 
   return (
@@ -157,7 +183,7 @@ export default function OrgTeamPage() {
         </div>
         {loading && <p className="p-10 text-center text-sm">Loading...</p>}
         {error && <p className="p-10 text-center text-sm text-red-600">{error.message}</p>}
-        {members.map((member: any) => (
+        {members.map((member: TeamMember) => (
           <div
             key={member.user.id}
             className="flex flex-col gap-4 border-b p-5 last:border-0 md:flex-row md:items-center"
@@ -203,7 +229,7 @@ export default function OrgTeamPage() {
             </div>
             {!member.roles.includes('master_admin') && (
               <button
-                onClick={() => removeMember(member.user.id)}
+                onClick={() => setPendingRemoval(member)}
                 className="text-xs font-semibold text-red-600"
               >
                 Remove
@@ -219,7 +245,7 @@ export default function OrgTeamPage() {
         {invites.length === 0 && (
           <p className="p-8 text-center text-sm text-gray-400">No invitations yet.</p>
         )}
-        {invites.map((item: any) => (
+        {invites.map((item: TeamInvite) => (
           <div
             key={item.id}
             className="flex flex-col gap-3 border-b p-5 last:border-0 md:flex-row md:items-center"
@@ -235,9 +261,10 @@ export default function OrgTeamPage() {
               <>
                 <button
                   onClick={() =>
-                    navigator.clipboard
-                      .writeText(link(item.token))
-                      .then(() => setMessage('Invitation link copied.'))
+                    navigator.clipboard.writeText(link(item.token)).then(() => {
+                      setMessage('Invitation link copied.');
+                      showToast('Invitation link copied.', 'success');
+                    })
                   }
                   className="text-xs font-semibold"
                 >
@@ -259,6 +286,7 @@ export default function OrgTeamPage() {
                       link(result.data.resendOrganisationInvite.token),
                     );
                     setMessage('New invitation link copied.');
+                    showToast('New invitation link copied.', 'success');
                     await refetch();
                   })
                 }
@@ -332,6 +360,17 @@ export default function OrgTeamPage() {
           </div>
         </div>
       )}
+      <ConfirmationDialog
+        open={Boolean(pendingRemoval)}
+        title="Remove team member?"
+        description={`${pendingRemoval?.user.name ?? 'This member'} will immediately lose organisation access. Their existing events, jobs, listings, and messages will be retained.`}
+        confirmLabel="Remove member"
+        tone="danger"
+        onClose={() => setPendingRemoval(null)}
+        onConfirm={() => {
+          if (pendingRemoval) return removeMember(pendingRemoval.user.id, true);
+        }}
+      />
     </main>
   );
 }

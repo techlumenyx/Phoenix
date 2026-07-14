@@ -31,11 +31,13 @@ import OrgVerificationPage from '../pages/org-auth/OrgVerificationPage';
 import OrgSuccessPage from '../pages/org-auth/OrgSuccessPage';
 import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
+import GlobalSearchPage from '../pages/GlobalSearchPage';
 import OrgOverviewPage from '../pages/org/OrgOverviewPage';
 import OrgEventsPage from '../pages/org/OrgEventsPage';
 import OrgListingsPage from '../pages/org/OrgListingsPage';
 import OrgJobsPage from '../pages/org/OrgJobsPage';
 import OrgSettingsPage from '../pages/org/OrgSettingsPage';
+import OrgNotificationsPage from '../pages/org/OrgNotificationsPage';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +46,7 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true,           element: <HomePage /> },
+      { path: 'search',        element: <GlobalSearchPage /> },
       { path: 'events',        element: <EventsPage /> },
       { path: 'events/all',    element: <AllEventsPage /> },
       { path: 'events/:id',    element: <EventDetailsPage /> },
@@ -93,6 +96,7 @@ const router = createBrowserRouter([
       { path: 'jobs',       element: <OrgJobsPage /> },
       { path: 'messages',   element: <MessagingPage sellerMode /> },
       { path: 'messages/:threadId', element: <MessagingPage sellerMode /> },
+      { path: 'notifications', element: <OrgNotificationsPage /> },
       { path: 'settings',   element: <OrgSettingsPage /> },
       { path: 'team',       element: <OrgTeamPage /> },
     ],

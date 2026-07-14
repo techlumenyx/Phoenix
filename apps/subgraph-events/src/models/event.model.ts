@@ -51,6 +51,11 @@ export interface IEvent {
   // Scheduling
   startDate: Date;
   endDate:   Date | null;
+  seriesId: mongoose.Types.ObjectId | null;
+  occurrenceNumber: number | null;
+  originalStartDate: Date | null;
+  isSeriesException: boolean;
+  overriddenFields: string[];
 
   // Capacity — null = unlimited; resolver rejects CONFIRMED when full
   capacity: number | null;
@@ -112,6 +117,11 @@ export const EventSchema = new Schema<IEvent>(
 
     startDate: { type: Date, required: true },
     endDate:   { type: Date, default: null },
+    seriesId: { type: Schema.Types.ObjectId, default: null },
+    occurrenceNumber: { type: Number, default: null },
+    originalStartDate: { type: Date, default: null },
+    isSeriesException: { type: Boolean, default: false },
+    overriddenFields: [{ type: String }],
 
     capacity: { type: Number, default: null },
 
@@ -141,3 +151,7 @@ EventSchema.index({ organisationId: 1, status: 1 });
 EventSchema.index({ category: 1, status: 1 });
 // Promoted strip query
 EventSchema.index({ isPromoted: 1, promotedUntil: 1 });
+EventSchema.index(
+  { seriesId: 1, startDate: 1 },
+  { unique: true, partialFilterExpression: { seriesId: { $type: 'objectId' } } },
+);

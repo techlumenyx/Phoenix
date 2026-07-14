@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import mongoose, { type HydratedDocument } from 'mongoose';
 import { type IMarketplaceItem } from '../models/marketplace-item.model';
-import { MarketplaceItemModel } from '../models';
+import { ClassifiedOrganisationNotificationModel, MarketplaceItemModel } from '../models';
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
 
@@ -48,6 +48,31 @@ interface CreateItemInput {
   imageUrls:   string[];
   isDonation:  boolean;
   organisationId?: string;
+}
+
+type UpdateItemInput = Partial<Pick<CreateItemInput,
+  'title' | 'description' | 'price' | 'currency' | 'condition' | 'category' |
+  'region' | 'imageUrls' | 'isDonation'
+>>;
+
+const LISTING_MANAGER_ROLES = ['master_admin', 'site_admin', 'classifieds_manager'] as const;
+
+function canManageItem(doc: ItemDocument, ctx: GraphQLContext) {
+  if (doc.organisationId) {
+    return canAccessOrganisation(ctx.auth, doc.organisationId.toString(), [...LISTING_MANAGER_ROLES]);
+  }
+  return doc.createdBy === ctx.auth.firebaseUid;
+}
+
+async function requireManageableItem(id: string, ctx: GraphQLContext) {
+  if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
+    throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
+  }
+  const doc = await MarketplaceItemModel.findById(id);
+  if (!doc || !canManageItem(doc, ctx)) {
+    throw new GraphQLError('Item not found or access denied', { extensions: { code: 'NOT_FOUND' } });
+  }
+  return doc;
 }
 
 interface ItemsArgs {
@@ -127,53 +152,57 @@ export const marketplaceResolvers = {
       return mapItem(doc);
     },
 
-    updateMarketplaceItem: async (_: unknown, { id, input }: { id: string; input: Partial<CreateItemInput> }, ctx: GraphQLContext) => {
-      if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
-        throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
-      }
+    updateMarketplaceItem: async (_: unknown, { id, input }: { id: string; input: UpdateItemInput }, ctx: GraphQLContext) => {
+      const doc = await requireManageableItem(id, ctx);
       const update: Record<string, unknown> = {};
-      if (input.title)       update['title'] = input.title;
-      if (input.description) update['description'] = input.description;
+      if (input.title?.trim())       update['title'] = input.title.trim();
+      if (input.description?.trim()) update['description'] = input.description.trim();
       if (input.price !== undefined) update['sellingPrice'] = input.price;
+      if (input.currency?.trim()) update['currency'] = input.currency.trim().toUpperCase();
       if (input.condition)   update['condition'] = input.condition;
+      if (input.category)    update['category'] = input.category;
+      if (input.region?.trim()) update['region'] = input.region.trim();
       if (input.imageUrls)   update['imageUrls'] = input.imageUrls;
-      if (input.isDonation !== undefined) update['isDonation'] = input.isDonation;
+      if (input.isDonation !== undefined) {
+        update['isDonation'] = input.isDonation;
+        if (input.isDonation) update['sellingPrice'] = 0;
+      }
 
-      const doc = await MarketplaceItemModel.findOneAndUpdate(
-        { _id: id, createdBy: ctx.auth.firebaseUid },
-        { $set: update },
-        { new: true },
-      );
-      if (!doc) throw new GraphQLError('Item not found or access denied', { extensions: { code: 'NOT_FOUND' } });
+      doc.set(update);
+      await doc.save();
       return mapItem(doc);
     },
 
     deleteMarketplaceItem: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
-      if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
-        throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
-      }
-      const result = await MarketplaceItemModel.deleteOne({ _id: id, createdBy: ctx.auth.firebaseUid });
+      const doc = await requireManageableItem(id, ctx);
+      const result = await MarketplaceItemModel.deleteOne({ _id: doc._id });
       return result.deletedCount > 0;
     },
 
     updateMarketplaceItemStatus: async (_: unknown, { id, status }: { id: string; status: string }, ctx: GraphQLContext) => {
-      if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
-        throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
+      if (!['AVAILABLE', 'RESERVED', 'SOLD'].includes(status)) {
+        throw new GraphQLError('This listing status cannot be set manually', { extensions: { code: 'BAD_USER_INPUT' } });
       }
-      const doc = await MarketplaceItemModel.findOneAndUpdate(
-        { _id: id, createdBy: ctx.auth.firebaseUid },
-        { $set: { status } },
-        { new: true },
-      );
-      if (!doc) throw new GraphQLError('Item not found or access denied', { extensions: { code: 'NOT_FOUND' } });
+      const doc = await requireManageableItem(id, ctx);
+      doc.status = status as ItemDocument['status'];
+      await doc.save();
       return mapItem(doc);
     },
 
-    reportListing: async (_: unknown, { itemId }: { itemId: string; reason: string }, ctx: GraphQLContext) => {
+    reportListing: async (_: unknown, { itemId, reason }: { itemId: string; reason: string }, ctx: GraphQLContext) => {
       if (!ctx.auth.isAuthenticated) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      await MarketplaceItemModel.updateOne({ _id: itemId }, { $inc: { flagCount: 1 } });
+      const item = await MarketplaceItemModel.findOneAndUpdate({ _id: itemId }, { $inc: { flagCount: 1 } }, { new: true });
+      if (!item) throw new GraphQLError('Listing not found', { extensions: { code: 'NOT_FOUND' } });
+      if (item.organisationId && ctx.auth.firebaseUid) {
+        const dedupeKey = `report:${item._id}:${ctx.auth.firebaseUid}`;
+        await ClassifiedOrganisationNotificationModel.updateOne(
+          { dedupeKey },
+          { $setOnInsert: { organisationId: item.organisationId, type: 'LISTING_REPORTED', title: 'Listing reported', message: `${item.title} was reported: ${reason}`, href: `/marketplace/${item._id}`, sourceId: item._id.toString(), dedupeKey, readAt: null } },
+          { upsert: true },
+        );
+      }
       return true;
     },
   },

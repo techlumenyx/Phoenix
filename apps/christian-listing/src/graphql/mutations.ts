@@ -67,6 +67,11 @@ export const UPDATE_ORGANISATION = gql`
       description
       region
       websiteUrl
+      logoUrl
+      contactEmail
+      phoneNumber
+      isActive
+      deactivatedAt
       socialLinks { whatsapp instagram facebook twitter website }
     }
   }
@@ -94,21 +99,70 @@ export const MY_ORG_JOB_LISTINGS = gql`
 
 export const MY_MARKETPLACE_LISTINGS = gql`
   query MyMarketplaceListings {
-    me {
+    myOrganisations {
       id
       marketplaceListings {
         id
         title
+        description
         category
         price
         currency
         condition
         region
+        imageUrls
         status
         isDonation
         createdAt
+        updatedAt
       }
     }
+  }
+`;
+
+export const SET_ORGANISATION_ACTIVE = gql`
+  mutation SetOrganisationActive($organisationId: ID!, $active: Boolean!) {
+    setOrganisationActive(organisationId: $organisationId, active: $active) {
+      id
+      isActive
+      deactivatedAt
+    }
+  }
+`;
+
+export const UPDATE_MARKETPLACE_ITEM = gql`
+  mutation UpdateMarketplaceItem($id: ID!, $input: UpdateMarketplaceItemInput!) {
+    updateMarketplaceItem(id: $id, input: $input) {
+      id
+      title
+      description
+      category
+      price
+      currency
+      condition
+      region
+      imageUrls
+      status
+      isDonation
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_MARKETPLACE_ITEM_STATUS = gql`
+  mutation UpdateMarketplaceItemStatus($id: ID!, $status: ListingStatus!) {
+    updateMarketplaceItemStatus(id: $id, status: $status) {
+      id
+      status
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_MARKETPLACE_ITEM = gql`
+  mutation DeleteMarketplaceItem($id: ID!) {
+    deleteMarketplaceItem(id: $id)
   }
 `;
 
@@ -120,6 +174,7 @@ export const MY_ORG_EVENTS = gql`
         edges {
           id
           title
+          description
           category
           date
           location { type city country }
@@ -127,8 +182,31 @@ export const MY_ORG_EVENTS = gql`
           capacityLimit
           status
           isRecurring
+          seriesId
+          occurrenceNumber
+          isSeriesException
+          series { recurrence { frequency interval daysOfWeek dayOfMonth timezone endsAt occurrenceCount } }
         }
       }
+    }
+  }
+`;
+
+export const CANCEL_EVENT = gql`
+  mutation CancelManagedEvent($id: ID!, $scope: EventUpdateScope!) {
+    cancelEvent(id: $id, scope: $scope)
+  }
+`;
+
+export const UPDATE_MANAGED_EVENT = gql`
+  mutation UpdateManagedEvent($id: ID!, $scope: EventUpdateScope!, $input: UpdateEventInput!) {
+    updateEvent(id: $id, scope: $scope, input: $input) {
+      id
+      title
+      description
+      date
+      status
+      isSeriesException
     }
   }
 `;
@@ -141,6 +219,10 @@ export const MY_ORGANISATIONS = gql`
       description
       logoUrl
       websiteUrl
+      contactEmail
+      phoneNumber
+      isActive
+      deactivatedAt
       socialLinks {
         whatsapp
         instagram

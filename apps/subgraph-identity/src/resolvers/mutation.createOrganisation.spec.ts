@@ -3,13 +3,15 @@ import { GraphQLError } from 'graphql';
 const mockSetCustomUserClaims = jest.fn();
 const mockFindOne = jest.fn();
 const mockCreate = jest.fn();
+const mockUpdateUser = jest.fn();
 
 jest.mock('firebase-admin/auth', () => ({
   getAuth: () => ({ setCustomUserClaims: mockSetCustomUserClaims }),
 }));
 
-jest.mock('../models/organisation.model', () => ({
+jest.mock('../models', () => ({
   OrganisationModel: { findOne: mockFindOne, create: mockCreate },
+  UserModel: { updateOne: mockUpdateUser },
 }));
 
 import { createOrganisation } from './mutation.createOrganisation';
@@ -37,7 +39,9 @@ describe('createOrganisation', () => {
     mockFindOne.mockResolvedValue(existing);
     const result = await createOrganisation({}, { input: { name: 'My Church' } }, baseContext);
     expect(result).toBe(existing);
-    expect(mockSetCustomUserClaims).not.toHaveBeenCalled();
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith('uid-org', {
+      accountType: 'organisation', orgId: 'org1', roles: ['master_admin'],
+    });
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
@@ -54,7 +58,9 @@ describe('createOrganisation', () => {
     expect(existingOrg.save).toHaveBeenCalledTimes(1);
     expect(existingOrg.name).toBe('My Church');
     expect(result.name).toBe('My Church');
-    expect(mockSetCustomUserClaims).not.toHaveBeenCalled();
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith('uid-org', {
+      accountType: 'organisation', orgId: 'org-id', roles: ['master_admin'],
+    });
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
@@ -65,7 +71,9 @@ describe('createOrganisation', () => {
 
     const result = await createOrganisation({}, { input: { name: 'My Church' } }, baseContext);
 
-    expect(mockSetCustomUserClaims).toHaveBeenCalledWith('uid-org', { accountType: 'organisation' });
+    expect(mockSetCustomUserClaims).toHaveBeenCalledWith('uid-org', {
+      accountType: 'organisation', orgId: 'org2', roles: ['master_admin'],
+    });
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ createdBy: 'uid-org', name: 'My Church' }),
     );

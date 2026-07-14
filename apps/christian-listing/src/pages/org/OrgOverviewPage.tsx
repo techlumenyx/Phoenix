@@ -40,12 +40,12 @@ function OrgAvatarInitials({ name }: { name: string }) {
 
 // ── Org Profile Header ────────────────────────────────────────────────────────
 function OrgProfileHeader({ org }: { org: OrgData }) {
-  const socialEntries = org.socialLinks
+  const socialLinks = org.socialLinks;
+  const socialEntries = socialLinks
     ? (['instagram', 'twitter', 'whatsapp', 'facebook'] as const)
-        .map((k) => ({ key: k, handle: org.socialLinks![k] }))
-        .filter((e) => !!e.handle)
+        .map((k) => ({ key: k, handle: socialLinks[k] }))
+        .filter((e): e is { key: typeof e.key; handle: string } => Boolean(e.handle))
         .slice(0, 2)
-        .map((e) => ({ key: e.key, handle: e.handle! }))
     : [];
 
   const websiteDisplay = org.websiteUrl?.replace(/^https?:\/\//, '') ?? null;
@@ -341,79 +341,6 @@ function NotificationCentre() {
   );
 }
 
-function MarketplaceMessages() {
-  // Mock data to match the 4 repeated items in the image
-  const messages = Array(4).fill({
-    id: crypto.randomUUID(),
-    name: 'CL User',
-    avatarUrl: 'https://i.pravatar.cc/150?img=11', // Placeholder avatar
-    preview: "Hello! I'm interested in buying your bible for sale....",
-    time: '10m ago',
-    isUnread: true,
-  });
-
-  return (
-    <div className="font-sans w-full bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
-      
-      {/* Header */}
-      <div className="px-6 py-5 flex items-center justify-between border-b border-gray-200">
-        <h2 className="text-2xl font-serif font-bold text-[#1B1B1B]">
-          Marketplace Messages
-        </h2>
-        <button className="text-[13px] font-medium text-gray-500 hover:text-gray-800 transition-colors">
-          Open Inbox
-        </button>
-      </div>
-
-      {/* Messages List */}
-      <div className="flex flex-col">
-        {messages.map((message, index) => (
-          <div 
-            key={index} 
-            className={`flex items-center gap-4 px-6 py-4 ${
-              index !== messages.length - 1 ? 'border-b border-gray-100' : ''
-            } hover:bg-gray-50/50 transition-colors cursor-pointer`}
-          >
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
-              <img 
-                src={message.avatarUrl} 
-                alt={message.name} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Content Container */}
-            <div className="flex-1 min-w-0">
-              {/* Top Row: Name & Meta */}
-              <div className="flex justify-between items-center mb-0.5">
-                <h4 className="font-bold text-[#1B1B1B] text-[14px]">
-                  {message.name}
-                </h4>
-                
-                <div className="flex items-center gap-2 shrink-0 pl-2">
-                  <span className="text-[12px] text-gray-400 font-medium">
-                    {message.time}
-                  </span>
-                  {message.isUnread && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#1B1B1B]" />
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Row: Message Preview */}
-              <p className="text-[13px] text-gray-500 truncate pr-4">
-                {message.preview}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-    </div>
-  );
-}
-
 // ── Shared 3-dot action button ────────────────────────────────────────────────
 function RowActions() {
   return (
@@ -683,6 +610,20 @@ const PILL_TO_ENUM: Record<string, string> = {
   'Other':                  'OTHER',
 };
 
+function zonedLocalDateTime(date: string, time: string, timezone: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = (time || '00:00').split(':').map(Number);
+  const desired = Date.UTC(year, month - 1, day, hour, minute, 0);
+  let result = new Date(desired);
+  for (let pass = 0; pass < 2; pass += 1) {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(result);
+    const value = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+    const actual = Date.UTC(value('year'), value('month') - 1, value('day'), value('hour'), value('minute'), value('second'));
+    result = new Date(result.getTime() + desired - actual);
+  }
+  return result;
+}
+
 function CreateEventForm({ orgId }: { orgId?: string }) {
   const [title, setTitle]           = useState('');
   const [description, setDesc]      = useState('');
@@ -693,6 +634,14 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
   const [region, setRegion]         = useState('');
   const [capacity, setCapacity]     = useState('');
   const [isTicketed, setIsTicketed] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'WEEKLY' | 'MONTHLY'>('WEEKLY');
+  const [recurrenceInterval, setRecurrenceInterval] = useState('1');
+  const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
+  const [recurrenceEnd, setRecurrenceEnd] = useState<'COUNT' | 'UNTIL'>('COUNT');
+  const [occurrenceCount, setOccurrenceCount] = useState('12');
+  const [recurrenceUntil, setRecurrenceUntil] = useState('');
+  const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [eventType, setEventType]   = useState<'PHYSICAL' | 'VIRTUAL' | 'HYBRID'>('PHYSICAL');
   const [selectedCategory, setCategory] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -715,13 +664,14 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
     setSubmitting(true);
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
+      const eventDate = isRecurring ? zonedLocalDateTime(date, time, timezone) : new Date(dateTime);
       await createEvent({
         variables: {
           input: {
             title:              title.trim(),
             description:        description.trim(),
             category:           PILL_TO_ENUM[selectedCategory] ?? 'OTHER',
-            date:               new Date(dateTime).toISOString(),
+            date:               eventDate.toISOString(),
             location: {
               type:         eventType,
               address:      eventType !== 'VIRTUAL' ? address.trim() || undefined : undefined,
@@ -730,6 +680,16 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
             hostOrganisationIds: [orgId],
             region:             region.trim(),
             capacityLimit:      capacity ? parseInt(capacity, 10) : undefined,
+            isRecurring,
+            recurrence: isRecurring ? {
+              frequency: recurrenceFrequency,
+              interval: Math.max(1, parseInt(recurrenceInterval, 10) || 1),
+              daysOfWeek: recurrenceFrequency === 'WEEKLY' ? recurrenceDays : undefined,
+              dayOfMonth: recurrenceFrequency === 'MONTHLY' ? new Date(`${date}T12:00:00`).getDate() : undefined,
+              timezone,
+              occurrenceCount: recurrenceEnd === 'COUNT' ? Math.min(100, Math.max(1, parseInt(occurrenceCount, 10) || 1)) : undefined,
+              endsAt: recurrenceEnd === 'UNTIL' && recurrenceUntil ? zonedLocalDateTime(recurrenceUntil, '23:59', timezone).toISOString() : undefined,
+            } : undefined,
           },
         },
       });
@@ -737,6 +697,8 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
       setTitle(''); setDesc(''); setDate(''); setTime('');
       setAddress(''); setVirtual(''); setRegion(''); setCapacity('');
       setCategory(null); setEventType('PHYSICAL'); setIsTicketed(false);
+      setIsRecurring(false); setRecurrenceFrequency('WEEKLY'); setRecurrenceInterval('1');
+      setRecurrenceDays([]); setRecurrenceEnd('COUNT'); setOccurrenceCount('12'); setRecurrenceUntil('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to publish event — please try again.');
     } finally {
@@ -870,6 +832,21 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
           )}
         </div>
       </div>
+
+      <section className="rounded-xl border border-gray-200 bg-[#FAF6ED] p-4">
+        <label className="flex cursor-pointer items-center justify-between gap-4">
+          <span><span className="block text-sm font-semibold text-[#1B1B1B]">Recurring event</span><span className="mt-1 block text-xs text-gray-500">Create a managed weekly or monthly series.</span></span>
+          <input type="checkbox" checked={isRecurring} onChange={(event) => setIsRecurring(event.target.checked)} className="h-4 w-4 accent-[#1B1B1B]" />
+        </label>
+        {isRecurring && <div className="mt-4 grid gap-4 border-t border-gray-200 pt-4 md:grid-cols-3">
+          <label className="text-xs font-semibold text-gray-600">Frequency<select value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as 'WEEKLY' | 'MONTHLY')} className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"><option value="WEEKLY">Weekly</option><option value="MONTHLY">Monthly</option></select></label>
+          <label className="text-xs font-semibold text-gray-600">Repeat every<input type="number" min="1" max={recurrenceFrequency === 'WEEKLY' ? 52 : 12} value={recurrenceInterval} onChange={(event) => setRecurrenceInterval(event.target.value)} className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm" /><span className="mt-1 block font-normal text-gray-400">{recurrenceFrequency === 'WEEKLY' ? 'week(s)' : 'month(s)'}</span></label>
+          <label className="text-xs font-semibold text-gray-600">Timezone<input value={timezone} onChange={(event) => setTimezone(event.target.value)} placeholder="Europe/London" className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm" /></label>
+          {recurrenceFrequency === 'WEEKLY' && <div className="md:col-span-3"><p className="text-xs font-semibold text-gray-600">Repeat on</p><div className="mt-2 flex flex-wrap gap-2">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((label, day) => <button key={label} type="button" onClick={() => setRecurrenceDays((current) => current.includes(day) ? current.filter((value) => value !== day) : [...current, day])} className={`h-9 w-11 rounded-full text-xs font-semibold ${recurrenceDays.includes(day) ? 'bg-[#1B1B1B] text-white' : 'border border-gray-200 bg-white text-gray-600'}`}>{label}</button>)}</div></div>}
+          {recurrenceFrequency === 'MONTHLY' && <p className="self-end text-xs leading-5 text-gray-500 md:col-span-3">Repeats on day {date ? new Date(`${date}T12:00:00`).getDate() : '—'} of each selected month. Shorter months use their last valid day.</p>}
+          <div className="md:col-span-3"><p className="text-xs font-semibold text-gray-600">Series ends</p><div className="mt-2 flex flex-wrap items-center gap-4"><label className="flex items-center gap-2 text-xs"><input type="radio" checked={recurrenceEnd === 'COUNT'} onChange={() => setRecurrenceEnd('COUNT')} className="accent-[#1B1B1B]" />After</label><input type="number" min="1" max="100" disabled={recurrenceEnd !== 'COUNT'} value={occurrenceCount} onChange={(event) => setOccurrenceCount(event.target.value)} className="w-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40" /><span className="text-xs text-gray-500">occurrences</span><label className="ml-3 flex items-center gap-2 text-xs"><input type="radio" checked={recurrenceEnd === 'UNTIL'} onChange={() => setRecurrenceEnd('UNTIL')} className="accent-[#1B1B1B]" />On date</label><input type="date" disabled={recurrenceEnd !== 'UNTIL'} min={date} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40" /></div></div>
+        </div>}
+      </section>
 
       {/* Region Tag */}
       <div>
@@ -1580,10 +1557,13 @@ function CreateJobsForm({ orgId }: { orgId?: string }) {
 }
 
 function CreationCentre({ orgId }: { orgId?: string }) {
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('create');
+    return requested === 'listing' ? 1 : requested === 'job' ? 2 : 0;
+  });
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <div id="creation-centre" className="bg-white rounded-xl border border-gray-100 overflow-hidden scroll-mt-6">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-100">
         <h2 className="text-sm font-bold text-[#1B1B1B]">Creation Centre</h2>

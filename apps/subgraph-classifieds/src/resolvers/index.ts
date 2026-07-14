@@ -3,6 +3,7 @@ import { jobResolvers } from './job.resolver';
 import { jobApplicationResolvers } from './job-application.resolver';
 import { savedClassifiedResolvers } from './saved-classified.resolver';
 import { messagingResolvers } from './messaging.resolver';
+import { classifiedNotificationResolvers } from './notification.resolver';
 
 export const resolvers = {
   Query: {
@@ -11,6 +12,7 @@ export const resolvers = {
     ...jobApplicationResolvers.Query,
     ...savedClassifiedResolvers.Query,
     ...messagingResolvers.Query,
+    ...classifiedNotificationResolvers.Query,
   },
   Mutation: {
     ...marketplaceResolvers.Mutation,
@@ -18,6 +20,7 @@ export const resolvers = {
     ...jobApplicationResolvers.Mutation,
     ...savedClassifiedResolvers.Mutation,
     ...messagingResolvers.Mutation,
+    ...classifiedNotificationResolvers.Mutation,
   },
   MarketplaceItem: marketplaceResolvers.MarketplaceItem,
   JobListing:      jobResolvers.JobListing,

@@ -44,6 +44,7 @@ export interface IOrganisation {
   createdBy: string;   // firebaseUid of the master_admin (user who created the org)
   // Step 1 — optional for schema-driven creation
   phoneNumber: string | null;
+  contactEmail: string | null;
   // Core fields
   name:             string | null;
   description:      string | null;
@@ -59,6 +60,8 @@ export interface IOrganisation {
   verificationTier:    VerificationTier;
   isVerified:          boolean;   // virtual — derived from verificationStatus
   onboardingCompleted: boolean;
+  isActive:             boolean;
+  deactivatedAt:        Date | null;
   followerCount:       number;
   createdAt: Date;
   updatedAt: Date;
@@ -93,6 +96,7 @@ export const OrganisationSchema = new Schema<IOrganisation>(
   {
     createdBy:   { type: String, required: true },
     phoneNumber: { type: String, default: null },
+    contactEmail: { type: String, default: null },
 
     name:             { type: String, default: null },
     description:      { type: String, default: null },
@@ -116,6 +120,8 @@ export const OrganisationSchema = new Schema<IOrganisation>(
       default: 'NONE',
     },
     onboardingCompleted: { type: Boolean, default: false },
+    isActive:             { type: Boolean, default: true },
+    deactivatedAt:        { type: Date, default: null },
     followerCount:       { type: Number,  default: 0 },
   },
   { timestamps: true },
@@ -124,6 +130,7 @@ export const OrganisationSchema = new Schema<IOrganisation>(
 OrganisationSchema.index({ createdBy: 1 });
 OrganisationSchema.index({ regionCode: 1 });
 OrganisationSchema.index({ verificationStatus: 1 });
+OrganisationSchema.index({ isActive: 1 });
 
 // Derived trust badge — true when admin has approved verification
 OrganisationSchema.virtual('isVerified').get(function () {

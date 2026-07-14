@@ -1,7 +1,9 @@
 const mockFind = jest.fn();
+const mockFindUser = jest.fn();
 
-jest.mock('../models/organisation.model', () => ({
+jest.mock('../models', () => ({
   OrganisationModel: { find: mockFind },
+  UserModel: { findOne: mockFindUser },
 }));
 
 import { myOrganisations } from './query.myOrganisations';
@@ -27,9 +29,10 @@ describe('myOrganisations', () => {
 
   it('queries orgs by createdBy firebaseUid', async () => {
     const orgs = [{ _id: 'org1', name: 'My Church' }];
+    mockFindUser.mockReturnValue({ select: jest.fn().mockResolvedValue(null) });
     mockFind.mockResolvedValue(orgs);
     const result = await myOrganisations({}, {}, authedContext);
-    expect(mockFind).toHaveBeenCalledWith({ createdBy: 'uid-org' });
+    expect(mockFind).toHaveBeenCalledWith({ $or: [{ createdBy: 'uid-org' }] });
     expect(result).toBe(orgs);
   });
 });

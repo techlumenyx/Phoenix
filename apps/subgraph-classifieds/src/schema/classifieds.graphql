@@ -272,6 +272,8 @@ type Query {
   ): MarketplaceItemConnection!
 
   communityGives(region: String, limit: Int): [MarketplaceItem!]!
+  classifiedOrganisationNotifications(organisationId: ID!, unreadOnly: Boolean, limit: Int): [ClassifiedOrganisationNotification!]!
+  classifiedOrganisationUnreadCount(organisationId: ID!): Int!
 }
 
 type JobListingConnection {
@@ -285,6 +287,8 @@ type MarketplaceItemConnection {
   hasNextPage: Boolean!
   endCursor: String
 }
+
+type ClassifiedOrganisationNotification { id: ID! type: String! title: String! message: String! href: String sourceId: String readAt: DateTime createdAt: DateTime! }
 
 # ─── Mutations ────────────────────────────────────────────────────────────────
 
@@ -309,6 +313,8 @@ type Mutation {
   sendMessage(threadId: ID!, body: String!): Message!
   markThreadRead(threadId: ID!): Boolean!
   archiveThread(threadId: ID!): MessageThread!
+  markClassifiedOrganisationNotificationRead(id: ID!): ClassifiedOrganisationNotification!
+  markAllClassifiedOrganisationNotificationsRead(organisationId: ID!): Boolean!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────
@@ -388,7 +394,10 @@ input UpdateMarketplaceItemInput {
   title: String
   description: String
   price: Float
+  currency: String
   condition: ItemCondition
+  category: MarketplaceCategory
+  region: String
   imageUrls: [String!]
   isDonation: Boolean
 }

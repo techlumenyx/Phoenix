@@ -10,9 +10,15 @@ const EVENT_DETAILS = gql`
     event(id: $id) {
       id title description category date endDate region
       rsvpCount interestedCount savedCount confirmedCount capacityLimit waitlistCount
-      status imageUrls isPromoted externalTicketUrl
+      status imageUrls isPromoted externalTicketUrl isRecurring seriesId occurrenceNumber isSeriesException
       location { type address city country virtualLink }
       hosts { id name description logoUrl region isVerified verificationTier websiteUrl }
+      mySeriesRsvp { id stage }
+      series {
+        id
+        recurrence { frequency interval daysOfWeek dayOfMonth timezone endsAt occurrenceCount }
+        occurrences(limit: 20) { edges { id date status rsvpCount capacityLimit } }
+      }
     }
     relatedEvents: events(status: PUBLISHED, sort: POPULAR, limit: 20) {
       edges { id title description category date region rsvpCount imageUrls location { city country type } }
@@ -33,12 +39,27 @@ const CANCEL_RSVP = gql`
   }
 `;
 
+const RSVP_TO_SERIES = gql`
+  mutation EventDetailsSeriesRsvp($seriesId: ID!, $stage: RsvpStage!) {
+    rsvpToSeries(seriesId: $seriesId, stage: $stage) { id stage }
+  }
+`;
+
+const CANCEL_SERIES_RSVP = gql`
+  mutation EventDetailsCancelSeriesRsvp($seriesId: ID!) {
+    cancelSeriesRsvp(seriesId: $seriesId)
+  }
+`;
+
 type RsvpStage = 'INTERESTED' | 'SAVED' | 'CONFIRMED' | 'WAITLISTED';
 interface EventDetailsData {
   event: null | {
     id: string; title: string; description: string; category: string; date: string; endDate?: string | null; region: string;
     rsvpCount: number; interestedCount: number; savedCount: number; confirmedCount: number; capacityLimit?: number | null; waitlistCount: number;
     status: string; imageUrls: string[]; isPromoted: boolean; externalTicketUrl?: string | null;
+    isRecurring: boolean; seriesId?: string | null; occurrenceNumber?: number | null; isSeriesException: boolean;
+    mySeriesRsvp?: { id: string; stage: RsvpStage } | null;
+    series?: { id: string; recurrence: { frequency: 'WEEKLY' | 'MONTHLY'; interval: number; daysOfWeek: number[]; dayOfMonth?: number | null; timezone: string; endsAt?: string | null; occurrenceCount?: number | null }; occurrences: { edges: Array<{ id: string; date: string; status: string; rsvpCount: number; capacityLimit?: number | null }> } } | null;
     location: { type: string; address?: string | null; city?: string | null; country?: string | null; virtualLink?: string | null };
     hosts: Array<{ id: string; name: string; description?: string | null; logoUrl?: string | null; region?: string | null; isVerified: boolean; verificationTier: string; websiteUrl?: string | null }>;
   };
@@ -56,6 +77,8 @@ export default function EventDetailsPage() {
   const { data, loading, error, refetch } = useQuery<EventDetailsData>(EVENT_DETAILS, { variables: { id }, skip: !id });
   const [rsvp, { loading: rsvpLoading }] = useMutation(RSVP_TO_EVENT);
   const [cancelRsvp, { loading: cancelLoading }] = useMutation(CANCEL_RSVP);
+  const [rsvpSeries, { loading: seriesRsvpLoading }] = useMutation(RSVP_TO_SERIES);
+  const [cancelSeriesRsvp, { loading: cancelSeriesLoading }] = useMutation(CANCEL_SERIES_RSVP);
   const event = data?.event;
   const currentStage = data?.myRsvps.find((entry) => entry.event.id === id)?.stage;
 
@@ -77,6 +100,21 @@ export default function EventDetailsPage() {
   const cancel = async () => {
     await cancelRsvp({ variables: { eventId: id } });
     setNotice('Your response was removed.');
+    await refetch();
+  };
+
+  const attendSeries = async () => {
+    if (!user) { navigate('/signin', { state: { from: location.pathname } }); return; }
+    if (!event?.seriesId) return;
+    await rsvpSeries({ variables: { seriesId: event.seriesId, stage: 'CONFIRMED' } });
+    setNotice('You are registered for all future occurrences. Capacity is checked separately for each date.');
+    await refetch();
+  };
+
+  const leaveSeries = async () => {
+    if (!event?.seriesId) return;
+    await cancelSeriesRsvp({ variables: { seriesId: event.seriesId } });
+    setNotice('Future series registrations were removed. Past attendance history was kept.');
     await refetch();
   };
 
@@ -113,6 +151,7 @@ export default function EventDetailsPage() {
           <div className="relative overflow-hidden rounded-xl bg-[#2a241e] aspect-[16/10] shadow-sm">
             <img src={event.imageUrls[0] || '/assets/event-theology.png'} alt={event.title} className="h-full w-full object-cover" />
             <span className="absolute left-4 top-4 rounded-full bg-[#8c3f86] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{event.category.replaceAll('_', '/')}</span>
+            {event.isRecurring && <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#42113f]">Recurring series · #{event.occurrenceNumber}</span>}
             {host?.isVerified && <span className="absolute right-4 top-4 rounded-full bg-[#7acb37] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#17310b]">✓ Verified</span>}
           </div>
 
@@ -129,6 +168,7 @@ export default function EventDetailsPage() {
           <h1 className="font-serif text-[28px] font-bold leading-[1.02]">{event.title}</h1>
           <div className="mt-7 space-y-5 text-sm">
             <InfoRow icon="▣" title={date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} detail={`${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}${endDate ? ` – ${endDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : ''}`} />
+            {event.series && <InfoRow icon="↻" title={`${event.series.recurrence.frequency === 'WEEKLY' ? 'Weekly' : 'Monthly'} series`} detail={`Every ${event.series.recurrence.interval > 1 ? `${event.series.recurrence.interval} ` : ''}${event.series.recurrence.frequency === 'WEEKLY' ? 'week(s)' : 'month(s)'} · ${event.series.recurrence.timezone}`} />}
             <InfoRow icon="⌖" title={event.location.type === 'VIRTUAL' ? 'Online event' : event.location.city || event.region} detail={locationText} link={event.location.type !== 'VIRTUAL' ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}` : event.location.virtualLink || undefined} />
             {event.location.type === 'HYBRID' && event.location.virtualLink && <InfoRow icon="↗" title="Join online" detail="Virtual attendance is available" link={event.location.virtualLink} />}
           </div>
@@ -145,8 +185,11 @@ export default function EventDetailsPage() {
               <button disabled={rsvpLoading} onClick={() => setStage('SAVED')} className={`rounded-lg border px-4 py-3 text-sm ${currentStage === 'SAVED' ? 'border-[#42113f] bg-[#f8eff7]' : 'border-gray-400 bg-white'}`}>{currentStage === 'SAVED' ? 'Saved' : 'Save Event'}</button>
             </div>
             {currentStage && <button disabled={cancelLoading} onClick={cancel} className="w-full py-1 text-xs text-gray-500 underline hover:text-gray-900">Remove my response</button>}
+            {event.isRecurring && event.seriesId && <div className="rounded-xl border border-[#d9c5d7] bg-[#f8eff7] p-3"><p className="text-xs font-semibold text-[#42113f]">Attend the series</p><p className="mt-1 text-[11px] leading-5 text-gray-600">Register for each future occurrence. Full dates automatically place you on that occurrence’s waitlist.</p>{event.mySeriesRsvp ? <button disabled={cancelSeriesLoading} onClick={leaveSeries} className="mt-2 text-xs font-semibold text-red-600 underline">Stop attending future dates</button> : <button disabled={seriesRsvpLoading} onClick={attendSeries} className="mt-3 w-full rounded-lg border border-[#42113f] bg-white px-3 py-2 text-xs font-semibold text-[#42113f]">Attend all future dates</button>}</div>}
             {notice && <p role="status" className="text-center text-xs font-medium text-green-700">{notice}</p>}
           </div>
+
+          {event.series && <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5"><h3 className="text-sm font-bold">Other dates in this series</h3><div className="mt-3 max-h-56 space-y-2 overflow-y-auto">{event.series.occurrences.edges.filter((occurrence) => occurrence.status !== 'CANCELLED').map((occurrence) => <Link key={occurrence.id} to={`/events/${occurrence.id}`} className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs ${occurrence.id === event.id ? 'bg-[#f8eff7] font-semibold text-[#42113f]' : 'bg-gray-50 hover:bg-gray-100'}`}><span>{new Date(occurrence.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span><span>{occurrence.id === event.id ? 'Current' : `${occurrence.rsvpCount} going`}</span></Link>)}</div></section>}
 
           {host && <section className="mt-7 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">

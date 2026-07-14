@@ -8,7 +8,7 @@ jest.mock('firebase-admin/auth', () => ({
   getAuth: () => ({ setCustomUserClaims: mockSetCustomUserClaims }),
 }));
 
-jest.mock('../models/user.model', () => ({
+jest.mock('../models', () => ({
   UserModel: { findOne: mockFindOne, create: mockCreate },
 }));
 
