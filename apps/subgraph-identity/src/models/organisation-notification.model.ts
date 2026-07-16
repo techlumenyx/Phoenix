@@ -3,7 +3,7 @@ import mongoose, { Schema } from 'mongoose';
 export interface IIdentityOrganisationNotification {
   _id: mongoose.Types.ObjectId;
   organisationId: mongoose.Types.ObjectId;
-  type: 'NEW_FOLLOWER' | 'VERIFICATION_UPDATE';
+  type: 'NEW_FOLLOWER' | 'VERIFICATION_UPDATE' | 'ACCOUNT_UPDATE';
   title: string;
   message: string;
   href: string | null;
@@ -16,7 +16,7 @@ export interface IIdentityOrganisationNotification {
 export const IdentityOrganisationNotificationSchema = new Schema<IIdentityOrganisationNotification>(
   {
     organisationId: { type: Schema.Types.ObjectId, required: true, index: true },
-    type: { type: String, enum: ['NEW_FOLLOWER', 'VERIFICATION_UPDATE'], required: true },
+    type: { type: String, enum: ['NEW_FOLLOWER', 'VERIFICATION_UPDATE', 'ACCOUNT_UPDATE'], required: true },
     title: { type: String, required: true },
     message: { type: String, required: true },
     href: { type: String, default: null },

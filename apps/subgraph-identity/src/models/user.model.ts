@@ -69,6 +69,9 @@ export interface IUser {
   regionCode: string | null;   // filter  — "GB-LND"    — set in onboarding step 1
   preferences: UserPreference[];
   onboardingCompleted: boolean;
+  accountStatus: 'ACTIVE' | 'SUSPENDED';
+  warningCount: number;
+  suspensionReason: string | null;
 
   // All platform and org roles in one array — [] for regular users
   roles: Role[];
@@ -120,6 +123,9 @@ export const UserSchema = new Schema<IUser>(
     regionCode:          { type: String,  default: null },
     preferences:         [{ type: String, enum: USER_PREFERENCES }],
     onboardingCompleted: { type: Boolean, default: false },
+    accountStatus:       { type: String, enum: ['ACTIVE', 'SUSPENDED'], default: 'ACTIVE', index: true },
+    warningCount:        { type: Number, default: 0 },
+    suspensionReason:    { type: String, default: null },
 
     roles: [{ type: String, enum: ROLES }],
 

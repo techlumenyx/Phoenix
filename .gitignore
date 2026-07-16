@@ -55,6 +55,9 @@ tools/bin/router
 *.log
 npm-debug.log*
 
+# Local database backups
+backups/
+
 # Apollo Router binary
 router.exe
 router

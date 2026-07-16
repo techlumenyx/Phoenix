@@ -4,7 +4,7 @@
 FROM ghcr.io/apollographql/router:v2.16.0
 
 USER root
-COPY apps/gateway/router.yaml /dist/config/router.yaml
+COPY apps/gateway/router.production.yaml /dist/config/router.yaml
 COPY apps/gateway/supergraph.graphql /dist/schema/supergraph.graphql
 RUN chown -R router:router /dist/config /dist/schema
 USER router

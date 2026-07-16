@@ -43,6 +43,7 @@ enum ListingStatus {
   RESERVED
   SOLD
   PENDING_REVIEW
+  REMOVED
 }
 
 enum MarketplaceSort {

@@ -5,6 +5,21 @@ extend schema
 
 scalar DateTime
 
+enum AdminRole {
+  SUPER_ADMIN
+  TRUST_SAFETY
+  VERIFICATION_REVIEWER
+  CONTENT_MANAGER
+  SUPPORT_AGENT
+  ANALYST
+  AUDITOR
+}
+
+enum AdminStatus {
+  ACTIVE
+  DISABLED
+}
+
 enum VerificationTier {
   NONE
   STANDARD
@@ -85,6 +100,18 @@ type OrganisationTeamMember { user: User! roles: [String!]! joinedAt: DateTime }
 type OrganisationInvite { id: ID! email: String! organisation: Organisation! roles: [String!]! status: String! token: String! expiresAt: DateTime! createdAt: DateTime! }
 type IdentityOrganisationNotification { id: ID! type: String! title: String! message: String! href: String sourceId: String readAt: DateTime createdAt: DateTime! }
 
+type Admin @key(fields: "id") {
+  id: ID!
+  firebaseUid: String!
+  email: String!
+  name: String!
+  roles: [AdminRole!]!
+  status: AdminStatus!
+  lastLoginAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type VerificationRequest @key(fields: "id") {
   id: ID!
   organisation: Organisation!
@@ -104,6 +131,7 @@ enum VerificationStatus {
 # ─── Queries ──────────────────────────────────────────────────────────────────
 
 type Query {
+  adminMe: Admin
   me: User
   user(id: ID!): User
   organisation(id: ID!): Organisation
@@ -139,7 +167,7 @@ type Mutation {
   createOrganisation(input: CreateOrganisationInput!): Organisation!
   updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
   setOrganisationActive(organisationId: ID!, active: Boolean!): Organisation!
-  submitVerification(organisationId: ID!, documentUrls: [String!]!): VerificationRequest!
+  submitVerification(organisationId: ID!, documentUrls: [String!]!, requestedTier: VerificationTier = STANDARD): VerificationRequest!
   followOrganisation(organisationId: ID!): Organisation!
   unfollowOrganisation(organisationId: ID!): Organisation!
   inviteOrganisationMember(organisationId: ID!, email: String!, roles: [String!]!): OrganisationInvite!

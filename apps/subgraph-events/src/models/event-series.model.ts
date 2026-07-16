@@ -31,6 +31,8 @@ export interface IEventSeries {
   imageUrls: string[];
   ticketUrl: string | null;
   status: EventStatus;
+  adminSuspended: boolean;
+  preAdminStatus: EventStatus | null;
   recurrence: IRecurrenceRule;
   createdAt: Date;
   updatedAt: Date;
@@ -70,6 +72,8 @@ export const EventSeriesSchema = new Schema<IEventSeries>({
   imageUrls: [{ type: String }],
   ticketUrl: { type: String, default: null },
   status: { type: String, default: 'PUBLISHED' },
+  adminSuspended: { type: Boolean, default: false, index: true },
+  preAdminStatus: { type: String, default: null },
   recurrence: { type: RecurrenceRuleSchema, required: true },
 }, { timestamps: true });
 

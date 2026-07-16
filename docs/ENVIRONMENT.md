@@ -10,6 +10,14 @@ Copy `.env.example` to `.env` and fill in all values before running any service.
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Yes | Firebase Admin SDK service account JSON, **base64-encoded**. Get from Firebase Console → Project Settings → Service Accounts → Generate new private key. Encode: `base64 -i serviceAccount.json` (Mac/Linux) |
 | `PORT` | Yes | HTTP port the service listens on. Each service uses a different port (4001–4004). Set automatically by Docker Compose. |
 | `NODE_ENV` | No | `development` or `production`. Defaults to `development`. |
+| `INTERNAL_SERVICE_KEY` | Yes for admin workflows | Shared high-entropy backend-only secret used for authenticated subgraph-to-subgraph commands. It deliberately does not use the browser-injected `CL_` prefix. |
+| `ADMIN_INTERNAL_URL` | Yes for identity and classifieds | Admin service HTTP base URL. Local default: `http://localhost:4004`; Docker: `http://admin:4004`. |
+| `CLASSIFIEDS_INTERNAL_URL` | Yes for admin | Classifieds service HTTP base URL. Local default: `http://localhost:4003`; Docker: `http://classifieds:4003`. |
+| `IDENTITY_INTERNAL_URL` | Yes for admin | Identity service HTTP base URL. Local default: `http://localhost:4001`; Docker: `http://identity:4001`. |
+| `EVENTS_INTERNAL_URL` | Yes for admin | Events service HTTP base URL. Local default: `http://localhost:4002`; Docker: `http://events:4002`. |
+| `ADMIN_ALLOWED_ORIGINS` | Yes in production | Comma-separated exact origins allowed to call the admin subgraph. Do not use wildcards. |
+| `ADMIN_RATE_LIMIT_PER_MINUTE` | No | Per-admin GraphQL mutation limit. Defaults to 120 per minute and enforces a minimum of 10. |
+| `APP_VERSION` / `GIT_SHA` | Recommended | Release identifiers displayed by the admin System Health page. |
 
 **Note on `FIREBASE_SERVICE_ACCOUNT_JSON`:** The raw service account JSON contains newlines which break environment variable handling in many shells. Always base64-encode the entire file before setting this variable.
 

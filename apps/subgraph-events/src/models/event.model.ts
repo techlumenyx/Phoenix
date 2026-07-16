@@ -74,6 +74,8 @@ export interface IEvent {
 
   // Platform state
   status:        EventStatus;
+  adminSuspended: boolean;
+  preAdminStatus: EventStatus | null;
   isPromoted:    boolean;
   promotedUntil: Date | null;
 
@@ -135,6 +137,8 @@ export const EventSchema = new Schema<IEvent>(
     notifyAttendees: { type: Boolean, default: false },
 
     status:        { type: String, enum: EVENT_STATUSES, default: 'DRAFT' },
+    adminSuspended: { type: Boolean, default: false, index: true },
+    preAdminStatus: { type: String, enum: EVENT_STATUSES, default: null },
     isPromoted:    { type: Boolean, default: false },
     promotedUntil: { type: Date,    default: null },
 

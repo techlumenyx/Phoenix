@@ -18,6 +18,8 @@
     "gateway": "nx serve gateway",
     "cl": "nx serve christian-listing",
     "cl-admin": "nx serve cl-admin",
+    "admin:provision": "tsx tools/scripts/provision-admin.ts",
+    "admin:backup": "powershell -ExecutionPolicy Bypass -File tools/scripts/backup-admin.ps1",
     "frontend": "concurrently -n cl,cl-admin -c blue,red npm:cl npm:cl-admin",
     "seed:local": "node tools/scripts/seed-local-mongo.js"
   },

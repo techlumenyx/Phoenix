@@ -63,6 +63,7 @@ export interface IOrganisation {
   isActive:             boolean;
   deactivatedAt:        Date | null;
   followerCount:       number;
+  warningCount:        number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -123,6 +124,7 @@ export const OrganisationSchema = new Schema<IOrganisation>(
     isActive:             { type: Boolean, default: true },
     deactivatedAt:        { type: Date, default: null },
     followerCount:       { type: Number,  default: 0 },
+    warningCount:        { type: Number, default: 0 },
   },
   { timestamps: true },
 );

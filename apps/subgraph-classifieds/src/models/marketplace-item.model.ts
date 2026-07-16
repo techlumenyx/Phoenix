@@ -27,6 +27,7 @@ export const LISTING_STATUSES = [
   'RESERVED',
   'SOLD',
   'PENDING_REVIEW',
+  'REMOVED',
 ] as const;
 
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
@@ -62,9 +63,13 @@ export interface IMarketplaceItem {
 
   // Platform state
   status:        ListingStatus;
+  adminSuspended: boolean;
+  preAdminStatus: ListingStatus | null;
   isPromoted:    boolean;
   promotedUntil: Date | null;
   flagCount: number;
+  preReviewStatus: 'AVAILABLE' | 'RESERVED' | 'SOLD' | null;
+  moderationCaseId: string | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -101,9 +106,13 @@ export const MarketplaceItemSchema = new Schema<IMarketplaceItem>(
     showContactOnOffer: { type: Boolean, default: false },
 
     status:        { type: String, enum: LISTING_STATUSES, default: 'AVAILABLE' },
+    adminSuspended: { type: Boolean, default: false, index: true },
+    preAdminStatus: { type: String, enum: LISTING_STATUSES, default: null },
     isPromoted:    { type: Boolean, default: false },
     promotedUntil: { type: Date,    default: null },
     flagCount:     { type: Number,  default: 0 },
+    preReviewStatus: { type: String, enum: ['AVAILABLE', 'RESERVED', 'SOLD'], default: null },
+    moderationCaseId: { type: String, default: null },
   },
   { timestamps: true },
 );

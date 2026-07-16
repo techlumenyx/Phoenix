@@ -7,6 +7,7 @@ import { myOrganisations } from './query.myOrganisations';
 import { followResolvers } from './follow.resolver';
 import { teamResolvers } from './team.resolver';
 import { identityNotificationResolvers } from './notification.resolver';
+import { adminResolvers } from './admin.resolver';
 
 export const resolvers = {
   Query: {
@@ -16,6 +17,7 @@ export const resolvers = {
     ...followResolvers.Query,
     ...teamResolvers.Query,
     ...identityNotificationResolvers.Query,
+    ...adminResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,

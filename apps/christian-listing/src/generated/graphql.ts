@@ -17,6 +17,124 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+export enum AccountAction {
+  Reactivate = 'REACTIVATE',
+  Suspend = 'SUSPEND',
+  Warn = 'WARN'
+}
+
+export type Admin = {
+  __typename?: 'Admin';
+  createdAt: Scalars['DateTime']['output'];
+  email: Scalars['String']['output'];
+  firebaseUid: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  lastLoginAt?: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  roles: Array<AdminRole>;
+  status: AdminStatus;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type AdminDashboardStats = {
+  __typename?: 'AdminDashboardStats';
+  openModerationCases: Scalars['Int']['output'];
+  overdueVerifications: Scalars['Int']['output'];
+  pendingVerifications: Scalars['Int']['output'];
+  resolvedModerationLast7Days: Scalars['Int']['output'];
+  verificationDecisionsLast7Days: Scalars['Int']['output'];
+};
+
+export type AdminDirectoryConnection = {
+  __typename?: 'AdminDirectoryConnection';
+  edges: Array<AdminDirectoryItem>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type AdminDirectoryItem = {
+  __typename?: 'AdminDirectoryItem';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  organisationId?: Maybe<Scalars['String']['output']>;
+  ownerFirebaseUid?: Maybe<Scalars['String']['output']>;
+  privateSummary?: Maybe<Scalars['String']['output']>;
+  region?: Maybe<Scalars['String']['output']>;
+  seriesId?: Maybe<Scalars['String']['output']>;
+  sourceId: Scalars['ID']['output'];
+  status: Scalars['String']['output'];
+  subtitle?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  type: DirectoryEntityType;
+};
+
+export type AdminNotification = {
+  __typename?: 'AdminNotification';
+  createdAt: Scalars['DateTime']['output'];
+  href?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  readAt?: Maybe<Scalars['DateTime']['output']>;
+  title: Scalars['String']['output'];
+  type: AdminNotificationType;
+};
+
+export enum AdminNotificationType {
+  ActionFailed = 'ACTION_FAILED',
+  Assignment = 'ASSIGNMENT',
+  Escalation = 'ESCALATION',
+  Mention = 'MENTION',
+  SlaWarning = 'SLA_WARNING'
+}
+
+export enum AdminRole {
+  Analyst = 'ANALYST',
+  Auditor = 'AUDITOR',
+  ContentManager = 'CONTENT_MANAGER',
+  SuperAdmin = 'SUPER_ADMIN',
+  SupportAgent = 'SUPPORT_AGENT',
+  TrustSafety = 'TRUST_SAFETY',
+  VerificationReviewer = 'VERIFICATION_REVIEWER'
+}
+
+export enum AdminStatus {
+  Active = 'ACTIVE',
+  Disabled = 'DISABLED'
+}
+
+export type AdminSystemHealth = {
+  __typename?: 'AdminSystemHealth';
+  checkedAt: Scalars['DateTime']['output'];
+  dependencies: Array<SystemDependency>;
+  overallStatus: Scalars['String']['output'];
+  version: Scalars['String']['output'];
+};
+
+export type AdminTemplate = {
+  __typename?: 'AdminTemplate';
+  active: Scalars['Boolean']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  createdByFirebaseUid: Scalars['String']['output'];
+  history: Array<AdminTemplate>;
+  id: Scalars['ID']['output'];
+  internalGuidance?: Maybe<Scalars['String']['output']>;
+  key: Scalars['String']['output'];
+  locale: Scalars['String']['output'];
+  publicMessage: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  type: AdminTemplateType;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export enum AdminTemplateType {
+  Rejection = 'REJECTION',
+  Removal = 'REMOVAL',
+  Suspension = 'SUSPENSION',
+  Verification = 'VERIFICATION',
+  Warning = 'WARNING'
+}
+
 export enum ApplicationStatus {
   Hired = 'HIRED',
   Rejected = 'REJECTED',
@@ -26,22 +144,97 @@ export enum ApplicationStatus {
   Withdrawn = 'WITHDRAWN'
 }
 
-export type AuditLog = {
-  __typename?: 'AuditLog';
-  action: ModerationAction;
-  admin: User;
-  contentId: Scalars['String']['output'];
-  contentType: ContentType;
+export enum AuditAction {
+  AccessDocument = 'ACCESS_DOCUMENT',
+  AccessPrivateData = 'ACCESS_PRIVATE_DATA',
+  AccountReactivate = 'ACCOUNT_REACTIVATE',
+  AccountSuspend = 'ACCOUNT_SUSPEND',
+  AccountWarn = 'ACCOUNT_WARN',
+  AddNote = 'ADD_NOTE',
+  Assign = 'ASSIGN',
+  Dismiss = 'DISMISS',
+  DownloadAuditExport = 'DOWNLOAD_AUDIT_EXPORT',
+  EventCancel = 'EVENT_CANCEL',
+  EventRestore = 'EVENT_RESTORE',
+  NotificationRead = 'NOTIFICATION_READ',
+  PlacementCreate = 'PLACEMENT_CREATE',
+  PlacementDuplicate = 'PLACEMENT_DUPLICATE',
+  PlacementPause = 'PLACEMENT_PAUSE',
+  PlacementReorder = 'PLACEMENT_REORDER',
+  PlacementUpdate = 'PLACEMENT_UPDATE',
+  Remove = 'REMOVE',
+  RequestAuditExport = 'REQUEST_AUDIT_EXPORT',
+  SavedViewCreate = 'SAVED_VIEW_CREATE',
+  SavedViewDelete = 'SAVED_VIEW_DELETE',
+  TemplateActivate = 'TEMPLATE_ACTIVATE',
+  TemplateCreate = 'TEMPLATE_CREATE',
+  VerificationApprove = 'VERIFICATION_APPROVE',
+  VerificationAssign = 'VERIFICATION_ASSIGN',
+  VerificationNeedsInformation = 'VERIFICATION_NEEDS_INFORMATION',
+  VerificationReject = 'VERIFICATION_REJECT',
+  Warn = 'WARN'
+}
+
+export type AuditEvent = {
+  __typename?: 'AuditEvent';
+  action: AuditAction;
+  adminFirebaseUid: Scalars['String']['output'];
+  adminRoles: Array<Scalars['String']['output']>;
+  afterStatus?: Maybe<Scalars['String']['output']>;
+  beforeStatus?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
+  ipAddress?: Maybe<Scalars['String']['output']>;
   reason: Scalars['String']['output'];
+  requestId?: Maybe<Scalars['String']['output']>;
+  result: AuditResult;
+  route?: Maybe<Scalars['String']['output']>;
+  targetId: Scalars['String']['output'];
+  targetType: ContentType;
+  userAgent?: Maybe<Scalars['String']['output']>;
 };
 
-export type AuditLogConnection = {
-  __typename?: 'AuditLogConnection';
-  edges: Array<AuditLog>;
+export type AuditEventConnection = {
+  __typename?: 'AuditEventConnection';
+  edges: Array<AuditEvent>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type AuditExport = {
+  __typename?: 'AuditExport';
+  createdAt: Scalars['DateTime']['output'];
+  expiresAt: Scalars['DateTime']['output'];
+  failureReason?: Maybe<Scalars['String']['output']>;
+  from: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  requesterEmail: Scalars['String']['output'];
+  requesterFirebaseUid: Scalars['String']['output'];
+  rowCount: Scalars['Int']['output'];
+  status: AuditExportStatus;
+  to: Scalars['DateTime']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export enum AuditExportStatus {
+  Expired = 'EXPIRED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Ready = 'READY'
+}
+
+export enum AuditResult {
+  Failed = 'FAILED',
+  Success = 'SUCCESS'
+}
+
+export type CaseNote = {
+  __typename?: 'CaseNote';
+  authorFirebaseUid: Scalars['String']['output'];
+  body: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type ClassifiedOrganisationNotification = {
@@ -57,10 +250,15 @@ export type ClassifiedOrganisationNotification = {
 };
 
 export enum ContentType {
+  AuditExport = 'AUDIT_EXPORT',
   Event = 'EVENT',
-  JobListing = 'JOB_LISTING',
+  FeaturedPlacement = 'FEATURED_PLACEMENT',
+  Job = 'JOB',
   MarketplaceItem = 'MARKETPLACE_ITEM',
   Organisation = 'ORGANISATION',
+  OrganisationVerification = 'ORGANISATION_VERIFICATION',
+  SavedView = 'SAVED_VIEW',
+  Template = 'TEMPLATE',
   User = 'USER'
 }
 
@@ -87,12 +285,6 @@ export type CreateEventInput = {
   recurrence?: InputMaybe<RecurrenceRuleInput>;
   region: Scalars['String']['input'];
   title: Scalars['String']['input'];
-};
-
-export type CreateFlagRuleInput = {
-  condition: Scalars['String']['input'];
-  description: Scalars['String']['input'];
-  name: Scalars['String']['input'];
 };
 
 export type CreateJobListingInput = {
@@ -134,6 +326,14 @@ export type CreateOrganisationInput = {
 export type CreateUserInput = {
   name: Scalars['String']['input'];
 };
+
+export enum DirectoryEntityType {
+  Event = 'EVENT',
+  Job = 'JOB',
+  MarketplaceItem = 'MARKETPLACE_ITEM',
+  Organisation = 'ORGANISATION',
+  User = 'USER'
+}
 
 export type EducationEntry = {
   __typename?: 'EducationEntry';
@@ -185,6 +385,16 @@ export type Event = {
   updatedAt: Scalars['DateTime']['output'];
   waitlistCount: Scalars['Int']['output'];
 };
+
+export enum EventActionScope {
+  Occurrence = 'OCCURRENCE',
+  Series = 'SERIES'
+}
+
+export enum EventAdminAction {
+  Cancel = 'CANCEL',
+  Restore = 'RESTORE'
+}
 
 export enum EventCategory {
   BibleStudy = 'BIBLE_STUDY',
@@ -275,6 +485,43 @@ export enum FaithAlignmentTag {
   FaithBackgroundPreferred = 'FAITH_BACKGROUND_PREFERRED',
   OpenToAll = 'OPEN_TO_ALL'
 }
+
+export type FeaturedPlacement = {
+  __typename?: 'FeaturedPlacement';
+  createdAt: Scalars['DateTime']['output'];
+  createdByFirebaseUid: Scalars['String']['output'];
+  destinationUrl: Scalars['String']['output'];
+  endsAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  imageAlt?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  placementSource: PlacementSource;
+  rank: Scalars['Int']['output'];
+  regions: Array<Scalars['String']['output']>;
+  startsAt: Scalars['DateTime']['output'];
+  status: PlacementStatus;
+  targetId?: Maybe<Scalars['String']['output']>;
+  targetType: PlacementTargetType;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  updatedByFirebaseUid: Scalars['String']['output'];
+};
+
+export type FeaturedPlacementInput = {
+  destinationUrl: Scalars['String']['input'];
+  endsAt: Scalars['DateTime']['input'];
+  imageAlt?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  label: Scalars['String']['input'];
+  placementSource?: InputMaybe<PlacementSource>;
+  rank: Scalars['Int']['input'];
+  regions: Array<Scalars['String']['input']>;
+  startsAt: Scalars['DateTime']['input'];
+  targetId?: InputMaybe<Scalars['String']['input']>;
+  targetType: PlacementTargetType;
+  title: Scalars['String']['input'];
+};
 
 export type FollowRelationship = {
   __typename?: 'FollowRelationship';
@@ -380,6 +627,7 @@ export enum JobStatus {
 export enum ListingStatus {
   Available = 'AVAILABLE',
   PendingReview = 'PENDING_REVIEW',
+  Removed = 'REMOVED',
   Reserved = 'RESERVED',
   Sold = 'SOLD'
 }
@@ -508,50 +756,98 @@ export enum MessageType {
 }
 
 export enum ModerationAction {
-  Approve = 'APPROVE',
-  Ban = 'BAN',
+  Dismiss = 'DISMISS',
   Remove = 'REMOVE',
-  Suspend = 'SUSPEND',
   Warn = 'WARN'
+}
+
+export type ModerationCase = {
+  __typename?: 'ModerationCase';
+  assigneeFirebaseUid?: Maybe<Scalars['String']['output']>;
+  auditTimeline: Array<AuditEvent>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  notes: Array<CaseNote>;
+  organisationId?: Maybe<Scalars['String']['output']>;
+  ownerFirebaseUid: Scalars['String']['output'];
+  previousStatus?: Maybe<Scalars['String']['output']>;
+  priority: ModerationPriority;
+  reasonCodes: Array<ReportReasonCode>;
+  reportCount: Scalars['Int']['output'];
+  reports: Array<ModerationReport>;
+  resolutionAction?: Maybe<ModerationAction>;
+  resolutionReason?: Maybe<Scalars['String']['output']>;
+  resolvedAt?: Maybe<Scalars['DateTime']['output']>;
+  resolvedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  status: ModerationCaseStatus;
+  targetId: Scalars['String']['output'];
+  targetStatus: Scalars['String']['output'];
+  targetType: ContentType;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type ModerationCaseConnection = {
+  __typename?: 'ModerationCaseConnection';
+  edges: Array<ModerationCase>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export enum ModerationCaseStatus {
+  Open = 'OPEN',
+  PendingReview = 'PENDING_REVIEW',
+  Resolved = 'RESOLVED'
+}
+
+export enum ModerationPriority {
+  Critical = 'CRITICAL',
+  High = 'HIGH',
+  Normal = 'NORMAL'
 }
 
 export type ModerationReport = {
   __typename?: 'ModerationReport';
-  contentId: Scalars['String']['output'];
-  contentType: ContentType;
   createdAt: Scalars['DateTime']['output'];
+  details?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  reason: Scalars['String']['output'];
-  reportedByUser: User;
-  status: ReportStatus;
-};
-
-export type ModerationReportConnection = {
-  __typename?: 'ModerationReportConnection';
-  edges: Array<ModerationReport>;
-  endCursor?: Maybe<Scalars['String']['output']>;
-  hasNextPage: Scalars['Boolean']['output'];
+  reasonCode: ReportReasonCode;
+  reporterFirebaseUid: Scalars['String']['output'];
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
   acceptOrganisationInvite: Organisation;
+  accessDirectoryPrivateData: Scalars['String']['output'];
+  accessVerificationDocument: Scalars['String']['output'];
+  activateAdminTemplate: AdminTemplate;
+  addModerationCaseNote: CaseNote;
+  applyAccountAction: AdminDirectoryItem;
+  applyEventAction: Scalars['Boolean']['output'];
   archiveJobListing: JobListing;
   archiveThread: MessageThread;
+  assignModerationCase: ModerationCase;
+  assignVerificationSubmission: VerificationSubmission;
   cancelEvent: Scalars['Boolean']['output'];
   cancelRsvp: Scalars['Boolean']['output'];
   cancelSeriesRsvp: Scalars['Boolean']['output'];
+  createAdminTemplate: AdminTemplate;
   createEvent: Event;
-  createFlagRule: SystemFlagRule;
+  createFeaturedPlacement: FeaturedPlacement;
   createJobListing: JobListing;
   createMarketplaceItem: MarketplaceItem;
   createOrganisation: Organisation;
   createUser: User;
+  decideVerificationSubmission: VerificationSubmission;
   deleteEvent: Scalars['Boolean']['output'];
   deleteMarketplaceItem: Scalars['Boolean']['output'];
-  flagContent: ModerationReport;
+  deleteSavedAdminView: Scalars['Boolean']['output'];
+  duplicateFeaturedPlacement: FeaturedPlacement;
   followOrganisation: Organisation;
   inviteOrganisationMember: OrganisationInvite;
+  markAdminNotificationRead: AdminNotification;
+  markAllAdminNotificationsRead: Scalars['Boolean']['output'];
   markAllClassifiedOrganisationNotificationsRead: Scalars['Boolean']['output'];
   markAllEventOrganisationNotificationsRead: Scalars['Boolean']['output'];
   markAllIdentityOrganisationNotificationsRead: Scalars['Boolean']['output'];
@@ -559,14 +855,17 @@ export type Mutation = {
   markEventOrganisationNotificationRead: EventOrganisationNotification;
   markIdentityOrganisationNotificationRead: IdentityOrganisationNotification;
   markThreadRead: Scalars['Boolean']['output'];
+  pauseFeaturedPlacement: FeaturedPlacement;
   removeOrganisationMember: Scalars['Boolean']['output'];
+  reorderFeaturedPlacement: FeaturedPlacement;
   reportListing: Scalars['Boolean']['output'];
+  requestAuditExport: AuditExport;
   resendOrganisationInvite: OrganisationInvite;
-  resolveReport: AuditLog;
-  reviewVerification: VerificationQueueItem;
+  resolveModerationCase: ModerationCase;
   revokeOrganisationInvite: OrganisationInvite;
   rsvpToEvent: Rsvp;
   rsvpToSeries: SeriesRsvp;
+  saveAdminView: SavedAdminView;
   saveJob: Scalars['Boolean']['output'];
   saveMarketplaceItem: Scalars['Boolean']['output'];
   sendMessage: Message;
@@ -579,7 +878,7 @@ export type Mutation = {
   unsaveJob: Scalars['Boolean']['output'];
   unsaveMarketplaceItem: Scalars['Boolean']['output'];
   updateEvent: Event;
-  updateFlagRule: SystemFlagRule;
+  updateFeaturedPlacement: FeaturedPlacement;
   updateJobApplicationStatus: JobApplication;
   updateJobListing: JobListing;
   updateMarketplaceItem: MarketplaceItem;
@@ -595,6 +894,46 @@ export type MutationAcceptOrganisationInviteArgs = {
 };
 
 
+export type MutationAccessDirectoryPrivateDataArgs = {
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  type: DirectoryEntityType;
+};
+
+
+export type MutationAccessVerificationDocumentArgs = {
+  documentIndex: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationActivateAdminTemplateArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationAddModerationCaseNoteArgs = {
+  body: Scalars['String']['input'];
+  caseId: Scalars['ID']['input'];
+};
+
+
+export type MutationApplyAccountActionArgs = {
+  action: AccountAction;
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  type: DirectoryEntityType;
+};
+
+
+export type MutationApplyEventActionArgs = {
+  action: EventAdminAction;
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  scope: EventActionScope;
+};
+
+
 export type MutationArchiveJobListingArgs = {
   id: Scalars['ID']['input'];
 };
@@ -602,6 +941,19 @@ export type MutationArchiveJobListingArgs = {
 
 export type MutationArchiveThreadArgs = {
   threadId: Scalars['ID']['input'];
+};
+
+
+export type MutationAssignModerationCaseArgs = {
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  expectedVersion: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationAssignVerificationSubmissionArgs = {
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
 };
 
 
@@ -621,13 +973,23 @@ export type MutationCancelSeriesRsvpArgs = {
 };
 
 
+export type MutationCreateAdminTemplateArgs = {
+  internalGuidance?: InputMaybe<Scalars['String']['input']>;
+  key: Scalars['String']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
+  publicMessage: Scalars['String']['input'];
+  title: Scalars['String']['input'];
+  type: AdminTemplateType;
+};
+
+
 export type MutationCreateEventArgs = {
   input: CreateEventInput;
 };
 
 
-export type MutationCreateFlagRuleArgs = {
-  input: CreateFlagRuleInput;
+export type MutationCreateFeaturedPlacementArgs = {
+  input: FeaturedPlacementInput;
 };
 
 
@@ -651,6 +1013,14 @@ export type MutationCreateUserArgs = {
 };
 
 
+export type MutationDecideVerificationSubmissionArgs = {
+  action: VerificationDecision;
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  tier?: InputMaybe<VerificationTier>;
+};
+
+
 export type MutationDeleteEventArgs = {
   id: Scalars['ID']['input'];
 };
@@ -661,10 +1031,16 @@ export type MutationDeleteMarketplaceItemArgs = {
 };
 
 
-export type MutationFlagContentArgs = {
-  contentId: Scalars['String']['input'];
-  contentType: ContentType;
-  reason: Scalars['String']['input'];
+export type MutationDeleteSavedAdminViewArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDuplicateFeaturedPlacementArgs = {
+  endsAt: Scalars['DateTime']['input'];
+  id: Scalars['ID']['input'];
+  rank: Scalars['Int']['input'];
+  startsAt: Scalars['DateTime']['input'];
 };
 
 
@@ -677,6 +1053,11 @@ export type MutationInviteOrganisationMemberArgs = {
   email: Scalars['String']['input'];
   organisationId: Scalars['ID']['input'];
   roles: Array<Scalars['String']['input']>;
+};
+
+
+export type MutationMarkAdminNotificationReadArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -715,9 +1096,21 @@ export type MutationMarkThreadReadArgs = {
 };
 
 
+export type MutationPauseFeaturedPlacementArgs = {
+  id: Scalars['ID']['input'];
+  paused: Scalars['Boolean']['input'];
+};
+
+
 export type MutationRemoveOrganisationMemberArgs = {
   organisationId: Scalars['ID']['input'];
   userId: Scalars['ID']['input'];
+};
+
+
+export type MutationReorderFeaturedPlacementArgs = {
+  id: Scalars['ID']['input'];
+  rank: Scalars['Int']['input'];
 };
 
 
@@ -727,22 +1120,22 @@ export type MutationReportListingArgs = {
 };
 
 
+export type MutationRequestAuditExportArgs = {
+  from: Scalars['DateTime']['input'];
+  to: Scalars['DateTime']['input'];
+};
+
+
 export type MutationResendOrganisationInviteArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-export type MutationResolveReportArgs = {
+export type MutationResolveModerationCaseArgs = {
   action: ModerationAction;
+  expectedVersion: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
   reason: Scalars['String']['input'];
-  reportId: Scalars['ID']['input'];
-};
-
-
-export type MutationReviewVerificationArgs = {
-  approved: Scalars['Boolean']['input'];
-  rejectionReason?: InputMaybe<Scalars['String']['input']>;
-  requestId: Scalars['ID']['input'];
 };
 
 
@@ -760,6 +1153,13 @@ export type MutationRsvpToEventArgs = {
 export type MutationRsvpToSeriesArgs = {
   seriesId: Scalars['ID']['input'];
   stage: RsvpStage;
+};
+
+
+export type MutationSaveAdminViewArgs = {
+  filtersJson: Scalars['String']['input'];
+  module: SavedViewModule;
+  name: Scalars['String']['input'];
 };
 
 
@@ -804,6 +1204,7 @@ export type MutationSubmitJobApplicationArgs = {
 export type MutationSubmitVerificationArgs = {
   documentUrls: Array<Scalars['String']['input']>;
   organisationId: Scalars['ID']['input'];
+  requestedTier?: InputMaybe<VerificationTier>;
 };
 
 
@@ -829,9 +1230,9 @@ export type MutationUpdateEventArgs = {
 };
 
 
-export type MutationUpdateFlagRuleArgs = {
+export type MutationUpdateFeaturedPlacementArgs = {
   id: Scalars['ID']['input'];
-  input: UpdateFlagRuleInput;
+  input: FeaturedPlacementInput;
 };
 
 
@@ -895,7 +1296,6 @@ export type Organisation = {
   region?: Maybe<Scalars['String']['output']>;
   socialLinks?: Maybe<SocialLinks>;
   updatedAt: Scalars['DateTime']['output'];
-  verificationRequests: Array<VerificationQueueItem>;
   verificationTier: VerificationTier;
   websiteUrl?: Maybe<Scalars['String']['output']>;
 };
@@ -932,15 +1332,25 @@ export type OrganisationTeamMember = {
   user: User;
 };
 
-export type PlatformStats = {
-  __typename?: 'PlatformStats';
-  activeEvents: Scalars['Int']['output'];
-  activeJobListings: Scalars['Int']['output'];
-  activeMarketplaceItems: Scalars['Int']['output'];
-  pendingModerationReports: Scalars['Int']['output'];
-  pendingVerifications: Scalars['Int']['output'];
-  totalUsers: Scalars['Int']['output'];
-};
+export enum PlacementSource {
+  Editorial = 'EDITORIAL',
+  Promotion = 'PROMOTION'
+}
+
+export enum PlacementStatus {
+  Active = 'ACTIVE',
+  Expired = 'EXPIRED',
+  Paused = 'PAUSED',
+  Scheduled = 'SCHEDULED'
+}
+
+export enum PlacementTargetType {
+  Announcement = 'ANNOUNCEMENT',
+  Event = 'EVENT',
+  Job = 'JOB',
+  MarketplaceItem = 'MARKETPLACE_ITEM',
+  Organisation = 'ORGANISATION'
+}
 
 export type ProfilePrivacySettings = {
   __typename?: 'ProfilePrivacySettings';
@@ -967,7 +1377,16 @@ export enum ProfileVisibility {
 
 export type Query = {
   __typename?: 'Query';
-  auditLogs: AuditLogConnection;
+  adminDashboardStats: AdminDashboardStats;
+  adminDirectory: AdminDirectoryConnection;
+  adminMe?: Maybe<Admin>;
+  adminNotificationUnreadCount: Scalars['Int']['output'];
+  adminNotifications: Array<AdminNotification>;
+  adminSystemHealth: AdminSystemHealth;
+  adminTemplates: Array<AdminTemplate>;
+  auditEvents: AuditEventConnection;
+  auditExportContent: Scalars['String']['output'];
+  auditExports: Array<AuditExport>;
   classifiedOrganisationNotifications: Array<ClassifiedOrganisationNotification>;
   classifiedOrganisationUnreadCount: Scalars['Int']['output'];
   communityGives: Array<MarketplaceItem>;
@@ -977,7 +1396,7 @@ export type Query = {
   eventSeries?: Maybe<EventSeries>;
   events: EventConnection;
   featuredEvents: Array<Event>;
-  flagRules: Array<SystemFlagRule>;
+  featuredPlacements: Array<FeaturedPlacement>;
   identityOrganisationNotifications: Array<IdentityOrganisationNotification>;
   identityOrganisationUnreadCount: Scalars['Int']['output'];
   isFollowingOrganisation: Scalars['Boolean']['output'];
@@ -989,7 +1408,8 @@ export type Query = {
   marketplaceItems: MarketplaceItemConnection;
   me?: Maybe<User>;
   messageThread?: Maybe<MessageThread>;
-  moderationQueue: ModerationReportConnection;
+  moderationCase?: Maybe<ModerationCase>;
+  moderationCases: ModerationCaseConnection;
   myFollowingOrganisations: Array<Organisation>;
   myJobApplication?: Maybe<JobApplication>;
   myMessageThreads: MessageThreadConnection;
@@ -1004,17 +1424,49 @@ export type Query = {
   organisationJobApplications: Array<JobApplication>;
   organisationTeam: Array<OrganisationTeamMember>;
   organisations: OrganisationConnection;
-  platformStats: PlatformStats;
+  savedAdminViews: Array<SavedAdminView>;
   unreadMessageCount: Scalars['Int']['output'];
   user?: Maybe<User>;
-  verificationQueue: Array<VerificationQueueItem>;
+  verificationSubmission?: Maybe<VerificationSubmission>;
+  verificationSubmissions: VerificationSubmissionConnection;
 };
 
 
-export type QueryAuditLogsArgs = {
-  adminId?: InputMaybe<Scalars['ID']['input']>;
+export type QueryAdminDirectoryArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  type: DirectoryEntityType;
+};
+
+
+export type QueryAdminNotificationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryAdminTemplatesArgs = {
+  activeOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  type?: InputMaybe<AdminTemplateType>;
+};
+
+
+export type QueryAuditEventsArgs = {
+  action?: InputMaybe<AuditAction>;
+  adminFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  caseId?: InputMaybe<Scalars['ID']['input']>;
+  from?: InputMaybe<Scalars['DateTime']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  result?: InputMaybe<AuditResult>;
+  targetType?: InputMaybe<ContentType>;
+  to?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+
+export type QueryAuditExportContentArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -1077,6 +1529,12 @@ export type QueryEventsArgs = {
 
 export type QueryFeaturedEventsArgs = {
   region?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryFeaturedPlacementsArgs = {
+  region?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<PlacementStatus>;
 };
 
 
@@ -1153,10 +1611,18 @@ export type QueryMessageThreadArgs = {
 };
 
 
-export type QueryModerationQueueArgs = {
+export type QueryModerationCaseArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryModerationCasesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  status?: InputMaybe<ReportStatus>;
+  priority?: InputMaybe<ModerationPriority>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<ModerationCaseStatus>;
 };
 
 
@@ -1217,14 +1683,27 @@ export type QueryOrganisationsArgs = {
 };
 
 
+export type QuerySavedAdminViewsArgs = {
+  module?: InputMaybe<SavedViewModule>;
+};
+
+
 export type QueryUserArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-export type QueryVerificationQueueArgs = {
+export type QueryVerificationSubmissionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryVerificationSubmissionsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  status?: InputMaybe<VerificationStatus>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<VerificationReviewStatus>;
 };
 
 export type Rsvp = {
@@ -1263,9 +1742,13 @@ export type RecurrenceRuleInput = {
   timezone: Scalars['String']['input'];
 };
 
-export enum ReportStatus {
-  Pending = 'PENDING',
-  Resolved = 'RESOLVED'
+export enum ReportReasonCode {
+  Duplicate = 'DUPLICATE',
+  FraudScam = 'FRAUD_SCAM',
+  Inappropriate = 'INAPPROPRIATE',
+  Other = 'OTHER',
+  ProhibitedUnsafe = 'PROHIBITED_UNSAFE',
+  SpamMisleading = 'SPAM_MISLEADING'
 }
 
 export enum RoleType {
@@ -1293,6 +1776,24 @@ export type SalaryRangeInput = {
   max: Scalars['Float']['input'];
   min: Scalars['Float']['input'];
 };
+
+export type SavedAdminView = {
+  __typename?: 'SavedAdminView';
+  createdAt: Scalars['DateTime']['output'];
+  filtersJson: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  module: SavedViewModule;
+  name: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export enum SavedViewModule {
+  Audit = 'AUDIT',
+  Curation = 'CURATION',
+  Directory = 'DIRECTORY',
+  Moderation = 'MODERATION',
+  Verification = 'VERIFICATION'
+}
 
 export type SeriesRsvp = {
   __typename?: 'SeriesRSVP';
@@ -1350,15 +1851,14 @@ export type SubmitJobApplicationInput = {
   yearsOfExperience?: InputMaybe<Scalars['Float']['input']>;
 };
 
-export type SystemFlagRule = {
-  __typename?: 'SystemFlagRule';
-  condition: Scalars['String']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  description: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  isActive: Scalars['Boolean']['output'];
+export type SystemDependency = {
+  __typename?: 'SystemDependency';
+  category: Scalars['String']['output'];
+  checkedAt: Scalars['DateTime']['output'];
+  detail: Scalars['String']['output'];
+  latencyMs?: Maybe<Scalars['Int']['output']>;
   name: Scalars['String']['output'];
-  updatedAt: Scalars['DateTime']['output'];
+  status: Scalars['String']['output'];
 };
 
 export type UpdateEventInput = {
@@ -1372,13 +1872,6 @@ export type UpdateEventInput = {
   location?: InputMaybe<EventLocationInput>;
   status?: InputMaybe<EventStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
-};
-
-export type UpdateFlagRuleInput = {
-  condition?: InputMaybe<Scalars['String']['input']>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateJobListingInput = {
@@ -1456,17 +1949,11 @@ export type UserConnection = {
   hasNextPage: Scalars['Boolean']['output'];
 };
 
-export type VerificationQueueItem = {
-  __typename?: 'VerificationQueueItem';
-  documentUrls: Array<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  organisation: Organisation;
-  rejectionReason?: Maybe<Scalars['String']['output']>;
-  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
-  reviewedBy?: Maybe<User>;
-  status: VerificationStatus;
-  submittedAt: Scalars['DateTime']['output'];
-};
+export enum VerificationDecision {
+  Approve = 'APPROVE',
+  NeedsInformation = 'NEEDS_INFORMATION',
+  Reject = 'REJECT'
+}
 
 export type VerificationRequest = {
   __typename?: 'VerificationRequest';
@@ -1479,11 +1966,54 @@ export type VerificationRequest = {
   submittedAt: Scalars['DateTime']['output'];
 };
 
+export enum VerificationReviewStatus {
+  Approved = 'APPROVED',
+  NeedsInformation = 'NEEDS_INFORMATION',
+  PendingReview = 'PENDING_REVIEW',
+  Rejected = 'REJECTED'
+}
+
 export enum VerificationStatus {
   Approved = 'APPROVED',
   Pending = 'PENDING',
   Rejected = 'REJECTED'
 }
+
+export type VerificationSubmission = {
+  __typename?: 'VerificationSubmission';
+  approvedTier?: Maybe<VerificationTier>;
+  assigneeFirebaseUid?: Maybe<Scalars['String']['output']>;
+  auditTimeline: Array<AuditEvent>;
+  createdAt: Scalars['DateTime']['output'];
+  decisionReason?: Maybe<Scalars['String']['output']>;
+  documentLabels: Array<Scalars['String']['output']>;
+  dueAt: Scalars['DateTime']['output'];
+  history: Array<VerificationSubmission>;
+  id: Scalars['ID']['output'];
+  officialEmail?: Maybe<Scalars['String']['output']>;
+  officialName?: Maybe<Scalars['String']['output']>;
+  organisationId: Scalars['String']['output'];
+  organisationName: Scalars['String']['output'];
+  organisationType?: Maybe<Scalars['String']['output']>;
+  ownerFirebaseUid: Scalars['String']['output'];
+  pocName?: Maybe<Scalars['String']['output']>;
+  pocTitle?: Maybe<Scalars['String']['output']>;
+  region?: Maybe<Scalars['String']['output']>;
+  registrationNumber?: Maybe<Scalars['String']['output']>;
+  requestedTier: VerificationTier;
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  status: VerificationReviewStatus;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type VerificationSubmissionConnection = {
+  __typename?: 'VerificationSubmissionConnection';
+  edges: Array<VerificationSubmission>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
 
 export enum VerificationTier {
   Charity = 'CHARITY',

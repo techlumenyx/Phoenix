@@ -19,200 +19,707 @@ export type Scalars = {
   _FieldSet: { input: any; output: any; }
 };
 
-export type AuditLog = {
-  __typename?: 'AuditLog';
-  action: ModerationAction;
-  admin: User;
-  contentId: Scalars['String']['output'];
-  contentType: ContentType;
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
-  reason: Scalars['String']['output'];
+export const AccountAction = {
+  Reactivate: 'REACTIVATE',
+  Suspend: 'SUSPEND',
+  Warn: 'WARN'
+} as const;
+
+export type AccountAction = typeof AccountAction[keyof typeof AccountAction];
+export type AdminDashboardStats = {
+  __typename?: 'AdminDashboardStats';
+  openModerationCases: Scalars['Int']['output'];
+  overdueVerifications: Scalars['Int']['output'];
+  pendingVerifications: Scalars['Int']['output'];
+  resolvedModerationLast7Days: Scalars['Int']['output'];
+  verificationDecisionsLast7Days: Scalars['Int']['output'];
 };
 
-export type AuditLogConnection = {
-  __typename?: 'AuditLogConnection';
-  edges: Array<AuditLog>;
+export type AdminDirectoryConnection = {
+  __typename?: 'AdminDirectoryConnection';
+  edges: Array<AdminDirectoryItem>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
 };
 
+export type AdminDirectoryItem = {
+  __typename?: 'AdminDirectoryItem';
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  organisationId?: Maybe<Scalars['String']['output']>;
+  ownerFirebaseUid?: Maybe<Scalars['String']['output']>;
+  privateSummary?: Maybe<Scalars['String']['output']>;
+  region?: Maybe<Scalars['String']['output']>;
+  seriesId?: Maybe<Scalars['String']['output']>;
+  sourceId: Scalars['ID']['output'];
+  status: Scalars['String']['output'];
+  subtitle?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  type: DirectoryEntityType;
+};
+
+export type AdminNotification = {
+  __typename?: 'AdminNotification';
+  createdAt: Scalars['DateTime']['output'];
+  href?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  readAt?: Maybe<Scalars['DateTime']['output']>;
+  title: Scalars['String']['output'];
+  type: AdminNotificationType;
+};
+
+export const AdminNotificationType = {
+  ActionFailed: 'ACTION_FAILED',
+  Assignment: 'ASSIGNMENT',
+  Escalation: 'ESCALATION',
+  Mention: 'MENTION',
+  SlaWarning: 'SLA_WARNING'
+} as const;
+
+export type AdminNotificationType = typeof AdminNotificationType[keyof typeof AdminNotificationType];
+export type AdminSystemHealth = {
+  __typename?: 'AdminSystemHealth';
+  checkedAt: Scalars['DateTime']['output'];
+  dependencies: Array<SystemDependency>;
+  overallStatus: Scalars['String']['output'];
+  version: Scalars['String']['output'];
+};
+
+export type AdminTemplate = {
+  __typename?: 'AdminTemplate';
+  active: Scalars['Boolean']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  createdByFirebaseUid: Scalars['String']['output'];
+  history: Array<AdminTemplate>;
+  id: Scalars['ID']['output'];
+  internalGuidance?: Maybe<Scalars['String']['output']>;
+  key: Scalars['String']['output'];
+  locale: Scalars['String']['output'];
+  publicMessage: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  type: AdminTemplateType;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export const AdminTemplateType = {
+  Rejection: 'REJECTION',
+  Removal: 'REMOVAL',
+  Suspension: 'SUSPENSION',
+  Verification: 'VERIFICATION',
+  Warning: 'WARNING'
+} as const;
+
+export type AdminTemplateType = typeof AdminTemplateType[keyof typeof AdminTemplateType];
+export const AuditAction = {
+  AccessDocument: 'ACCESS_DOCUMENT',
+  AccessPrivateData: 'ACCESS_PRIVATE_DATA',
+  AccountReactivate: 'ACCOUNT_REACTIVATE',
+  AccountSuspend: 'ACCOUNT_SUSPEND',
+  AccountWarn: 'ACCOUNT_WARN',
+  AddNote: 'ADD_NOTE',
+  Assign: 'ASSIGN',
+  Dismiss: 'DISMISS',
+  DownloadAuditExport: 'DOWNLOAD_AUDIT_EXPORT',
+  EventCancel: 'EVENT_CANCEL',
+  EventRestore: 'EVENT_RESTORE',
+  NotificationRead: 'NOTIFICATION_READ',
+  PlacementCreate: 'PLACEMENT_CREATE',
+  PlacementDuplicate: 'PLACEMENT_DUPLICATE',
+  PlacementPause: 'PLACEMENT_PAUSE',
+  PlacementReorder: 'PLACEMENT_REORDER',
+  PlacementUpdate: 'PLACEMENT_UPDATE',
+  Remove: 'REMOVE',
+  RequestAuditExport: 'REQUEST_AUDIT_EXPORT',
+  SavedViewCreate: 'SAVED_VIEW_CREATE',
+  SavedViewDelete: 'SAVED_VIEW_DELETE',
+  TemplateActivate: 'TEMPLATE_ACTIVATE',
+  TemplateCreate: 'TEMPLATE_CREATE',
+  VerificationApprove: 'VERIFICATION_APPROVE',
+  VerificationAssign: 'VERIFICATION_ASSIGN',
+  VerificationNeedsInformation: 'VERIFICATION_NEEDS_INFORMATION',
+  VerificationReject: 'VERIFICATION_REJECT',
+  Warn: 'WARN'
+} as const;
+
+export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
+export type AuditEvent = {
+  __typename?: 'AuditEvent';
+  action: AuditAction;
+  adminFirebaseUid: Scalars['String']['output'];
+  adminRoles: Array<Scalars['String']['output']>;
+  afterStatus?: Maybe<Scalars['String']['output']>;
+  beforeStatus?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  ipAddress?: Maybe<Scalars['String']['output']>;
+  reason: Scalars['String']['output'];
+  requestId?: Maybe<Scalars['String']['output']>;
+  result: AuditResult;
+  route?: Maybe<Scalars['String']['output']>;
+  targetId: Scalars['String']['output'];
+  targetType: ContentType;
+  userAgent?: Maybe<Scalars['String']['output']>;
+};
+
+export type AuditEventConnection = {
+  __typename?: 'AuditEventConnection';
+  edges: Array<AuditEvent>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type AuditExport = {
+  __typename?: 'AuditExport';
+  createdAt: Scalars['DateTime']['output'];
+  expiresAt: Scalars['DateTime']['output'];
+  failureReason?: Maybe<Scalars['String']['output']>;
+  from: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  requesterEmail: Scalars['String']['output'];
+  requesterFirebaseUid: Scalars['String']['output'];
+  rowCount: Scalars['Int']['output'];
+  status: AuditExportStatus;
+  to: Scalars['DateTime']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export const AuditExportStatus = {
+  Expired: 'EXPIRED',
+  Failed: 'FAILED',
+  Pending: 'PENDING',
+  Ready: 'READY'
+} as const;
+
+export type AuditExportStatus = typeof AuditExportStatus[keyof typeof AuditExportStatus];
+export const AuditResult = {
+  Failed: 'FAILED',
+  Success: 'SUCCESS'
+} as const;
+
+export type AuditResult = typeof AuditResult[keyof typeof AuditResult];
+export type CaseNote = {
+  __typename?: 'CaseNote';
+  authorFirebaseUid: Scalars['String']['output'];
+  body: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
 export const ContentType = {
+  AuditExport: 'AUDIT_EXPORT',
   Event: 'EVENT',
-  JobListing: 'JOB_LISTING',
+  FeaturedPlacement: 'FEATURED_PLACEMENT',
+  Job: 'JOB',
+  MarketplaceItem: 'MARKETPLACE_ITEM',
+  Organisation: 'ORGANISATION',
+  OrganisationVerification: 'ORGANISATION_VERIFICATION',
+  SavedView: 'SAVED_VIEW',
+  Template: 'TEMPLATE',
+  User: 'USER'
+} as const;
+
+export type ContentType = typeof ContentType[keyof typeof ContentType];
+export const DirectoryEntityType = {
+  Event: 'EVENT',
+  Job: 'JOB',
   MarketplaceItem: 'MARKETPLACE_ITEM',
   Organisation: 'ORGANISATION',
   User: 'USER'
 } as const;
 
-export type ContentType = typeof ContentType[keyof typeof ContentType];
-export type CreateFlagRuleInput = {
-  condition: Scalars['String']['input'];
-  description: Scalars['String']['input'];
-  name: Scalars['String']['input'];
+export type DirectoryEntityType = typeof DirectoryEntityType[keyof typeof DirectoryEntityType];
+export const EventActionScope = {
+  Occurrence: 'OCCURRENCE',
+  Series: 'SERIES'
+} as const;
+
+export type EventActionScope = typeof EventActionScope[keyof typeof EventActionScope];
+export const EventAdminAction = {
+  Cancel: 'CANCEL',
+  Restore: 'RESTORE'
+} as const;
+
+export type EventAdminAction = typeof EventAdminAction[keyof typeof EventAdminAction];
+export type FeaturedPlacement = {
+  __typename?: 'FeaturedPlacement';
+  createdAt: Scalars['DateTime']['output'];
+  createdByFirebaseUid: Scalars['String']['output'];
+  destinationUrl: Scalars['String']['output'];
+  endsAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  imageAlt?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  placementSource: PlacementSource;
+  rank: Scalars['Int']['output'];
+  regions: Array<Scalars['String']['output']>;
+  startsAt: Scalars['DateTime']['output'];
+  status: PlacementStatus;
+  targetId?: Maybe<Scalars['String']['output']>;
+  targetType: PlacementTargetType;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  updatedByFirebaseUid: Scalars['String']['output'];
+};
+
+export type FeaturedPlacementInput = {
+  destinationUrl: Scalars['String']['input'];
+  endsAt: Scalars['DateTime']['input'];
+  imageAlt?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  label: Scalars['String']['input'];
+  placementSource?: InputMaybe<PlacementSource>;
+  rank: Scalars['Int']['input'];
+  regions: Array<Scalars['String']['input']>;
+  startsAt: Scalars['DateTime']['input'];
+  targetId?: InputMaybe<Scalars['String']['input']>;
+  targetType: PlacementTargetType;
+  title: Scalars['String']['input'];
 };
 
 export const ModerationAction = {
-  Approve: 'APPROVE',
-  Ban: 'BAN',
+  Dismiss: 'DISMISS',
   Remove: 'REMOVE',
-  Suspend: 'SUSPEND',
   Warn: 'WARN'
 } as const;
 
 export type ModerationAction = typeof ModerationAction[keyof typeof ModerationAction];
-export type ModerationReport = {
-  __typename?: 'ModerationReport';
-  contentId: Scalars['String']['output'];
-  contentType: ContentType;
+export type ModerationCase = {
+  __typename?: 'ModerationCase';
+  assigneeFirebaseUid?: Maybe<Scalars['String']['output']>;
+  auditTimeline: Array<AuditEvent>;
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
-  reason: Scalars['String']['output'];
-  reportedByUser: User;
-  status: ReportStatus;
+  notes: Array<CaseNote>;
+  organisationId?: Maybe<Scalars['String']['output']>;
+  ownerFirebaseUid: Scalars['String']['output'];
+  previousStatus?: Maybe<Scalars['String']['output']>;
+  priority: ModerationPriority;
+  reasonCodes: Array<ReportReasonCode>;
+  reportCount: Scalars['Int']['output'];
+  reports: Array<ModerationReport>;
+  resolutionAction?: Maybe<ModerationAction>;
+  resolutionReason?: Maybe<Scalars['String']['output']>;
+  resolvedAt?: Maybe<Scalars['DateTime']['output']>;
+  resolvedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  status: ModerationCaseStatus;
+  targetId: Scalars['String']['output'];
+  targetStatus: Scalars['String']['output'];
+  targetType: ContentType;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
 };
 
-export type ModerationReportConnection = {
-  __typename?: 'ModerationReportConnection';
-  edges: Array<ModerationReport>;
+export type ModerationCaseConnection = {
+  __typename?: 'ModerationCaseConnection';
+  edges: Array<ModerationCase>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
 };
 
-export type Mutation = {
-  __typename?: 'Mutation';
-  createFlagRule: SystemFlagRule;
-  flagContent: ModerationReport;
-  resolveReport: AuditLog;
-  reviewVerification: VerificationQueueItem;
-  updateFlagRule: SystemFlagRule;
-};
-
-
-export type MutationCreateFlagRuleArgs = {
-  input: CreateFlagRuleInput;
-};
-
-
-export type MutationFlagContentArgs = {
-  contentId: Scalars['String']['input'];
-  contentType: ContentType;
-  reason: Scalars['String']['input'];
-};
-
-
-export type MutationResolveReportArgs = {
-  action: ModerationAction;
-  reason: Scalars['String']['input'];
-  reportId: Scalars['ID']['input'];
-};
-
-
-export type MutationReviewVerificationArgs = {
-  approved: Scalars['Boolean']['input'];
-  rejectionReason?: InputMaybe<Scalars['String']['input']>;
-  requestId: Scalars['ID']['input'];
-};
-
-
-export type MutationUpdateFlagRuleArgs = {
-  id: Scalars['ID']['input'];
-  input: UpdateFlagRuleInput;
-};
-
-export type Organisation = {
-  __typename?: 'Organisation';
-  id: Scalars['ID']['output'];
-  verificationRequests: Array<VerificationQueueItem>;
-};
-
-export type PlatformStats = {
-  __typename?: 'PlatformStats';
-  activeEvents: Scalars['Int']['output'];
-  activeJobListings: Scalars['Int']['output'];
-  activeMarketplaceItems: Scalars['Int']['output'];
-  pendingModerationReports: Scalars['Int']['output'];
-  pendingVerifications: Scalars['Int']['output'];
-  totalUsers: Scalars['Int']['output'];
-};
-
-export type Query = {
-  __typename?: 'Query';
-  auditLogs: AuditLogConnection;
-  flagRules: Array<SystemFlagRule>;
-  moderationQueue: ModerationReportConnection;
-  platformStats: PlatformStats;
-  verificationQueue: Array<VerificationQueueItem>;
-};
-
-
-export type QueryAuditLogsArgs = {
-  adminId?: InputMaybe<Scalars['ID']['input']>;
-  after?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-export type QueryModerationQueueArgs = {
-  after?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  status?: InputMaybe<ReportStatus>;
-};
-
-
-export type QueryVerificationQueueArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  status?: InputMaybe<VerificationStatus>;
-};
-
-export const ReportStatus = {
-  Pending: 'PENDING',
+export const ModerationCaseStatus = {
+  Open: 'OPEN',
+  PendingReview: 'PENDING_REVIEW',
   Resolved: 'RESOLVED'
 } as const;
 
-export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
-export type SystemFlagRule = {
-  __typename?: 'SystemFlagRule';
-  condition: Scalars['String']['output'];
+export type ModerationCaseStatus = typeof ModerationCaseStatus[keyof typeof ModerationCaseStatus];
+export const ModerationPriority = {
+  Critical: 'CRITICAL',
+  High: 'HIGH',
+  Normal: 'NORMAL'
+} as const;
+
+export type ModerationPriority = typeof ModerationPriority[keyof typeof ModerationPriority];
+export type ModerationReport = {
+  __typename?: 'ModerationReport';
   createdAt: Scalars['DateTime']['output'];
-  description: Scalars['String']['output'];
+  details?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  isActive: Scalars['Boolean']['output'];
+  reasonCode: ReportReasonCode;
+  reporterFirebaseUid: Scalars['String']['output'];
+};
+
+export type Mutation = {
+  __typename?: 'Mutation';
+  accessDirectoryPrivateData: Scalars['String']['output'];
+  accessVerificationDocument: Scalars['String']['output'];
+  activateAdminTemplate: AdminTemplate;
+  addModerationCaseNote: CaseNote;
+  applyAccountAction: AdminDirectoryItem;
+  applyEventAction: Scalars['Boolean']['output'];
+  assignModerationCase: ModerationCase;
+  assignVerificationSubmission: VerificationSubmission;
+  createAdminTemplate: AdminTemplate;
+  createFeaturedPlacement: FeaturedPlacement;
+  decideVerificationSubmission: VerificationSubmission;
+  deleteSavedAdminView: Scalars['Boolean']['output'];
+  duplicateFeaturedPlacement: FeaturedPlacement;
+  markAdminNotificationRead: AdminNotification;
+  markAllAdminNotificationsRead: Scalars['Boolean']['output'];
+  pauseFeaturedPlacement: FeaturedPlacement;
+  reorderFeaturedPlacement: FeaturedPlacement;
+  requestAuditExport: AuditExport;
+  resolveModerationCase: ModerationCase;
+  saveAdminView: SavedAdminView;
+  updateFeaturedPlacement: FeaturedPlacement;
+};
+
+
+export type MutationAccessDirectoryPrivateDataArgs = {
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  type: DirectoryEntityType;
+};
+
+
+export type MutationAccessVerificationDocumentArgs = {
+  documentIndex: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationActivateAdminTemplateArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationAddModerationCaseNoteArgs = {
+  body: Scalars['String']['input'];
+  caseId: Scalars['ID']['input'];
+};
+
+
+export type MutationApplyAccountActionArgs = {
+  action: AccountAction;
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  type: DirectoryEntityType;
+};
+
+
+export type MutationApplyEventActionArgs = {
+  action: EventAdminAction;
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  scope: EventActionScope;
+};
+
+
+export type MutationAssignModerationCaseArgs = {
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  expectedVersion: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationAssignVerificationSubmissionArgs = {
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateAdminTemplateArgs = {
+  internalGuidance?: InputMaybe<Scalars['String']['input']>;
+  key: Scalars['String']['input'];
+  locale?: InputMaybe<Scalars['String']['input']>;
+  publicMessage: Scalars['String']['input'];
+  title: Scalars['String']['input'];
+  type: AdminTemplateType;
+};
+
+
+export type MutationCreateFeaturedPlacementArgs = {
+  input: FeaturedPlacementInput;
+};
+
+
+export type MutationDecideVerificationSubmissionArgs = {
+  action: VerificationDecision;
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+  tier?: InputMaybe<VerificationTier>;
+};
+
+
+export type MutationDeleteSavedAdminViewArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDuplicateFeaturedPlacementArgs = {
+  endsAt: Scalars['DateTime']['input'];
+  id: Scalars['ID']['input'];
+  rank: Scalars['Int']['input'];
+  startsAt: Scalars['DateTime']['input'];
+};
+
+
+export type MutationMarkAdminNotificationReadArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationPauseFeaturedPlacementArgs = {
+  id: Scalars['ID']['input'];
+  paused: Scalars['Boolean']['input'];
+};
+
+
+export type MutationReorderFeaturedPlacementArgs = {
+  id: Scalars['ID']['input'];
+  rank: Scalars['Int']['input'];
+};
+
+
+export type MutationRequestAuditExportArgs = {
+  from: Scalars['DateTime']['input'];
+  to: Scalars['DateTime']['input'];
+};
+
+
+export type MutationResolveModerationCaseArgs = {
+  action: ModerationAction;
+  expectedVersion: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+  reason: Scalars['String']['input'];
+};
+
+
+export type MutationSaveAdminViewArgs = {
+  filtersJson: Scalars['String']['input'];
+  module: SavedViewModule;
+  name: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateFeaturedPlacementArgs = {
+  id: Scalars['ID']['input'];
+  input: FeaturedPlacementInput;
+};
+
+export const PlacementSource = {
+  Editorial: 'EDITORIAL',
+  Promotion: 'PROMOTION'
+} as const;
+
+export type PlacementSource = typeof PlacementSource[keyof typeof PlacementSource];
+export const PlacementStatus = {
+  Active: 'ACTIVE',
+  Expired: 'EXPIRED',
+  Paused: 'PAUSED',
+  Scheduled: 'SCHEDULED'
+} as const;
+
+export type PlacementStatus = typeof PlacementStatus[keyof typeof PlacementStatus];
+export const PlacementTargetType = {
+  Announcement: 'ANNOUNCEMENT',
+  Event: 'EVENT',
+  Job: 'JOB',
+  MarketplaceItem: 'MARKETPLACE_ITEM',
+  Organisation: 'ORGANISATION'
+} as const;
+
+export type PlacementTargetType = typeof PlacementTargetType[keyof typeof PlacementTargetType];
+export type Query = {
+  __typename?: 'Query';
+  adminDashboardStats: AdminDashboardStats;
+  adminDirectory: AdminDirectoryConnection;
+  adminNotificationUnreadCount: Scalars['Int']['output'];
+  adminNotifications: Array<AdminNotification>;
+  adminSystemHealth: AdminSystemHealth;
+  adminTemplates: Array<AdminTemplate>;
+  auditEvents: AuditEventConnection;
+  auditExportContent: Scalars['String']['output'];
+  auditExports: Array<AuditExport>;
+  featuredPlacements: Array<FeaturedPlacement>;
+  moderationCase?: Maybe<ModerationCase>;
+  moderationCases: ModerationCaseConnection;
+  savedAdminViews: Array<SavedAdminView>;
+  verificationSubmission?: Maybe<VerificationSubmission>;
+  verificationSubmissions: VerificationSubmissionConnection;
+};
+
+
+export type QueryAdminDirectoryArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  type: DirectoryEntityType;
+};
+
+
+export type QueryAdminNotificationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryAdminTemplatesArgs = {
+  activeOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  type?: InputMaybe<AdminTemplateType>;
+};
+
+
+export type QueryAuditEventsArgs = {
+  action?: InputMaybe<AuditAction>;
+  adminFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  caseId?: InputMaybe<Scalars['ID']['input']>;
+  from?: InputMaybe<Scalars['DateTime']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  result?: InputMaybe<AuditResult>;
+  targetType?: InputMaybe<ContentType>;
+  to?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+
+export type QueryAuditExportContentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryFeaturedPlacementsArgs = {
+  region?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<PlacementStatus>;
+};
+
+
+export type QueryModerationCaseArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryModerationCasesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  priority?: InputMaybe<ModerationPriority>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<ModerationCaseStatus>;
+};
+
+
+export type QuerySavedAdminViewsArgs = {
+  module?: InputMaybe<SavedViewModule>;
+};
+
+
+export type QueryVerificationSubmissionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryVerificationSubmissionsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<VerificationReviewStatus>;
+};
+
+export const ReportReasonCode = {
+  Duplicate: 'DUPLICATE',
+  FraudScam: 'FRAUD_SCAM',
+  Inappropriate: 'INAPPROPRIATE',
+  Other: 'OTHER',
+  ProhibitedUnsafe: 'PROHIBITED_UNSAFE',
+  SpamMisleading: 'SPAM_MISLEADING'
+} as const;
+
+export type ReportReasonCode = typeof ReportReasonCode[keyof typeof ReportReasonCode];
+export type SavedAdminView = {
+  __typename?: 'SavedAdminView';
+  createdAt: Scalars['DateTime']['output'];
+  filtersJson: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  module: SavedViewModule;
   name: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export type UpdateFlagRuleInput = {
-  condition?: InputMaybe<Scalars['String']['input']>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+export const SavedViewModule = {
+  Audit: 'AUDIT',
+  Curation: 'CURATION',
+  Directory: 'DIRECTORY',
+  Moderation: 'MODERATION',
+  Verification: 'VERIFICATION'
+} as const;
+
+export type SavedViewModule = typeof SavedViewModule[keyof typeof SavedViewModule];
+export type SystemDependency = {
+  __typename?: 'SystemDependency';
+  category: Scalars['String']['output'];
+  checkedAt: Scalars['DateTime']['output'];
+  detail: Scalars['String']['output'];
+  latencyMs?: Maybe<Scalars['Int']['output']>;
+  name: Scalars['String']['output'];
+  status: Scalars['String']['output'];
 };
 
-export type User = {
-  __typename?: 'User';
-  id: Scalars['ID']['output'];
-};
+export const VerificationDecision = {
+  Approve: 'APPROVE',
+  NeedsInformation: 'NEEDS_INFORMATION',
+  Reject: 'REJECT'
+} as const;
 
-export type VerificationQueueItem = {
-  __typename?: 'VerificationQueueItem';
-  documentUrls: Array<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  organisation: Organisation;
-  rejectionReason?: Maybe<Scalars['String']['output']>;
-  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
-  reviewedBy?: Maybe<User>;
-  status: VerificationStatus;
-  submittedAt: Scalars['DateTime']['output'];
-};
-
-export const VerificationStatus = {
+export type VerificationDecision = typeof VerificationDecision[keyof typeof VerificationDecision];
+export const VerificationReviewStatus = {
   Approved: 'APPROVED',
-  Pending: 'PENDING',
+  NeedsInformation: 'NEEDS_INFORMATION',
+  PendingReview: 'PENDING_REVIEW',
   Rejected: 'REJECTED'
 } as const;
 
-export type VerificationStatus = typeof VerificationStatus[keyof typeof VerificationStatus];
+export type VerificationReviewStatus = typeof VerificationReviewStatus[keyof typeof VerificationReviewStatus];
+export type VerificationSubmission = {
+  __typename?: 'VerificationSubmission';
+  approvedTier?: Maybe<VerificationTier>;
+  assigneeFirebaseUid?: Maybe<Scalars['String']['output']>;
+  auditTimeline: Array<AuditEvent>;
+  createdAt: Scalars['DateTime']['output'];
+  decisionReason?: Maybe<Scalars['String']['output']>;
+  documentLabels: Array<Scalars['String']['output']>;
+  dueAt: Scalars['DateTime']['output'];
+  history: Array<VerificationSubmission>;
+  id: Scalars['ID']['output'];
+  officialEmail?: Maybe<Scalars['String']['output']>;
+  officialName?: Maybe<Scalars['String']['output']>;
+  organisationId: Scalars['String']['output'];
+  organisationName: Scalars['String']['output'];
+  organisationType?: Maybe<Scalars['String']['output']>;
+  ownerFirebaseUid: Scalars['String']['output'];
+  pocName?: Maybe<Scalars['String']['output']>;
+  pocTitle?: Maybe<Scalars['String']['output']>;
+  region?: Maybe<Scalars['String']['output']>;
+  registrationNumber?: Maybe<Scalars['String']['output']>;
+  requestedTier: VerificationTier;
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  status: VerificationReviewStatus;
+  updatedAt: Scalars['DateTime']['output'];
+  version: Scalars['Int']['output'];
+};
+
+export type VerificationSubmissionConnection = {
+  __typename?: 'VerificationSubmissionConnection';
+  edges: Array<VerificationSubmission>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export const VerificationTier = {
+  Charity: 'CHARITY',
+  Ngo: 'NGO',
+  None: 'NONE',
+  Standard: 'STANDARD'
+} as const;
+
+export type VerificationTier = typeof VerificationTier[keyof typeof VerificationTier];
 export type WithIndex<TObject> = TObject & Record<string, any>;
 export type ResolversObject<TObject> = WithIndex<TObject>;
 
@@ -296,68 +803,206 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
-  AuditLog: ResolverTypeWrapper<AuditLog>;
-  String: ResolverTypeWrapper<Scalars['String']['output']>;
-  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
-  AuditLogConnection: ResolverTypeWrapper<AuditLogConnection>;
-  Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
-  ContentType: ContentType;
-  CreateFlagRuleInput: CreateFlagRuleInput;
-  DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
-  ModerationAction: ModerationAction;
-  ModerationReport: ResolverTypeWrapper<ModerationReport>;
-  ModerationReportConnection: ResolverTypeWrapper<ModerationReportConnection>;
-  Mutation: ResolverTypeWrapper<{}>;
-  Organisation: ResolverTypeWrapper<Organisation>;
-  PlatformStats: ResolverTypeWrapper<PlatformStats>;
+  AccountAction: AccountAction;
+  AdminDashboardStats: ResolverTypeWrapper<AdminDashboardStats>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  AdminDirectoryConnection: ResolverTypeWrapper<AdminDirectoryConnection>;
+  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
+  AdminDirectoryItem: ResolverTypeWrapper<AdminDirectoryItem>;
+  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  AdminNotification: ResolverTypeWrapper<AdminNotification>;
+  AdminNotificationType: AdminNotificationType;
+  AdminSystemHealth: ResolverTypeWrapper<AdminSystemHealth>;
+  AdminTemplate: ResolverTypeWrapper<AdminTemplate>;
+  AdminTemplateType: AdminTemplateType;
+  AuditAction: AuditAction;
+  AuditEvent: ResolverTypeWrapper<AuditEvent>;
+  AuditEventConnection: ResolverTypeWrapper<AuditEventConnection>;
+  AuditExport: ResolverTypeWrapper<AuditExport>;
+  AuditExportStatus: AuditExportStatus;
+  AuditResult: AuditResult;
+  CaseNote: ResolverTypeWrapper<CaseNote>;
+  ContentType: ContentType;
+  DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
+  DirectoryEntityType: DirectoryEntityType;
+  EventActionScope: EventActionScope;
+  EventAdminAction: EventAdminAction;
+  FeaturedPlacement: ResolverTypeWrapper<FeaturedPlacement>;
+  FeaturedPlacementInput: FeaturedPlacementInput;
+  ModerationAction: ModerationAction;
+  ModerationCase: ResolverTypeWrapper<ModerationCase>;
+  ModerationCaseConnection: ResolverTypeWrapper<ModerationCaseConnection>;
+  ModerationCaseStatus: ModerationCaseStatus;
+  ModerationPriority: ModerationPriority;
+  ModerationReport: ResolverTypeWrapper<ModerationReport>;
+  Mutation: ResolverTypeWrapper<{}>;
+  PlacementSource: PlacementSource;
+  PlacementStatus: PlacementStatus;
+  PlacementTargetType: PlacementTargetType;
   Query: ResolverTypeWrapper<{}>;
-  ReportStatus: ReportStatus;
-  SystemFlagRule: ResolverTypeWrapper<SystemFlagRule>;
-  UpdateFlagRuleInput: UpdateFlagRuleInput;
-  User: ResolverTypeWrapper<User>;
-  VerificationQueueItem: ResolverTypeWrapper<VerificationQueueItem>;
-  VerificationStatus: VerificationStatus;
+  ReportReasonCode: ReportReasonCode;
+  SavedAdminView: ResolverTypeWrapper<SavedAdminView>;
+  SavedViewModule: SavedViewModule;
+  SystemDependency: ResolverTypeWrapper<SystemDependency>;
+  VerificationDecision: VerificationDecision;
+  VerificationReviewStatus: VerificationReviewStatus;
+  VerificationSubmission: ResolverTypeWrapper<VerificationSubmission>;
+  VerificationSubmissionConnection: ResolverTypeWrapper<VerificationSubmissionConnection>;
+  VerificationTier: VerificationTier;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
-  AuditLog: AuditLog;
-  String: Scalars['String']['output'];
-  ID: Scalars['ID']['output'];
-  AuditLogConnection: AuditLogConnection;
-  Boolean: Scalars['Boolean']['output'];
-  CreateFlagRuleInput: CreateFlagRuleInput;
-  DateTime: Scalars['DateTime']['output'];
-  ModerationReport: ModerationReport;
-  ModerationReportConnection: ModerationReportConnection;
-  Mutation: {};
-  Organisation: Organisation;
-  PlatformStats: PlatformStats;
+  AdminDashboardStats: AdminDashboardStats;
   Int: Scalars['Int']['output'];
+  AdminDirectoryConnection: AdminDirectoryConnection;
+  String: Scalars['String']['output'];
+  Boolean: Scalars['Boolean']['output'];
+  AdminDirectoryItem: AdminDirectoryItem;
+  ID: Scalars['ID']['output'];
+  AdminNotification: AdminNotification;
+  AdminSystemHealth: AdminSystemHealth;
+  AdminTemplate: AdminTemplate;
+  AuditEvent: AuditEvent;
+  AuditEventConnection: AuditEventConnection;
+  AuditExport: AuditExport;
+  CaseNote: CaseNote;
+  DateTime: Scalars['DateTime']['output'];
+  FeaturedPlacement: FeaturedPlacement;
+  FeaturedPlacementInput: FeaturedPlacementInput;
+  ModerationCase: ModerationCase;
+  ModerationCaseConnection: ModerationCaseConnection;
+  ModerationReport: ModerationReport;
+  Mutation: {};
   Query: {};
-  SystemFlagRule: SystemFlagRule;
-  UpdateFlagRuleInput: UpdateFlagRuleInput;
-  User: User;
-  VerificationQueueItem: VerificationQueueItem;
+  SavedAdminView: SavedAdminView;
+  SystemDependency: SystemDependency;
+  VerificationSubmission: VerificationSubmission;
+  VerificationSubmissionConnection: VerificationSubmissionConnection;
 }>;
 
-export type AuditLogResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AuditLog'] = ResolversParentTypes['AuditLog']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AuditLog']>, { __typename: 'AuditLog' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-  action?: Resolver<ResolversTypes['ModerationAction'], ParentType, ContextType>;
-  admin?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
-  contentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  contentType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
-  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  reason?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+export type AdminDashboardStatsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminDashboardStats'] = ResolversParentTypes['AdminDashboardStats']> = ResolversObject<{
+  openModerationCases?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  overdueVerifications?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  pendingVerifications?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  resolvedModerationLast7Days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  verificationDecisionsLast7Days?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type AuditLogConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AuditLogConnection'] = ResolversParentTypes['AuditLogConnection']> = ResolversObject<{
-  edges?: Resolver<Array<ResolversTypes['AuditLog']>, ParentType, ContextType>;
+export type AdminDirectoryConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminDirectoryConnection'] = ResolversParentTypes['AdminDirectoryConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['AdminDirectoryItem']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminDirectoryItemResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminDirectoryItem'] = ResolversParentTypes['AdminDirectoryItem']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AdminDirectoryItem']>, { __typename: 'AdminDirectoryItem' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  organisationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  ownerFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  privateSummary?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  region?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  seriesId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  sourceId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  subtitle?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['DirectoryEntityType'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminNotificationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminNotification'] = ResolversParentTypes['AdminNotification']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AdminNotification']>, { __typename: 'AdminNotification' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  href?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  message?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  readAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['AdminNotificationType'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminSystemHealthResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminSystemHealth'] = ResolversParentTypes['AdminSystemHealth']> = ResolversObject<{
+  checkedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  dependencies?: Resolver<Array<ResolversTypes['SystemDependency']>, ParentType, ContextType>;
+  overallStatus?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  version?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminTemplateResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminTemplate'] = ResolversParentTypes['AdminTemplate']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AdminTemplate']>, { __typename: 'AdminTemplate' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  active?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  createdByFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  history?: Resolver<Array<ResolversTypes['AdminTemplate']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  internalGuidance?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  locale?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  publicMessage?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['AdminTemplateType'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  version?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AuditEventResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AuditEvent'] = ResolversParentTypes['AuditEvent']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AuditEvent']>, { __typename: 'AuditEvent' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  action?: Resolver<ResolversTypes['AuditAction'], ParentType, ContextType>;
+  adminFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  adminRoles?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  afterStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  beforeStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  ipAddress?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  reason?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  requestId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  result?: Resolver<ResolversTypes['AuditResult'], ParentType, ContextType>;
+  route?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  targetId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
+  userAgent?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AuditEventConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AuditEventConnection'] = ResolversParentTypes['AuditEventConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['AuditEvent']>, ParentType, ContextType>;
+  endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AuditExportResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AuditExport'] = ResolversParentTypes['AuditExport']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AuditExport']>, { __typename: 'AuditExport' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  expiresAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  failureReason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  from?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  requesterEmail?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  requesterFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  rowCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['AuditExportStatus'], ParentType, ContextType>;
+  to?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type CaseNoteResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['CaseNote'] = ResolversParentTypes['CaseNote']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['CaseNote']>, { __typename: 'CaseNote' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  authorFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -365,101 +1010,195 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
   name: 'DateTime';
 }
 
-export type ModerationReportResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ModerationReport'] = ResolversParentTypes['ModerationReport']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ModerationReport']>, { __typename: 'ModerationReport' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-  contentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  contentType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
+export type FeaturedPlacementResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['FeaturedPlacement'] = ResolversParentTypes['FeaturedPlacement']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['FeaturedPlacement']>, { __typename: 'FeaturedPlacement' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  createdByFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  destinationUrl?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  endsAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  reason?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  reportedByUser?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['ReportStatus'], ParentType, ContextType>;
+  imageAlt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  label?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  placementSource?: Resolver<ResolversTypes['PlacementSource'], ParentType, ContextType>;
+  rank?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  regions?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  startsAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['PlacementStatus'], ParentType, ContextType>;
+  targetId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  targetType?: Resolver<ResolversTypes['PlacementTargetType'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  updatedByFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type ModerationReportConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ModerationReportConnection'] = ResolversParentTypes['ModerationReportConnection']> = ResolversObject<{
-  edges?: Resolver<Array<ResolversTypes['ModerationReport']>, ParentType, ContextType>;
+export type ModerationCaseResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ModerationCase'] = ResolversParentTypes['ModerationCase']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ModerationCase']>, { __typename: 'ModerationCase' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  assigneeFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  auditTimeline?: Resolver<Array<ResolversTypes['AuditEvent']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  notes?: Resolver<Array<ResolversTypes['CaseNote']>, ParentType, ContextType>;
+  organisationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  ownerFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  previousStatus?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  priority?: Resolver<ResolversTypes['ModerationPriority'], ParentType, ContextType>;
+  reasonCodes?: Resolver<Array<ResolversTypes['ReportReasonCode']>, ParentType, ContextType>;
+  reportCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  reports?: Resolver<Array<ResolversTypes['ModerationReport']>, ParentType, ContextType>;
+  resolutionAction?: Resolver<Maybe<ResolversTypes['ModerationAction']>, ParentType, ContextType>;
+  resolutionReason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  resolvedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  resolvedByFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['ModerationCaseStatus'], ParentType, ContextType>;
+  targetId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetStatus?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  version?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ModerationCaseConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ModerationCaseConnection'] = ResolversParentTypes['ModerationCaseConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['ModerationCase']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ModerationReportResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ModerationReport'] = ResolversParentTypes['ModerationReport']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ModerationReport']>, { __typename: 'ModerationReport' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  details?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  reasonCode?: Resolver<ResolversTypes['ReportReasonCode'], ParentType, ContextType>;
+  reporterFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
-  createFlagRule?: Resolver<ResolversTypes['SystemFlagRule'], ParentType, ContextType, RequireFields<MutationCreateFlagRuleArgs, 'input'>>;
-  flagContent?: Resolver<ResolversTypes['ModerationReport'], ParentType, ContextType, RequireFields<MutationFlagContentArgs, 'contentId' | 'contentType' | 'reason'>>;
-  resolveReport?: Resolver<ResolversTypes['AuditLog'], ParentType, ContextType, RequireFields<MutationResolveReportArgs, 'action' | 'reason' | 'reportId'>>;
-  reviewVerification?: Resolver<ResolversTypes['VerificationQueueItem'], ParentType, ContextType, RequireFields<MutationReviewVerificationArgs, 'approved' | 'requestId'>>;
-  updateFlagRule?: Resolver<ResolversTypes['SystemFlagRule'], ParentType, ContextType, RequireFields<MutationUpdateFlagRuleArgs, 'id' | 'input'>>;
-}>;
-
-export type OrganisationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Organisation'] = ResolversParentTypes['Organisation']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['Organisation']>, { __typename: 'Organisation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-
-  verificationRequests?: Resolver<Array<ResolversTypes['VerificationQueueItem']>, { __typename: 'Organisation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type PlatformStatsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['PlatformStats'] = ResolversParentTypes['PlatformStats']> = ResolversObject<{
-  activeEvents?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  activeJobListings?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  activeMarketplaceItems?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  pendingModerationReports?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  pendingVerifications?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  totalUsers?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+  accessDirectoryPrivateData?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationAccessDirectoryPrivateDataArgs, 'id' | 'reason' | 'type'>>;
+  accessVerificationDocument?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationAccessVerificationDocumentArgs, 'documentIndex' | 'id'>>;
+  activateAdminTemplate?: Resolver<ResolversTypes['AdminTemplate'], ParentType, ContextType, RequireFields<MutationActivateAdminTemplateArgs, 'id'>>;
+  addModerationCaseNote?: Resolver<ResolversTypes['CaseNote'], ParentType, ContextType, RequireFields<MutationAddModerationCaseNoteArgs, 'body' | 'caseId'>>;
+  applyAccountAction?: Resolver<ResolversTypes['AdminDirectoryItem'], ParentType, ContextType, RequireFields<MutationApplyAccountActionArgs, 'action' | 'id' | 'reason' | 'type'>>;
+  applyEventAction?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationApplyEventActionArgs, 'action' | 'id' | 'reason' | 'scope'>>;
+  assignModerationCase?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationAssignModerationCaseArgs, 'expectedVersion' | 'id'>>;
+  assignVerificationSubmission?: Resolver<ResolversTypes['VerificationSubmission'], ParentType, ContextType, RequireFields<MutationAssignVerificationSubmissionArgs, 'id'>>;
+  createAdminTemplate?: Resolver<ResolversTypes['AdminTemplate'], ParentType, ContextType, RequireFields<MutationCreateAdminTemplateArgs, 'key' | 'publicMessage' | 'title' | 'type'>>;
+  createFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationCreateFeaturedPlacementArgs, 'input'>>;
+  decideVerificationSubmission?: Resolver<ResolversTypes['VerificationSubmission'], ParentType, ContextType, RequireFields<MutationDecideVerificationSubmissionArgs, 'action' | 'id' | 'reason'>>;
+  deleteSavedAdminView?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteSavedAdminViewArgs, 'id'>>;
+  duplicateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationDuplicateFeaturedPlacementArgs, 'endsAt' | 'id' | 'rank' | 'startsAt'>>;
+  markAdminNotificationRead?: Resolver<ResolversTypes['AdminNotification'], ParentType, ContextType, RequireFields<MutationMarkAdminNotificationReadArgs, 'id'>>;
+  markAllAdminNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  pauseFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationPauseFeaturedPlacementArgs, 'id' | 'paused'>>;
+  reorderFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationReorderFeaturedPlacementArgs, 'id' | 'rank'>>;
+  requestAuditExport?: Resolver<ResolversTypes['AuditExport'], ParentType, ContextType, RequireFields<MutationRequestAuditExportArgs, 'from' | 'to'>>;
+  resolveModerationCase?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationResolveModerationCaseArgs, 'action' | 'expectedVersion' | 'id' | 'reason'>>;
+  saveAdminView?: Resolver<ResolversTypes['SavedAdminView'], ParentType, ContextType, RequireFields<MutationSaveAdminViewArgs, 'filtersJson' | 'module' | 'name'>>;
+  updateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationUpdateFeaturedPlacementArgs, 'id' | 'input'>>;
 }>;
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
-  auditLogs?: Resolver<ResolversTypes['AuditLogConnection'], ParentType, ContextType, Partial<QueryAuditLogsArgs>>;
-  flagRules?: Resolver<Array<ResolversTypes['SystemFlagRule']>, ParentType, ContextType>;
-  moderationQueue?: Resolver<ResolversTypes['ModerationReportConnection'], ParentType, ContextType, Partial<QueryModerationQueueArgs>>;
-  platformStats?: Resolver<ResolversTypes['PlatformStats'], ParentType, ContextType>;
-  verificationQueue?: Resolver<Array<ResolversTypes['VerificationQueueItem']>, ParentType, ContextType, Partial<QueryVerificationQueueArgs>>;
+  adminDashboardStats?: Resolver<ResolversTypes['AdminDashboardStats'], ParentType, ContextType>;
+  adminDirectory?: Resolver<ResolversTypes['AdminDirectoryConnection'], ParentType, ContextType, RequireFields<QueryAdminDirectoryArgs, 'type'>>;
+  adminNotificationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  adminNotifications?: Resolver<Array<ResolversTypes['AdminNotification']>, ParentType, ContextType, Partial<QueryAdminNotificationsArgs>>;
+  adminSystemHealth?: Resolver<ResolversTypes['AdminSystemHealth'], ParentType, ContextType>;
+  adminTemplates?: Resolver<Array<ResolversTypes['AdminTemplate']>, ParentType, ContextType, Partial<QueryAdminTemplatesArgs>>;
+  auditEvents?: Resolver<ResolversTypes['AuditEventConnection'], ParentType, ContextType, Partial<QueryAuditEventsArgs>>;
+  auditExportContent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryAuditExportContentArgs, 'id'>>;
+  auditExports?: Resolver<Array<ResolversTypes['AuditExport']>, ParentType, ContextType>;
+  featuredPlacements?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType, Partial<QueryFeaturedPlacementsArgs>>;
+  moderationCase?: Resolver<Maybe<ResolversTypes['ModerationCase']>, ParentType, ContextType, RequireFields<QueryModerationCaseArgs, 'id'>>;
+  moderationCases?: Resolver<ResolversTypes['ModerationCaseConnection'], ParentType, ContextType, Partial<QueryModerationCasesArgs>>;
+  savedAdminViews?: Resolver<Array<ResolversTypes['SavedAdminView']>, ParentType, ContextType, Partial<QuerySavedAdminViewsArgs>>;
+  verificationSubmission?: Resolver<Maybe<ResolversTypes['VerificationSubmission']>, ParentType, ContextType, RequireFields<QueryVerificationSubmissionArgs, 'id'>>;
+  verificationSubmissions?: Resolver<ResolversTypes['VerificationSubmissionConnection'], ParentType, ContextType, Partial<QueryVerificationSubmissionsArgs>>;
 }>;
 
-export type SystemFlagRuleResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SystemFlagRule'] = ResolversParentTypes['SystemFlagRule']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['SystemFlagRule']>, { __typename: 'SystemFlagRule' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-  condition?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+export type SavedAdminViewResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SavedAdminView'] = ResolversParentTypes['SavedAdminView']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['SavedAdminView']>, { __typename: 'SavedAdminView' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
-  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  filtersJson?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  module?: Resolver<ResolversTypes['SavedViewModule'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-
+export type SystemDependencyResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SystemDependency'] = ResolversParentTypes['SystemDependency']> = ResolversObject<{
+  category?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  checkedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  detail?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  latencyMs?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type VerificationQueueItemResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['VerificationQueueItem'] = ResolversParentTypes['VerificationQueueItem']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['VerificationQueueItem']>, { __typename: 'VerificationQueueItem' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
-  documentUrls?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+export type VerificationSubmissionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['VerificationSubmission'] = ResolversParentTypes['VerificationSubmission']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['VerificationSubmission']>, { __typename: 'VerificationSubmission' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  approvedTier?: Resolver<Maybe<ResolversTypes['VerificationTier']>, ParentType, ContextType>;
+  assigneeFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  auditTimeline?: Resolver<Array<ResolversTypes['AuditEvent']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  decisionReason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  documentLabels?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  dueAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  history?: Resolver<Array<ResolversTypes['VerificationSubmission']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  organisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType>;
-  rejectionReason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  officialEmail?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  officialName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  organisationId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  organisationName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  organisationType?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  ownerFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  pocName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  pocTitle?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  region?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  registrationNumber?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  requestedTier?: Resolver<ResolversTypes['VerificationTier'], ParentType, ContextType>;
   reviewedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  reviewedBy?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['VerificationStatus'], ParentType, ContextType>;
-  submittedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  reviewedByFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['VerificationReviewStatus'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  version?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type VerificationSubmissionConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['VerificationSubmissionConnection'] = ResolversParentTypes['VerificationSubmissionConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['VerificationSubmission']>, ParentType, ContextType>;
+  endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
-  AuditLog?: AuditLogResolvers<ContextType>;
-  AuditLogConnection?: AuditLogConnectionResolvers<ContextType>;
+  AdminDashboardStats?: AdminDashboardStatsResolvers<ContextType>;
+  AdminDirectoryConnection?: AdminDirectoryConnectionResolvers<ContextType>;
+  AdminDirectoryItem?: AdminDirectoryItemResolvers<ContextType>;
+  AdminNotification?: AdminNotificationResolvers<ContextType>;
+  AdminSystemHealth?: AdminSystemHealthResolvers<ContextType>;
+  AdminTemplate?: AdminTemplateResolvers<ContextType>;
+  AuditEvent?: AuditEventResolvers<ContextType>;
+  AuditEventConnection?: AuditEventConnectionResolvers<ContextType>;
+  AuditExport?: AuditExportResolvers<ContextType>;
+  CaseNote?: CaseNoteResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
+  FeaturedPlacement?: FeaturedPlacementResolvers<ContextType>;
+  ModerationCase?: ModerationCaseResolvers<ContextType>;
+  ModerationCaseConnection?: ModerationCaseConnectionResolvers<ContextType>;
   ModerationReport?: ModerationReportResolvers<ContextType>;
-  ModerationReportConnection?: ModerationReportConnectionResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
-  Organisation?: OrganisationResolvers<ContextType>;
-  PlatformStats?: PlatformStatsResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
-  SystemFlagRule?: SystemFlagRuleResolvers<ContextType>;
-  User?: UserResolvers<ContextType>;
-  VerificationQueueItem?: VerificationQueueItemResolvers<ContextType>;
+  SavedAdminView?: SavedAdminViewResolvers<ContextType>;
+  SystemDependency?: SystemDependencyResolvers<ContextType>;
+  VerificationSubmission?: VerificationSubmissionResolvers<ContextType>;
+  VerificationSubmissionConnection?: VerificationSubmissionConnectionResolvers<ContextType>;
 }>;
 

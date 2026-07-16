@@ -3,7 +3,7 @@ import mongoose, { Schema } from 'mongoose';
 export interface IEventOrganisationNotification {
   _id: mongoose.Types.ObjectId;
   organisationId: mongoose.Types.ObjectId;
-  type: 'RSVP_MILESTONE';
+  type: 'RSVP_MILESTONE' | 'ADMIN_ACTION';
   title: string;
   message: string;
   href: string | null;
@@ -16,7 +16,7 @@ export interface IEventOrganisationNotification {
 export const EventOrganisationNotificationSchema = new Schema<IEventOrganisationNotification>(
   {
     organisationId: { type: Schema.Types.ObjectId, required: true, index: true },
-    type: { type: String, enum: ['RSVP_MILESTONE'], required: true },
+    type: { type: String, enum: ['RSVP_MILESTONE', 'ADMIN_ACTION'], required: true },
     title: { type: String, required: true },
     message: { type: String, required: true },
     href: { type: String, default: null },

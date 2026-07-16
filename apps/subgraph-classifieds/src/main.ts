@@ -6,11 +6,13 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin } from '@christian-listings/auth';
+import { buildAuthPlugin, isInternalServiceRequest } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
 import { buildContext, type GraphQLContext } from './context';
 import { setupModels } from './models';
 import { resolvers } from './resolvers';
+import { executeMarketplaceModerationCommand, type MarketplaceModerationCommand } from './services/moderation-command.service';
+import { applyAdminOrganisationClassifiedsAction, classifiedsDirectory } from './services/admin-directory.service';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/classifieds.graphql'), 'utf-8'),
@@ -39,6 +41,32 @@ async function bootstrap() {
 
   await fastify.register(buildAuthPlugin({ optional: true }));
 
+  fastify.post('/internal/moderation/marketplace', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) {
+      return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    }
+    const input = request.body as MarketplaceModerationCommand;
+    if (!isModerationCommand(input)) {
+      return reply.code(400).send({ error: 'Invalid moderation command' });
+    }
+    const result = await executeMarketplaceModerationCommand(input);
+    return result ?? reply.code(404).send({ error: 'Marketplace item not found' });
+  });
+
+  fastify.post('/internal/admin/directory', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof classifiedsDirectory>[0];
+    if (!input || !['JOB', 'MARKETPLACE_ITEM'].includes(input.type)) return reply.code(400).send({ error: 'Invalid directory request' });
+    return classifiedsDirectory(input);
+  });
+
+  fastify.post('/internal/admin/organisation-action', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof applyAdminOrganisationClassifiedsAction>[0];
+    if (!input || typeof input.organisationId !== 'string' || !['SUSPEND', 'REACTIVATE'].includes(input.action)) return reply.code(400).send({ error: 'Invalid organisation action' });
+    return applyAdminOrganisationClassifiedsAction(input);
+  });
+
   await fastify.register(fastifyApollo(apollo), {
     path: '/graphql',
     context: async (request) => buildContext(request),
@@ -49,6 +77,15 @@ async function bootstrap() {
   const port = Number(process.env['PORT'] ?? 4003);
   await fastify.listen({ port, host: '0.0.0.0' });
   console.log(`[subgraph-classifieds] running on port ${port}`);
+}
+
+function isModerationCommand(value: unknown): value is MarketplaceModerationCommand {
+  if (!value || typeof value !== 'object') return false;
+  const input = value as Partial<MarketplaceModerationCommand>;
+  return typeof input.itemId === 'string' && input.itemId.length > 0 &&
+    typeof input.caseId === 'string' && input.caseId.length > 0 &&
+    typeof input.action === 'string' && ['DISMISS', 'WARN', 'REMOVE'].includes(input.action) &&
+    typeof input.reason === 'string' && input.reason.trim().length >= 5 && input.reason.length <= 1000;
 }
 
 bootstrap().catch((err) => {

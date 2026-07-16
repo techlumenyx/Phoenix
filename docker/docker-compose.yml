@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   gateway:
@@ -6,7 +6,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.router
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -31,14 +31,16 @@ services:
       args:
         APP_NAME: subgraph-identity
     ports:
-      - "4001:4001"
+      - '4001:4001'
     environment:
       - NODE_ENV=production
       - PORT=4001
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4001/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,14 +52,15 @@ services:
       args:
         APP_NAME: subgraph-events
     ports:
-      - "4002:4002"
+      - '4002:4002'
     environment:
       - NODE_ENV=production
       - PORT=4002
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -69,7 +72,7 @@ services:
       args:
         APP_NAME: subgraph-classifieds
     ports:
-      - "4003:4003"
+      - '4003:4003'
     environment:
       - NODE_ENV=production
       - PORT=4003
@@ -78,8 +81,10 @@ services:
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -91,14 +96,23 @@ services:
       args:
         APP_NAME: subgraph-admin
     ports:
-      - "4004:4004"
+      - '4004:4004'
     environment:
       - NODE_ENV=production
       - PORT=4004
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - CLASSIFIEDS_INTERNAL_URL=http://classifieds:4003
+      - IDENTITY_INTERNAL_URL=http://identity:4001
+      - EVENTS_INTERNAL_URL=http://events:4002
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}
+      - ADMIN_RATE_LIMIT_PER_MINUTE=${ADMIN_RATE_LIMIT_PER_MINUTE:-120}
+      - APP_VERSION=${APP_VERSION:-development}
+      - GIT_SHA=${GIT_SHA:-local}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4004/health']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -107,7 +121,20 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.web
+      args:
+        APP_NAME: christian-listing
     ports:
-      - "80:80"
+      - '80:80'
+    depends_on:
+      - gateway
+
+  admin-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+      args:
+        APP_NAME: cl-admin
+    ports:
+      - '3001:80'
     depends_on:
       - gateway

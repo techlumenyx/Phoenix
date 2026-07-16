@@ -19,6 +19,36 @@ export type Scalars = {
   _FieldSet: { input: any; output: any; }
 };
 
+export type Admin = {
+  __typename?: 'Admin';
+  createdAt: Scalars['DateTime']['output'];
+  email: Scalars['String']['output'];
+  firebaseUid: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  lastLoginAt?: Maybe<Scalars['DateTime']['output']>;
+  name: Scalars['String']['output'];
+  roles: Array<AdminRole>;
+  status: AdminStatus;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export const AdminRole = {
+  Analyst: 'ANALYST',
+  Auditor: 'AUDITOR',
+  ContentManager: 'CONTENT_MANAGER',
+  SuperAdmin: 'SUPER_ADMIN',
+  SupportAgent: 'SUPPORT_AGENT',
+  TrustSafety: 'TRUST_SAFETY',
+  VerificationReviewer: 'VERIFICATION_REVIEWER'
+} as const;
+
+export type AdminRole = typeof AdminRole[keyof typeof AdminRole];
+export const AdminStatus = {
+  Active: 'ACTIVE',
+  Disabled: 'DISABLED'
+} as const;
+
+export type AdminStatus = typeof AdminStatus[keyof typeof AdminStatus];
 export type CreateOrganisationInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   logoUrl?: InputMaybe<Scalars['String']['input']>;
@@ -140,6 +170,7 @@ export type MutationSignUpArgs = {
 export type MutationSubmitVerificationArgs = {
   documentUrls: Array<Scalars['String']['input']>;
   organisationId: Scalars['ID']['input'];
+  requestedTier?: InputMaybe<VerificationTier>;
 };
 
 
@@ -237,6 +268,7 @@ export const ProfileVisibility = {
 export type ProfileVisibility = typeof ProfileVisibility[keyof typeof ProfileVisibility];
 export type Query = {
   __typename?: 'Query';
+  adminMe?: Maybe<Admin>;
   identityOrganisationNotifications: Array<IdentityOrganisationNotification>;
   identityOrganisationUnreadCount: Scalars['Int']['output'];
   isFollowingOrganisation: Scalars['Boolean']['output'];
@@ -487,12 +519,15 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
-  CreateOrganisationInput: CreateOrganisationInput;
+  Admin: ResolverTypeWrapper<Admin>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  AdminRole: AdminRole;
+  AdminStatus: AdminStatus;
+  CreateOrganisationInput: CreateOrganisationInput;
   CreateUserInput: CreateUserInput;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   FollowRelationship: ResolverTypeWrapper<FollowRelationship>;
-  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdentityOrganisationNotification: ResolverTypeWrapper<IdentityOrganisationNotification>;
   Mutation: ResolverTypeWrapper<{}>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
@@ -520,12 +555,13 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
-  CreateOrganisationInput: CreateOrganisationInput;
+  Admin: Admin;
   String: Scalars['String']['output'];
+  ID: Scalars['ID']['output'];
+  CreateOrganisationInput: CreateOrganisationInput;
   CreateUserInput: CreateUserInput;
   DateTime: Scalars['DateTime']['output'];
   FollowRelationship: FollowRelationship;
-  ID: Scalars['ID']['output'];
   IdentityOrganisationNotification: IdentityOrganisationNotification;
   Mutation: {};
   Boolean: Scalars['Boolean']['output'];
@@ -546,6 +582,20 @@ export type ResolversParentTypes = ResolversObject<{
   User: User;
   UserConnection: UserConnection;
   VerificationRequest: VerificationRequest;
+}>;
+
+export type AdminResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Admin'] = ResolversParentTypes['Admin']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['Admin']>, { __typename: 'Admin' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  firebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  lastLoginAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  roles?: Resolver<Array<ResolversTypes['AdminRole']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['AdminStatus'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
@@ -586,7 +636,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   revokeOrganisationInvite?: Resolver<ResolversTypes['OrganisationInvite'], ParentType, ContextType, RequireFields<MutationRevokeOrganisationInviteArgs, 'id'>>;
   setOrganisationActive?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationSetOrganisationActiveArgs, 'active' | 'organisationId'>>;
   signUp?: Resolver<ResolversTypes['SignUpPayload'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
-  submitVerification?: Resolver<ResolversTypes['VerificationRequest'], ParentType, ContextType, RequireFields<MutationSubmitVerificationArgs, 'documentUrls' | 'organisationId'>>;
+  submitVerification?: Resolver<ResolversTypes['VerificationRequest'], ParentType, ContextType, RequireFields<MutationSubmitVerificationArgs, 'documentUrls' | 'organisationId' | 'requestedTier'>>;
   unfollowOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationUnfollowOrganisationArgs, 'organisationId'>>;
   updateOrganisation?: Resolver<ResolversTypes['Organisation'], ParentType, ContextType, RequireFields<MutationUpdateOrganisationArgs, 'id' | 'input'>>;
   updateOrganisationMemberRoles?: Resolver<ResolversTypes['OrganisationTeamMember'], ParentType, ContextType, RequireFields<MutationUpdateOrganisationMemberRolesArgs, 'organisationId' | 'roles' | 'userId'>>;
@@ -650,6 +700,7 @@ export type ProfilePrivacySettingsResolvers<ContextType = GraphQLContext, Parent
 }>;
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  adminMe?: Resolver<Maybe<ResolversTypes['Admin']>, ParentType, ContextType>;
   identityOrganisationNotifications?: Resolver<Array<ResolversTypes['IdentityOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryIdentityOrganisationNotificationsArgs, 'organisationId'>>;
   identityOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryIdentityOrganisationUnreadCountArgs, 'organisationId'>>;
   isFollowingOrganisation?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryIsFollowingOrganisationArgs, 'organisationId'>>;
@@ -719,6 +770,7 @@ export type VerificationRequestResolvers<ContextType = GraphQLContext, ParentTyp
 }>;
 
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
+  Admin?: AdminResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   FollowRelationship?: FollowRelationshipResolvers<ContextType>;
   IdentityOrganisationNotification?: IdentityOrganisationNotificationResolvers<ContextType>;

@@ -1,11 +1,43 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import AdminProtectedRoute from '../auth/AdminProtectedRoute';
+import AdminShell from './AdminShell';
+import LoginPage from '../pages/LoginPage';
+import OverviewPage from '../pages/OverviewPage';
+import UnauthorizedPage from '../pages/UnauthorizedPage';
+import ModerationQueuePage from '../pages/moderation/ModerationQueuePage';
+import ModerationCasePage from '../pages/moderation/ModerationCasePage';
+import VerificationQueuePage from '../pages/verification/VerificationQueuePage';
+import VerificationCasePage from '../pages/verification/VerificationCasePage';
+import DirectoryPage from '../pages/directory/DirectoryPage';
+import AnalyticsPage from '../pages/AnalyticsPage';
+import AuditPage from '../pages/audit/AuditPage';
+import TemplatesPage from '../pages/templates/TemplatesPage';
+import CurationPage from '../pages/curation/CurationPage';
+import SystemHealthPage from '../pages/SystemHealthPage';
+
 export default function App() {
   return (
-    <div style={{ fontFamily: 'sans-serif', maxWidth: 600, margin: '60px auto', padding: '0 24px' }}>
-      <h1 style={{ color: '#1a2e1a' }}>CL Admin</h1>
-      <p style={{ color: '#555' }}>Admin dashboard — webpack app running on port 3001.</p>
-      <div style={{ marginTop: 32, padding: 20, background: '#f0fff4', borderRadius: 8 }}>
-        <strong>Status:</strong> App loaded successfully
-      </div>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorised" element={<UnauthorizedPage />} />
+      <Route element={<AdminProtectedRoute />}>
+        <Route element={<AdminShell />}>
+          <Route index element={<OverviewPage />} />
+          <Route path="moderation" element={<ModerationQueuePage />} />
+          <Route path="moderation/:caseId" element={<ModerationCasePage />} />
+          <Route path="verifications" element={<VerificationQueuePage />} />
+          <Route path="verifications/:verificationId" element={<VerificationCasePage />} />
+          <Route path="users" element={<DirectoryPage fixedType="USER" />} />
+          <Route path="organisations" element={<DirectoryPage fixedType="ORGANISATION" />} />
+          <Route path="content/:type" element={<DirectoryPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="audit" element={<AuditPage />} />
+          <Route path="templates" element={<TemplatesPage />} />
+          <Route path="curation" element={<CurationPage />} />
+          <Route path="system" element={<SystemHealthPage />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

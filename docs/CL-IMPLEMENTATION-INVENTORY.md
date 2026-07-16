@@ -58,7 +58,7 @@ Add Figma links in the Design column as they become available.
 |---|---|---:|---|---|
 | Organisation authentication | `/org/signup` | Implemented |  | Organisation account sign-in/sign-up. |
 | Organisation identity | `/org/onboarding/identity` | Implemented |  | Captures organisation identity details. |
-| Organisation verification | `/org/onboarding/verification` | Partial |  | Organisation record and claims are wired; document upload and admin approval remain deferred/out of current scope. |
+| Organisation verification | `/org/onboarding/verification`, admin `/verifications` | Implemented with URL-based documents |  | Versioned submissions, reviewer assignment, audited document access, SLA tracking, approve/reject/needs-information decisions, trust tiers, and persistent organisation notifications are wired end to end. Direct Cloudinary upload remains deferred. |
 | Organisation success | `/org/onboarding/success` | Implemented |  | Completion handoff into the protected organisation portal. |
 | Organisation route protection | Shared component | Implemented |  | Requires a signed-in organisation member and validates organisation membership. |
 
@@ -101,14 +101,16 @@ Add Figma links in the Design column as they become available.
 | Marketplace photo uploads and compression | Deferred | Yes, for uploader states | Cloudinary was explicitly postponed. |
 | Event cover/gallery uploads | Deferred | Yes, for uploader states | Cloudinary was explicitly postponed. |
 | CV upload | Deferred | Yes, for upload/progress/error states | Application data works without CV files. |
-| Organisation logo file upload and verification documents | Deferred | Yes | Logo URL management is implemented; Cloudinary file upload and admin approval remain intentionally postponed. |
+| Organisation logo file upload and verification documents | Partially implemented | Yes, for upload states | Versioned URL-based submissions and the complete admin approval flow are implemented. Cloudinary file upload remains intentionally postponed. |
 | RSVP confirmation and reminder emails | Not implemented | Email templates | Requires transactional email provider and scheduling. |
 | Job deadline auto-archive/reminder | Deferred | No | Explicitly skipped; expired jobs still reject applications. |
 | Public organisation profiles | Implemented | No | Event and job organiser links now open the live profile. |
 | Public member profiles | Deferred | Yes | Not required for launch; explicitly deferred. |
 | Information board management | Not implemented | Yes | Organisation posts and public feed presentation required. |
 | Full notification centre | Implemented | No | Organisation inbox persists follower, RSVP, report and verification activity with read/unread state. |
-| Marketplace moderation processing | Deferred | Admin design later | CL report submission exists; admin queue is out of scope. |
+| Marketplace moderation processing | Implemented | No | Reports are durable and deduplicated; three distinct reports hide a listing pending review. Admins can assign, note, dismiss, warn, or soft-remove cases with audit history and seller notifications. |
+| Admin audit, templates and curation | Implemented | No | Audit explorer/exports, versioned operational templates, scheduled regional highlights, saved views, admin notifications, and read-only system health are implemented in the dedicated admin portal. |
+| Admin launch hardening and recovery | Implemented | No | Production CSP/CORS and Router restrictions, admin mutation throttling, restart-safe exports, durable command reconciliation, operational indexes, backup/restore scripts, runbook, and operator acceptance checklist are implemented. |
 | Production transactional emails | Not implemented | Email templates | Includes auth, RSVP and deadline messages. |
 
 ## Phase 2 implementation order and design links

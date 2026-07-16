@@ -6,11 +6,12 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin } from '@christian-listings/auth';
+import { buildAuthPlugin, isInternalServiceRequest } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
 import { buildContext, type GraphQLContext } from './context';
 import { setupModels } from './models';
 import { resolvers } from './resolvers';
+import { applyAdminEventAction, applyAdminOrganisationEventAction, eventDirectory } from './services/admin-events.service';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/events.graphql'), 'utf-8'),
@@ -38,6 +39,26 @@ async function bootstrap() {
   await apollo.start();
 
   await fastify.register(buildAuthPlugin({ optional: true }));
+
+  fastify.post('/internal/admin/directory', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    return eventDirectory(request.body as Parameters<typeof eventDirectory>[0]);
+  });
+
+  fastify.post('/internal/admin/event-action', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof applyAdminEventAction>[0];
+    if (!input || !['CANCEL', 'RESTORE'].includes(input.action) || !['OCCURRENCE', 'SERIES'].includes(input.scope) || typeof input.reason !== 'string' || input.reason.trim().length < 5) return reply.code(400).send({ error: 'Invalid event action' });
+    const result = await applyAdminEventAction(input);
+    return result ?? reply.code(404).send({ error: 'Event not found' });
+  });
+
+  fastify.post('/internal/admin/organisation-action', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof applyAdminOrganisationEventAction>[0];
+    if (!input || typeof input.organisationId !== 'string' || !['SUSPEND', 'REACTIVATE'].includes(input.action)) return reply.code(400).send({ error: 'Invalid organisation action' });
+    return applyAdminOrganisationEventAction(input);
+  });
 
   await fastify.register(fastifyApollo(apollo), {
     path: '/graphql',

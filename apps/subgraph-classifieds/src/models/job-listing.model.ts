@@ -60,6 +60,8 @@ export interface IJobListing {
 
   // Platform state
   status:        JobStatus;
+  adminSuspended: boolean;
+  preAdminStatus: JobStatus | null;
   isPromoted:    boolean;
   promotedUntil: Date | null;
 
@@ -109,6 +111,8 @@ export const JobListingSchema = new Schema<IJobListing>(
     externalApplyUrl: { type: String, default: null },
 
     status:        { type: String, enum: JOB_STATUSES, default: 'ACTIVE' },
+    adminSuspended: { type: Boolean, default: false, index: true },
+    preAdminStatus: { type: String, enum: JOB_STATUSES, default: null },
     isPromoted:    { type: Boolean, default: false },
     promotedUntil: { type: Date,    default: null },
 

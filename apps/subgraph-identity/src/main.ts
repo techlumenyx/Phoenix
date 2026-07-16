@@ -6,11 +6,12 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin, getFirebaseAdmin } from '@christian-listings/auth';
+import { buildAuthPlugin, getFirebaseAdmin, isInternalServiceRequest } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
 import { buildContext, type GraphQLContext } from './context';
 import { resolvers } from './resolvers';
 import { setupModels } from './models';
+import { applyIdentityAccountAction, applyVerificationDecision, identityDirectory } from './services/admin-identity.service';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/identity.graphql'), 'utf-8'),
@@ -40,6 +41,29 @@ async function bootstrap() {
   await apollo.start();
 
   await fastify.register(buildAuthPlugin({ optional: true }));
+
+  fastify.post('/internal/admin/verification-decision', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof applyVerificationDecision>[0];
+    if (!input || !['APPROVE', 'REJECT', 'NEEDS_INFORMATION'].includes(input.action) || typeof input.reason !== 'string') return reply.code(400).send({ error: 'Invalid verification decision' });
+    const result = await applyVerificationDecision(input);
+    return result ?? reply.code(404).send({ error: 'Organisation not found' });
+  });
+
+  fastify.post('/internal/admin/directory', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof identityDirectory>[0];
+    if (!input || !['USER', 'ORGANISATION'].includes(input.type)) return reply.code(400).send({ error: 'Invalid directory request' });
+    return identityDirectory(input);
+  });
+
+  fastify.post('/internal/admin/account-action', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as Parameters<typeof applyIdentityAccountAction>[0];
+    if (!input || !['USER', 'ORGANISATION'].includes(input.type) || !['WARN', 'SUSPEND', 'REACTIVATE'].includes(input.action) || typeof input.reason !== 'string' || input.reason.trim().length < 5) return reply.code(400).send({ error: 'Invalid account action' });
+    const result = await applyIdentityAccountAction(input);
+    return result ?? reply.code(404).send({ error: 'Account not found' });
+  });
 
   await fastify.register(fastifyApollo(apollo), {
     path: '/graphql',

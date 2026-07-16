@@ -4,6 +4,7 @@ import { type IMarketplaceItem } from '../models/marketplace-item.model';
 import { ClassifiedOrganisationNotificationModel, MarketplaceItemModel } from '../models';
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
+import { sendMarketplaceReport } from '../services/admin-report.service';
 
 type ItemDocument = HydratedDocument<IMarketplaceItem>;
 
@@ -92,12 +93,15 @@ interface ItemsArgs {
 
 export const marketplaceResolvers = {
   Query: {
-    marketplaceItem: async (_: unknown, { id }: { id: string }) => {
+    marketplaceItem: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       const doc = await MarketplaceItemModel.findById(id);
+      if (doc && ['PENDING_REVIEW', 'REMOVED'].includes(doc.status) && !isPlatformAdmin(ctx) && !canManageItem(doc, ctx)) {
+        return null;
+      }
       return doc ? mapItem(doc) : null;
     },
 
-    marketplaceItems: async (_: unknown, { region, search, category, condition, subCategory, minPrice, maxPrice, isDonation, status, sort = 'NEWEST', limit = 20, after }: ItemsArgs) => {
+    marketplaceItems: async (_: unknown, { region, search, category, condition, subCategory, minPrice, maxPrice, isDonation, status, sort = 'NEWEST', limit = 20, after }: ItemsArgs, ctx: GraphQLContext) => {
       const filter: Record<string, unknown> = {};
       if (region)                 filter['region'] = region;
       if (search?.trim()) {
@@ -109,7 +113,11 @@ export const marketplaceResolvers = {
       if (subCategory)            filter['subCategory'] = { $regex: escapeRegex(subCategory), $options: 'i' };
       if (minPrice !== undefined || maxPrice !== undefined) filter['sellingPrice'] = { ...(minPrice !== undefined && { $gte: minPrice }), ...(maxPrice !== undefined && { $lte: maxPrice }) };
       if (isDonation !== undefined) filter['isDonation'] = isDonation;
-      if (status)                 filter['status'] = status;
+      if (isPlatformAdmin(ctx)) {
+        if (status) filter['status'] = status;
+      } else {
+        filter['status'] = 'AVAILABLE';
+      }
       if (after)                  filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
       const sortBy: Record<string, 1 | -1> = sort === 'PRICE_ASC' ? { sellingPrice: 1 } : sort === 'PRICE_DESC' ? { sellingPrice: -1 } : sort === 'POPULAR' ? { isPromoted: -1, createdAt: -1 } : { createdAt: -1 };
@@ -190,16 +198,49 @@ export const marketplaceResolvers = {
     },
 
     reportListing: async (_: unknown, { itemId, reason }: { itemId: string; reason: string }, ctx: GraphQLContext) => {
-      if (!ctx.auth.isAuthenticated) {
+      if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const item = await MarketplaceItemModel.findOneAndUpdate({ _id: itemId }, { $inc: { flagCount: 1 } }, { new: true });
+      const value = reason.trim();
+      if (!value || value.length > 1100) {
+        throw new GraphQLError('A valid report reason is required', { extensions: { code: 'BAD_USER_INPUT' } });
+      }
+      const item = await MarketplaceItemModel.findById(itemId);
       if (!item) throw new GraphQLError('Listing not found', { extensions: { code: 'NOT_FOUND' } });
-      if (item.organisationId && ctx.auth.firebaseUid) {
-        const dedupeKey = `report:${item._id}:${ctx.auth.firebaseUid}`;
+      if (canManageItem(item, ctx)) {
+        throw new GraphQLError('You cannot report a listing you manage', { extensions: { code: 'BAD_USER_INPUT' } });
+      }
+      if (item.status === 'REMOVED') {
+        throw new GraphQLError('This listing is no longer available', { extensions: { code: 'BAD_USER_INPUT' } });
+      }
+
+      const intake = await sendMarketplaceReport({
+        itemId: item._id.toString(),
+        reporterFirebaseUid: ctx.auth.firebaseUid,
+        reason: value,
+        snapshot: {
+          title: item.title,
+          ownerFirebaseUid: item.createdBy,
+          organisationId: item.organisationId?.toString() ?? null,
+          status: item.status,
+        },
+      });
+
+      item.flagCount = intake.distinctReportCount;
+      if (intake.shouldHide && item.status !== 'PENDING_REVIEW') {
+        if (['AVAILABLE', 'RESERVED', 'SOLD'].includes(item.status)) {
+          item.preReviewStatus = item.status as 'AVAILABLE' | 'RESERVED' | 'SOLD';
+        }
+        item.status = 'PENDING_REVIEW';
+        item.moderationCaseId = intake.caseId;
+      }
+      await item.save();
+
+      if (intake.shouldHide && item.organisationId) {
+        const dedupeKey = `review:${intake.caseId}`;
         await ClassifiedOrganisationNotificationModel.updateOne(
           { dedupeKey },
-          { $setOnInsert: { organisationId: item.organisationId, type: 'LISTING_REPORTED', title: 'Listing reported', message: `${item.title} was reported: ${reason}`, href: `/marketplace/${item._id}`, sourceId: item._id.toString(), dedupeKey, readAt: null } },
+          { $setOnInsert: { organisationId: item.organisationId, type: 'LISTING_UNDER_REVIEW', title: 'Listing under review', message: `${item.title} is temporarily hidden while our moderation team reviews community reports.`, href: '/org/listings', sourceId: item._id.toString(), dedupeKey, readAt: null } },
           { upsert: true },
         );
       }
@@ -234,4 +275,8 @@ export const marketplaceResolvers = {
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isPlatformAdmin(ctx: GraphQLContext) {
+  return ctx.auth.decodedToken?.['accountType'] === 'admin';
 }

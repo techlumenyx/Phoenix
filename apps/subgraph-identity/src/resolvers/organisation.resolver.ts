@@ -4,6 +4,7 @@ import { type IOrganisation } from '../models/organisation.model';
 import { IdentityOrganisationNotificationModel, OrganisationModel as _OrgModel } from '../models';
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
+import { sendVerificationSubmission } from '../services/admin-verification.client';
 
 function OrganisationModel() { return _OrgModel; }
 
@@ -167,27 +168,28 @@ export const organisationResolvers = {
 
     submitVerification: async (
       _: unknown,
-      { organisationId, documentUrls }: { organisationId: string; documentUrls: string[] },
+      { organisationId, documentUrls, requestedTier = 'STANDARD' }: { organisationId: string; documentUrls: string[]; requestedTier?: 'STANDARD' | 'CHARITY' | 'NGO' },
       ctx: GraphQLContext,
     ) => {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
-      const doc = await OrganisationModel().findOneAndUpdate(
-        { _id: organisationId, createdBy: ctx.auth.firebaseUid },
-        {
-          $set: {
-            'verificationDetails.documentUrls': documentUrls,
-            verificationStatus: 'PENDING_REVIEW',
-          },
-        },
-        { new: true },
-      );
+      if (!['STANDARD', 'CHARITY', 'NGO'].includes(requestedTier)) {
+        throw new GraphQLError('Select a supported verification tier', { extensions: { code: 'BAD_USER_INPUT' } });
+      }
+      if (documentUrls.length < 1 || documentUrls.length > 10 || documentUrls.some((url) => !isSecureDocumentUrl(url))) {
+        throw new GraphQLError('Provide between 1 and 10 secure document URLs', { extensions: { code: 'BAD_USER_INPUT' } });
+      }
+      const doc = await OrganisationModel().findOne({ _id: organisationId, createdBy: ctx.auth.firebaseUid });
       if (!doc) {
         throw new GraphQLError('Organisation not found or access denied', {
           extensions: { code: 'NOT_FOUND' },
         });
       }
+      const submission = await sendVerificationSubmission({ organisation: doc, requestedTier, documentUrls });
+      doc.verificationDetails.documentUrls = documentUrls;
+      doc.verificationStatus = 'PENDING_REVIEW';
+      await doc.save();
       await IdentityOrganisationNotificationModel.updateOne(
         { dedupeKey: `verification:${doc._id}:PENDING_REVIEW` },
         { $setOnInsert: { organisationId: doc._id, type: 'VERIFICATION_UPDATE', title: 'Verification submitted', message: 'Your organisation verification has been submitted for review.', href: '/org/settings', sourceId: doc._id.toString(), dedupeKey: `verification:${doc._id}:PENDING_REVIEW`, readAt: null } },
@@ -195,11 +197,11 @@ export const organisationResolvers = {
       );
       // Return a VerificationRequest-shaped object for the schema
       return {
-        id: doc._id.toString(),
+        id: submission.id,
         organisation: mapOrg(doc),
         status: 'PENDING',
         documentsUrls: documentUrls,
-        submittedAt: new Date(),
+        submittedAt: new Date(submission.createdAt),
         reviewedAt: null,
         rejectionReason: null,
       };
@@ -217,4 +219,13 @@ export const organisationResolvers = {
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isSecureDocumentUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || (process.env['NODE_ENV'] !== 'production' && ['localhost', '127.0.0.1'].includes(url.hostname));
+  } catch {
+    return false;
+  }
 }

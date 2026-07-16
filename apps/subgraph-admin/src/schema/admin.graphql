@@ -1,143 +1,283 @@
 extend schema
-  @link(url: "https://specs.apollo.dev/federation/v2.6", import: ["@key", "@external", "@extends", "@shareable"])
-
-# ─── Scalars & Enums ──────────────────────────────────────────────────────────
+  @link(url: "https://specs.apollo.dev/federation/v2.6", import: ["@key"])
 
 scalar DateTime
 
 enum ModerationAction {
-  APPROVE
+  DISMISS
   WARN
   REMOVE
-  SUSPEND
-  BAN
+}
+
+enum AuditAction {
+  ASSIGN
+  ADD_NOTE
+  DISMISS
+  WARN
+  REMOVE
+  ACCESS_DOCUMENT
+  ACCESS_PRIVATE_DATA
+  VERIFICATION_ASSIGN
+  VERIFICATION_APPROVE
+  VERIFICATION_REJECT
+  VERIFICATION_NEEDS_INFORMATION
+  ACCOUNT_WARN
+  ACCOUNT_SUSPEND
+  ACCOUNT_REACTIVATE
+  EVENT_CANCEL
+  EVENT_RESTORE
+  REQUEST_AUDIT_EXPORT
+  DOWNLOAD_AUDIT_EXPORT
+  TEMPLATE_CREATE
+  TEMPLATE_ACTIVATE
+  PLACEMENT_CREATE
+  PLACEMENT_UPDATE
+  PLACEMENT_PAUSE
+  PLACEMENT_DUPLICATE
+  PLACEMENT_REORDER
+  SAVED_VIEW_CREATE
+  SAVED_VIEW_DELETE
+  NOTIFICATION_READ
 }
 
 enum ContentType {
-  EVENT
-  JOB_LISTING
   MARKETPLACE_ITEM
+  ORGANISATION_VERIFICATION
   USER
   ORGANISATION
+  EVENT
+  JOB
+  AUDIT_EXPORT
+  TEMPLATE
+  FEATURED_PLACEMENT
+  SAVED_VIEW
 }
 
-enum ReportStatus {
-  PENDING
+enum AuditResult { SUCCESS FAILED }
+enum AdminTemplateType { WARNING REJECTION REMOVAL SUSPENSION VERIFICATION }
+enum PlacementTargetType { EVENT JOB MARKETPLACE_ITEM ORGANISATION ANNOUNCEMENT }
+enum PlacementStatus { SCHEDULED ACTIVE PAUSED EXPIRED }
+enum PlacementSource { EDITORIAL PROMOTION }
+enum SavedViewModule { MODERATION VERIFICATION AUDIT DIRECTORY CURATION }
+enum AdminNotificationType { ASSIGNMENT SLA_WARNING ESCALATION ACTION_FAILED MENTION }
+enum AuditExportStatus { PENDING READY FAILED EXPIRED }
+
+enum VerificationReviewStatus { PENDING_REVIEW NEEDS_INFORMATION APPROVED REJECTED }
+enum VerificationDecision { APPROVE REJECT NEEDS_INFORMATION }
+enum VerificationTier { NONE STANDARD CHARITY NGO }
+enum DirectoryEntityType { USER ORGANISATION EVENT JOB MARKETPLACE_ITEM }
+enum AccountAction { WARN SUSPEND REACTIVATE }
+enum EventAdminAction { CANCEL RESTORE }
+enum EventActionScope { OCCURRENCE SERIES }
+
+enum ModerationCaseStatus {
+  OPEN
+  PENDING_REVIEW
   RESOLVED
 }
 
-# ─── Federation Entity Stubs ──────────────────────────────────────────────────
-
-type User @key(fields: "id") @extends {
-  id: ID! @external
+enum ModerationPriority {
+  NORMAL
+  HIGH
+  CRITICAL
 }
 
-type Organisation @key(fields: "id") @extends {
-  id: ID! @external
-  verificationRequests: [VerificationQueueItem!]!
+enum ReportReasonCode {
+  SPAM_MISLEADING
+  FRAUD_SCAM
+  PROHIBITED_UNSAFE
+  INAPPROPRIATE
+  DUPLICATE
+  OTHER
 }
-
-# ─── Entities ─────────────────────────────────────────────────────────────────
 
 type ModerationReport @key(fields: "id") {
   id: ID!
-  contentId: String!
-  contentType: ContentType!
-  reportedByUser: User!
-  reason: String!
-  status: ReportStatus!
+  reporterFirebaseUid: String!
+  reasonCode: ReportReasonCode!
+  details: String
   createdAt: DateTime!
 }
 
-type AuditLog @key(fields: "id") {
+type CaseNote @key(fields: "id") {
   id: ID!
-  admin: User!
-  action: ModerationAction!
-  contentId: String!
-  contentType: ContentType!
-  reason: String!
-  createdAt: DateTime!
-}
-
-type SystemFlagRule @key(fields: "id") {
-  id: ID!
-  name: String!
-  description: String!
-  condition: String!
-  isActive: Boolean!
+  authorFirebaseUid: String!
+  body: String!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
 
-type VerificationQueueItem @key(fields: "id") {
+type AuditEvent @key(fields: "id") {
   id: ID!
-  organisation: Organisation!
-  status: VerificationStatus!
-  documentUrls: [String!]!
-  submittedAt: DateTime!
+  adminFirebaseUid: String!
+  action: AuditAction!
+  targetId: String!
+  targetType: ContentType!
+  reason: String!
+  beforeStatus: String
+  afterStatus: String
+  requestId: String
+  adminRoles: [String!]!
+  result: AuditResult!
+  route: String
+  ipAddress: String
+  userAgent: String
+  createdAt: DateTime!
+}
+
+type AuditExport @key(fields: "id") { id: ID! requesterFirebaseUid: String! requesterEmail: String! from: DateTime! to: DateTime! status: AuditExportStatus! rowCount: Int! failureReason: String expiresAt: DateTime! createdAt: DateTime! updatedAt: DateTime! }
+type AdminTemplate @key(fields: "id") { id: ID! key: String! type: AdminTemplateType! title: String! publicMessage: String! internalGuidance: String locale: String! version: Int! active: Boolean! createdByFirebaseUid: String! createdAt: DateTime! updatedAt: DateTime! history: [AdminTemplate!]! }
+type FeaturedPlacement @key(fields: "id") { id: ID! targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! status: PlacementStatus! placementSource: PlacementSource! createdByFirebaseUid: String! updatedByFirebaseUid: String! createdAt: DateTime! updatedAt: DateTime! }
+type SavedAdminView @key(fields: "id") { id: ID! name: String! module: SavedViewModule! filtersJson: String! createdAt: DateTime! updatedAt: DateTime! }
+type AdminNotification @key(fields: "id") { id: ID! type: AdminNotificationType! title: String! message: String! href: String readAt: DateTime createdAt: DateTime! }
+type SystemDependency { name: String! category: String! status: String! detail: String! latencyMs: Int checkedAt: DateTime! }
+type AdminSystemHealth { overallStatus: String! version: String! dependencies: [SystemDependency!]! checkedAt: DateTime! }
+
+type ModerationCase @key(fields: "id") {
+  id: ID!
+  targetId: String!
+  targetType: ContentType!
+  title: String!
+  ownerFirebaseUid: String!
+  organisationId: String
+  status: ModerationCaseStatus!
+  priority: ModerationPriority!
+  reportCount: Int!
+  reasonCodes: [ReportReasonCode!]!
+  assigneeFirebaseUid: String
+  targetStatus: String!
+  previousStatus: String
+  resolutionAction: ModerationAction
+  resolutionReason: String
+  resolvedByFirebaseUid: String
+  resolvedAt: DateTime
+  version: Int!
+  reports: [ModerationReport!]!
+  notes: [CaseNote!]!
+  auditTimeline: [AuditEvent!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ModerationCaseConnection {
+  edges: [ModerationCase!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type AuditEventConnection {
+  edges: [AuditEvent!]!
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type VerificationSubmission @key(fields: "id") {
+  id: ID!
+  organisationId: String!
+  organisationName: String!
+  ownerFirebaseUid: String!
+  version: Int!
+  status: VerificationReviewStatus!
+  requestedTier: VerificationTier!
+  approvedTier: VerificationTier
+  documentLabels: [String!]!
+  officialName: String
+  registrationNumber: String
+  officialEmail: String
+  pocName: String
+  pocTitle: String
+  organisationType: String
+  region: String
+  assigneeFirebaseUid: String
+  decisionReason: String
+  reviewedByFirebaseUid: String
   reviewedAt: DateTime
-  reviewedBy: User
-  rejectionReason: String
+  dueAt: DateTime!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  history: [VerificationSubmission!]!
+  auditTimeline: [AuditEvent!]!
 }
 
-enum VerificationStatus {
-  PENDING
-  APPROVED
-  REJECTED
+type VerificationSubmissionConnection { edges: [VerificationSubmission!]! hasNextPage: Boolean! endCursor: String }
+
+type AdminDirectoryItem @key(fields: "id") {
+  id: ID!
+  sourceId: ID!
+  type: DirectoryEntityType!
+  title: String!
+  subtitle: String
+  status: String!
+  region: String
+  ownerFirebaseUid: String
+  organisationId: String
+  seriesId: String
+  createdAt: DateTime!
+  privateSummary: String
 }
 
-type PlatformStats @shareable {
-  totalUsers: Int!
-  activeEvents: Int!
-  activeJobListings: Int!
-  activeMarketplaceItems: Int!
-  pendingModerationReports: Int!
+type AdminDirectoryConnection { edges: [AdminDirectoryItem!]! hasNextPage: Boolean! endCursor: String }
+
+type AdminDashboardStats {
+  openModerationCases: Int!
   pendingVerifications: Int!
+  overdueVerifications: Int!
+  resolvedModerationLast7Days: Int!
+  verificationDecisionsLast7Days: Int!
 }
-
-# ─── Queries ──────────────────────────────────────────────────────────────────
 
 type Query {
-  moderationQueue(status: ReportStatus, limit: Int, after: String): ModerationReportConnection!
-  auditLogs(adminId: ID, limit: Int, after: String): AuditLogConnection!
-  verificationQueue(status: VerificationStatus, limit: Int): [VerificationQueueItem!]!
-  platformStats: PlatformStats!
-  flagRules: [SystemFlagRule!]!
+  moderationCases(
+    status: ModerationCaseStatus
+    priority: ModerationPriority
+    assigneeFirebaseUid: String
+    search: String
+    limit: Int
+    after: String
+  ): ModerationCaseConnection!
+  moderationCase(id: ID!): ModerationCase
+  auditEvents(caseId: ID, adminFirebaseUid: String, targetType: ContentType, action: AuditAction, result: AuditResult, from: DateTime, to: DateTime, limit: Int, after: String): AuditEventConnection!
+  verificationSubmissions(status: VerificationReviewStatus, assigneeFirebaseUid: String, search: String, limit: Int, after: String): VerificationSubmissionConnection!
+  verificationSubmission(id: ID!): VerificationSubmission
+  adminDirectory(type: DirectoryEntityType!, search: String, limit: Int, after: String): AdminDirectoryConnection!
+  adminDashboardStats: AdminDashboardStats!
+  auditExports: [AuditExport!]!
+  auditExportContent(id: ID!): String!
+  adminTemplates(type: AdminTemplateType, activeOnly: Boolean): [AdminTemplate!]!
+  featuredPlacements(status: PlacementStatus, region: String): [FeaturedPlacement!]!
+  savedAdminViews(module: SavedViewModule): [SavedAdminView!]!
+  adminNotifications(unreadOnly: Boolean, limit: Int): [AdminNotification!]!
+  adminNotificationUnreadCount: Int!
+  adminSystemHealth: AdminSystemHealth!
 }
-
-type ModerationReportConnection {
-  edges: [ModerationReport!]!
-  hasNextPage: Boolean!
-  endCursor: String
-}
-
-type AuditLogConnection {
-  edges: [AuditLog!]!
-  hasNextPage: Boolean!
-  endCursor: String
-}
-
-# ─── Mutations ────────────────────────────────────────────────────────────────
 
 type Mutation {
-  flagContent(contentId: String!, contentType: ContentType!, reason: String!): ModerationReport!
-  resolveReport(reportId: ID!, action: ModerationAction!, reason: String!): AuditLog!
-  reviewVerification(requestId: ID!, approved: Boolean!, rejectionReason: String): VerificationQueueItem!
-  createFlagRule(input: CreateFlagRuleInput!): SystemFlagRule!
-  updateFlagRule(id: ID!, input: UpdateFlagRuleInput!): SystemFlagRule!
+  assignModerationCase(id: ID!, assigneeFirebaseUid: String, expectedVersion: Int!): ModerationCase!
+  addModerationCaseNote(caseId: ID!, body: String!): CaseNote!
+  resolveModerationCase(
+    id: ID!
+    action: ModerationAction!
+    reason: String!
+    expectedVersion: Int!
+  ): ModerationCase!
+  assignVerificationSubmission(id: ID!, assigneeFirebaseUid: String): VerificationSubmission!
+  accessVerificationDocument(id: ID!, documentIndex: Int!): String!
+  decideVerificationSubmission(id: ID!, action: VerificationDecision!, tier: VerificationTier, reason: String!): VerificationSubmission!
+  applyAccountAction(type: DirectoryEntityType!, id: ID!, action: AccountAction!, reason: String!): AdminDirectoryItem!
+  applyEventAction(id: ID!, action: EventAdminAction!, scope: EventActionScope!, reason: String!): Boolean!
+  accessDirectoryPrivateData(type: DirectoryEntityType!, id: ID!, reason: String!): String!
+  requestAuditExport(from: DateTime!, to: DateTime!): AuditExport!
+  createAdminTemplate(key: String!, type: AdminTemplateType!, title: String!, publicMessage: String!, internalGuidance: String, locale: String): AdminTemplate!
+  activateAdminTemplate(id: ID!): AdminTemplate!
+  createFeaturedPlacement(input: FeaturedPlacementInput!): FeaturedPlacement!
+  updateFeaturedPlacement(id: ID!, input: FeaturedPlacementInput!): FeaturedPlacement!
+  pauseFeaturedPlacement(id: ID!, paused: Boolean!): FeaturedPlacement!
+  duplicateFeaturedPlacement(id: ID!, startsAt: DateTime!, endsAt: DateTime!, rank: Int!): FeaturedPlacement!
+  reorderFeaturedPlacement(id: ID!, rank: Int!): FeaturedPlacement!
+  saveAdminView(name: String!, module: SavedViewModule!, filtersJson: String!): SavedAdminView!
+  deleteSavedAdminView(id: ID!): Boolean!
+  markAdminNotificationRead(id: ID!): AdminNotification!
+  markAllAdminNotificationsRead: Boolean!
 }
 
-# ─── Inputs ───────────────────────────────────────────────────────────────────
-
-input CreateFlagRuleInput {
-  name: String!
-  description: String!
-  condition: String!
-}
-
-input UpdateFlagRuleInput {
-  name: String
-  description: String
-  condition: String
-  isActive: Boolean
-}
+input FeaturedPlacementInput { targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! placementSource: PlacementSource = EDITORIAL }

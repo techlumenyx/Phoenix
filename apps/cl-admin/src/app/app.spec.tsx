@@ -1,23 +1,43 @@
-import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import App from './app';
 
-describe('App', () => {
-  it('renders without crashing', () => {
-    const { baseElement } = render(
-      <BrowserRouter>
+const mockAuthState = {
+  user: null,
+  admin: null,
+  initialized: true,
+  signingIn: false,
+  accessDenied: false,
+  error: null,
+  login: jest.fn(),
+  logout: jest.fn(),
+  clearError: jest.fn(),
+};
+
+jest.mock('../auth/authStore', () => ({
+  useAdminAuth: (selector?: (state: typeof mockAuthState) => unknown) =>
+    selector ? selector(mockAuthState) : mockAuthState,
+}));
+
+describe('admin App', () => {
+  it('renders the dedicated staff sign-in route', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>,
     );
-    expect(baseElement).toBeTruthy();
+
+    expect(screen.getByRole('heading', { name: /sign in to administration/i })).toBeTruthy();
+    expect(screen.getByText(/community and organisation accounts cannot access/i)).toBeTruthy();
   });
 
-  it('displays the admin heading', () => {
-    const { getByRole } = render(
-      <BrowserRouter>
+  it('redirects signed-out visitors to sign in', async () => {
+    render(
+      <MemoryRouter initialEntries={['/moderation']}>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>,
     );
-    expect(getByRole('heading', { name: /cl admin/i })).toBeTruthy();
+
+    expect(await screen.findByRole('heading', { name: /sign in to administration/i })).toBeTruthy();
   });
 });

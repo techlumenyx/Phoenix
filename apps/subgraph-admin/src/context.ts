@@ -1,14 +1,22 @@
 import type { FastifyRequest } from 'fastify';
-import { buildAuthContext, type AuthContext } from '@christian-listings/auth';
+import {
+  buildAuthContext,
+  requirePlatformAdmin,
+  type AuthContext,
+  type PlatformAdminAccess,
+} from '@christian-listings/auth';
 
 export interface GraphQLContext {
   auth: AuthContext;
+  admin: PlatformAdminAccess;
   request: FastifyRequest;
 }
 
 export function buildContext(request: FastifyRequest): GraphQLContext {
+  const auth = buildAuthContext(request);
   return {
-    auth: buildAuthContext(request),
+    auth,
+    admin: requirePlatformAdmin(auth),
     request,
   };
 }

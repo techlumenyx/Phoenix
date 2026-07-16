@@ -190,6 +190,7 @@ export type JobStatus = typeof JobStatus[keyof typeof JobStatus];
 export const ListingStatus = {
   Available: 'AVAILABLE',
   PendingReview: 'PENDING_REVIEW',
+  Removed: 'REMOVED',
   Reserved: 'RESERVED',
   Sold: 'SOLD'
 } as const;

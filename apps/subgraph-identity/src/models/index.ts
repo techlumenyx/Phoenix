@@ -4,12 +4,14 @@ import { OrganisationSchema, type IOrganisation } from './organisation.model';
 import { FollowRelationshipSchema, type IFollowRelationship } from './follow-relationship.model';
 import { OrgInviteSchema, type IOrgInvite } from './org-invite.model';
 import { IdentityOrganisationNotificationSchema, type IIdentityOrganisationNotification } from './organisation-notification.model';
+import { AdminSchema, type IAdmin } from './admin.model';
 
 export let UserModel: mongoose.Model<IUser>;
 export let OrganisationModel: mongoose.Model<IOrganisation>;
 export let FollowRelationshipModel: mongoose.Model<IFollowRelationship>;
 export let OrgInviteModel: mongoose.Model<IOrgInvite>;
 export let IdentityOrganisationNotificationModel: mongoose.Model<IIdentityOrganisationNotification>;
+export let AdminModel: mongoose.Model<IAdmin>;
 
 export function setupModels(connection: mongoose.Connection): void {
   UserModel = connection.model<IUser>('User', UserSchema);
@@ -17,4 +19,5 @@ export function setupModels(connection: mongoose.Connection): void {
   FollowRelationshipModel = connection.model<IFollowRelationship>('FollowRelationship', FollowRelationshipSchema);
   OrgInviteModel = connection.model<IOrgInvite>('OrgInvite', OrgInviteSchema);
   IdentityOrganisationNotificationModel = connection.model<IIdentityOrganisationNotification>('OrganisationNotification', IdentityOrganisationNotificationSchema);
+  AdminModel = connection.model<IAdmin>('Admin', AdminSchema);
 }

@@ -5,3 +5,6 @@ export { buildAuthContext } from './lib/context-builder';
 export type { AuthContext } from './lib/context-builder';
 export { getOrganisationAccess, canAccessOrganisation, ORGANISATION_ROLES } from './lib/organisation-access';
 export type { OrganisationAccess, OrganisationRole } from './lib/organisation-access';
+export { requirePlatformAdmin, PLATFORM_ADMIN_ROLES } from './lib/admin-access';
+export type { PlatformAdminAccess, PlatformAdminRole } from './lib/admin-access';
+export { isInternalServiceRequest, INTERNAL_SERVICE_HEADER } from './lib/internal-service-auth';
