@@ -25,12 +25,15 @@ const CATEGORIES = [
   ['CHARITY', 'Charity', '♡'], ['CONFERENCE', 'Conferences', '⌁'], ['YOUTH', 'Family & Youth', '☆'], ['BIBLE_STUDY', 'Bible Study', '✦'],
 ] as const;
 
+const EMPTY_PREFERENCES: string[] = [];
+
 export default function EventsPage() {
   const { region } = usePreferredRegion();
-  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? []);
+  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? EMPTY_PREFERENCES);
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
-  const { data, loading, error } = useQuery<HomeData>(EVENTS_HOME, { variables: { region: region || null, search: search || null, dateFrom: new Date().toISOString() }, fetchPolicy: 'cache-and-network' });
+  const dateFrom = useMemo(() => new Date().toISOString(), []);
+  const { data, loading, error } = useQuery<HomeData>(EVENTS_HOME, { variables: { region: region || null, search: search || null, dateFrom }, fetchPolicy: 'cache-and-network' });
   const upcoming = data?.upcoming.edges ?? [];
   const submit = (event: FormEvent) => { event.preventDefault(); setSearch(input.trim()); };
   const interestEvents = useMemo(() => {

@@ -18,10 +18,11 @@ const JOBS_HOME = gql`
 interface HomeJob { id: string; title: string; roleType: string; workLocation: string; region: string; skillsRequired: string[]; salaryRange?: { min: number; max: number; currency: string } | null; isPromoted: boolean; organisation: { id: string; name: string; isVerified: boolean } }
 interface HomeData { trending: { edges: HomeJob[] }; newest: { edges: HomeJob[] }; volunteering: { edges: HomeJob[] } }
 const SECTORS = [['Social Media', 'Technology', '▣'], ['Project Management', 'Operations', '⌘'], ['Teaching', 'Education', '☆'], ['Counselling', 'Health & Care', '♡']] as const;
+const EMPTY_PREFERENCES: string[] = [];
 
 export default function JobsPage() {
   const { region } = usePreferredRegion();
-  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? []);
+  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? EMPTY_PREFERENCES);
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
   const { data, loading, error } = useQuery<HomeData>(JOBS_HOME, { variables: { region: region || null, search: search || null }, fetchPolicy: 'cache-and-network' });

@@ -18,10 +18,11 @@ const MARKETPLACE_HOME = gql`
 interface HomeListing { id: string; title: string; description: string; price: number; currency: string; condition: string; category: string; region: string; imageUrls: string[]; isDonation: boolean; isPromoted: boolean; seller: { id: string; isVerified: boolean } }
 interface HomeData { promoted: { edges: HomeListing[] }; newest: { edges: HomeListing[] }; donations: { edges: HomeListing[] } }
 const CATEGORIES = [['FURNITURE', 'Home & Living', '⌂'], ['ELECTRONICS', 'Electronics', '▣'], ['BABY_AND_KIDS', 'Family & Kids', '♧'], ['CLOTHING', 'Clothing', '♢'], ['BOOKS', 'Books', '▤'], ['OTHER', 'Transport', '◇'], ['OTHER', 'Sports & Outdoor', '○'], ['FOOD', 'Food / Produce', '♨']] as const;
+const EMPTY_PREFERENCES: string[] = [];
 
 export default function MarketplacePage() {
   const { region } = usePreferredRegion();
-  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? []);
+  const preferences = useAuthStore((state) => state.dbUser?.preferences ?? EMPTY_PREFERENCES);
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
   const { data, loading, error } = useQuery<HomeData>(MARKETPLACE_HOME, { variables: { region: region || null, search: search || null }, fetchPolicy: 'cache-and-network' });
