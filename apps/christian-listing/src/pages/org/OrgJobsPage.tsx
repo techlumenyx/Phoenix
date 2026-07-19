@@ -29,7 +29,7 @@ const ORG_APPLICATIONS = gql`
   query OrganisationApplicationsInbox($organisationId: ID!) {
     organisationJobApplications(organisationId: $organisationId) {
       id status fullName email phoneNumber gender dateOfBirth experience yearsOfExperience
-      currentSalary expectedSalary portfolioUrl linkedInProfile createdAt
+      currentSalary expectedSalary cvUrl portfolioUrl linkedInProfile createdAt
       education { highestQualification institutionName yearOfEnrollment yearOfCompletion marksGrades degreeType }
       listing { id title }
     }
@@ -45,7 +45,7 @@ const UPDATE_APPLICATION_STATUS = gql`
 interface JobApplication {
   id: string; status: string; fullName: string; email: string; phoneNumber?: string | null; gender?: string | null; dateOfBirth?: string | null;
   experience?: string | null; yearsOfExperience?: number | null; currentSalary?: string | null; expectedSalary?: string | null;
-  portfolioUrl?: string | null; linkedInProfile?: string | null; createdAt: string; listing: { id: string; title: string };
+  cvUrl?: string | null; portfolioUrl?: string | null; linkedInProfile?: string | null; createdAt: string; listing: { id: string; title: string };
   education: Array<{ highestQualification?: string | null; institutionName?: string | null; yearOfEnrollment?: number | null; yearOfCompletion?: number | null; marksGrades?: string | null; degreeType?: string | null }>;
 }
 
@@ -342,7 +342,8 @@ function ApplicationDrawer({
             <div className="space-y-3">{application.education.map((item, index) => <div key={index} className="rounded-lg border border-gray-200 p-4"><strong>{item.highestQualification || item.degreeType || 'Qualification'}</strong><p className="mt-1 text-gray-600">{item.institutionName || 'Institution not provided'}</p><p className="mt-1 text-xs text-gray-400">{[item.yearOfEnrollment, item.yearOfCompletion].filter(Boolean).join(' - ')}{item.marksGrades ? ` · ${item.marksGrades}` : ''}</p></div>)}</div>
           </section>}
 
-          {(application.portfolioUrl || application.linkedInProfile) && <section className="flex flex-wrap gap-3">
+          {(application.cvUrl || application.portfolioUrl || application.linkedInProfile) && <section className="flex flex-wrap gap-3">
+            {application.cvUrl && <ExternalLink href={application.cvUrl}>Download CV</ExternalLink>}
             {application.portfolioUrl && <ExternalLink href={application.portfolioUrl}>Portfolio</ExternalLink>}
             {application.linkedInProfile && <ExternalLink href={application.linkedInProfile}>LinkedIn</ExternalLink>}
           </section>}

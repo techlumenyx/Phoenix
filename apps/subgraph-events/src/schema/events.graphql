@@ -86,6 +86,8 @@ type Event @key(fields: "id") {
   waitlistCount: Int!
   status: EventStatus!
   imageUrls: [String!]!
+  videoUrls: [String!]!
+  videoPosterUrls: [String!]!
   isPromoted: Boolean!
   isRecurring: Boolean!
   seriesId: String
@@ -209,6 +211,8 @@ input CreateEventInput {
   region: String!
   capacityLimit: Int
   imageUrls: [String!]
+  videoUrls: [String!]
+  videoPosterUrls: [String!]
   isRecurring: Boolean
   recurrence: RecurrenceRuleInput
   externalTicketUrl: String
@@ -223,6 +227,8 @@ input UpdateEventInput {
   location: EventLocationInput
   capacityLimit: Int
   imageUrls: [String!]
+  videoUrls: [String!]
+  videoPosterUrls: [String!]
   status: EventStatus
   externalTicketUrl: String
 }

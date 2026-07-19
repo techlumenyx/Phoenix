@@ -10,6 +10,7 @@ import { SavedAdminViewSchema, type ISavedAdminView } from './saved-admin-view.m
 import { AdminNotificationSchema, type IAdminNotification } from './admin-notification.model';
 import { AuditExportSchema, type IAuditExport } from './audit-export.model';
 import { AdminCommandSchema, type IAdminCommand } from './admin-command.model';
+import { MediaAssetSchema, type IMediaAsset } from '@christian-listings/db';
 
 export let ModerationReportModel: mongoose.Model<IModerationReport>;
 export let ModerationCaseModel: mongoose.Model<IModerationCase>;
@@ -22,6 +23,7 @@ export let SavedAdminViewModel: mongoose.Model<ISavedAdminView>;
 export let AdminNotificationModel: mongoose.Model<IAdminNotification>;
 export let AuditExportModel: mongoose.Model<IAuditExport>;
 export let AdminCommandModel: mongoose.Model<IAdminCommand>;
+export let MediaAssetModel: mongoose.Model<IMediaAsset>;
 
 export function setupModels(connection: Connection) {
   ModerationReportModel = connection.model<IModerationReport>('ModerationReport', ModerationReportSchema);
@@ -35,4 +37,5 @@ export function setupModels(connection: Connection) {
   AdminNotificationModel = connection.model<IAdminNotification>('AdminNotification', AdminNotificationSchema);
   AuditExportModel = connection.model<IAuditExport>('AuditExport', AuditExportSchema);
   AdminCommandModel = connection.model<IAdminCommand>('AdminCommand', AdminCommandSchema);
+  MediaAssetModel = connection.model<IMediaAsset>('MediaAsset', MediaAssetSchema);
 }

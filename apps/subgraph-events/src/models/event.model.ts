@@ -63,6 +63,8 @@ export interface IEvent {
   // Media — coverImageUrl: Phase 1; imageUrls + videoEmbedUrl: Phase 2
   coverImageUrl:  string | null;
   imageUrls:      string[];         // up to 10, populated in Phase 2
+  videoUrls:      string[];
+  videoPosterUrls: string[];
   videoEmbedUrl:  string | null;    // YouTube embed URL, Phase 2
 
   // Ticketing — field stored now, logic wired in Phase 2
@@ -129,6 +131,8 @@ export const EventSchema = new Schema<IEvent>(
 
     coverImageUrl: { type: String, default: null },
     imageUrls:     [{ type: String }],
+    videoUrls:     [{ type: String }],
+    videoPosterUrls: [{ type: String }],
     videoEmbedUrl: { type: String, default: null },
 
     isTicketed: { type: Boolean, default: false },

@@ -10,6 +10,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../components/ui/ToastProvider';
 import DirectoryState from '../../components/ui/DirectoryState';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
+import { uploadMedia } from '../../lib/mediaUpload';
 
 interface SocialLinks {
   whatsapp?: string | null;
@@ -50,6 +51,7 @@ export default function OrgSettingsPage() {
   );
   const [showLifecycleDialog, setShowLifecycleDialog] = useState(false);
   const [logoPreviewFailed, setLogoPreviewFailed] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [name, setName] = useState('');
   const [region, setRegion] = useState('');
   const [description, setDescription] = useState('');
@@ -236,12 +238,13 @@ export default function OrgSettingsPage() {
                 />
               </label>
               <div className="mt-3 flex flex-wrap items-center gap-3">
+                <label className="cursor-pointer rounded-lg bg-[#1B1B1B] px-4 py-2 text-xs font-semibold text-white">{logoUploading ? 'Uploading…' : 'Upload logo'}<input disabled={logoUploading} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setLogoUploading(true); try { const uploaded = await uploadMedia(file, 'ORGANISATION_LOGO', org.id); setLogoUrl(uploaded.url); setLogoPreviewFailed(false); } catch (value) { showToast(value instanceof Error ? value.message : 'Logo upload failed.', 'error'); } finally { setLogoUploading(false); event.target.value = ''; } }} /></label>
                 <button type="button" disabled={!logoUrl} onClick={() => { setLogoUrl(''); setLogoPreviewFailed(false); }} className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40">
                   Remove logo
                 </button>
                 {logoPreviewFailed && <span className="text-xs text-red-600">This image could not be previewed. Check that the URL is public.</span>}
               </div>
-              <p className="mt-3 text-xs leading-5 text-gray-500">Direct file upload will be added with the separate Cloudinary media feature. The browser does not upload to Cloudinary directly.</p>
+              <p className="mt-3 text-xs leading-5 text-gray-500">Uploaded logos are optimised and delivered through the platform media service.</p>
             </div>
           </div>
         </section>

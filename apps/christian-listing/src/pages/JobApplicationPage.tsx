@@ -2,6 +2,7 @@ import { gql, useMutation, useQuery } from '@apollo/client';
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { uploadMedia } from '../lib/mediaUpload';
 
 const APPLICATION_CONTEXT = gql`
   query JobApplicationContext($id: ID!) {
@@ -35,6 +36,9 @@ export default function JobApplicationPage() {
   const [form, setForm] = useState({ fullName: '', phoneNumber: '', email: '', gender: '', dateOfBirth: '', experienceDescription: '', yearsOfExperience: '', currentSalary: '', expectedSalary: '', portfolioUrl: '', linkedInProfile: '' });
   const [education, setEducation] = useState<EducationEntry[]>([emptyEducation(), emptyEducation()]);
   const [acknowledgements, setAcknowledgements] = useState([false, false, false, false]);
+  const [cvUrl, setCvUrl] = useState('');
+  const [cvName, setCvName] = useState('');
+  const [cvProgress, setCvProgress] = useState<number | null>(null);
   const accountName = dbUser?.name || firebaseUser?.displayName || '';
   const accountEmail = dbUser?.email || firebaseUser?.email || '';
 
@@ -62,7 +66,7 @@ export default function JobApplicationPage() {
         education: education.filter((entry) => Object.values(entry).some(Boolean)).map((entry) => ({ ...entry, yearOfEnrollment: entry.yearOfEnrollment ? Number(entry.yearOfEnrollment) : null, yearOfCompletion: entry.yearOfCompletion ? Number(entry.yearOfCompletion) : null })),
         experienceDescription: form.experienceDescription || null, yearsOfExperience: form.yearsOfExperience ? Number(form.yearsOfExperience) : null,
         currentSalary: form.currentSalary || null, expectedSalary: form.expectedSalary || null, portfolioUrl: form.portfolioUrl || null,
-        linkedInProfile: form.linkedInProfile || null, acknowledged: true,
+        linkedInProfile: form.linkedInProfile || null, cvUrl: cvUrl || null, acknowledged: true,
       } } });
       setSubmitted(true);
     } catch {
@@ -101,7 +105,7 @@ export default function JobApplicationPage() {
           </FormSection>
 
           <FormSection title="Document Uploads">
-            <div aria-disabled="true" className="rounded-xl border-2 border-dashed border-[#d8cbd9] bg-[#eee6ef] px-6 py-10 text-center text-sm text-gray-500"><p className="font-semibold text-gray-700">CV / Resume upload</p><p className="mt-2">Document uploads will be enabled with the upcoming secure media-upload feature.</p><p className="mt-1 text-xs">You can submit this application without a CV for now.</p></div>
+            <label className="block cursor-pointer rounded-xl border-2 border-dashed border-[#d8cbd9] bg-[#eee6ef] px-6 py-10 text-center text-sm text-gray-500"><p className="font-semibold text-gray-700">CV / Resume upload</p><p className="mt-2">{cvName || 'Choose a PDF file (maximum 10 MB)'}</p>{cvProgress !== null && <div className="mx-auto mt-3 h-2 max-w-sm overflow-hidden rounded bg-white"><div className="h-full bg-[#4a1746]" style={{ width: `${cvProgress}%` }} /></div>}<input className="hidden" type="file" accept="application/pdf,.pdf" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setSubmitError(''); setCvName(file.name); setCvProgress(0); try { const uploaded = await uploadMedia(file, 'JOB_CV', undefined, setCvProgress); setCvUrl(uploaded.url); setCvProgress(100); } catch (value) { setCvUrl(''); setCvProgress(null); setSubmitError(value instanceof Error ? value.message : 'CV upload failed.'); } }} /></label>
             <div className="mt-5 grid gap-5 md:grid-cols-2"><Field label="Portfolio URL" type="url" value={form.portfolioUrl} onChange={(value) => update('portfolioUrl', value)} /><Field label="LinkedIn Profile" type="url" value={form.linkedInProfile} onChange={(value) => update('linkedInProfile', value)} /></div>
           </FormSection>
 

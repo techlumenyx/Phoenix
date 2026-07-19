@@ -56,6 +56,8 @@ export interface IMarketplaceItem {
   isDonation: boolean;   // true = free charity listing; shown in "Community Gives" section
 
   imageUrls: string[];   // up to 10 Cloudinary URLs
+  videoUrl: string | null;
+  videoPosterUrl: string | null;
 
   // Seller contact — Phase 1: shown directly; Phase 2: gated behind offer flow
   contactInfo:        string | null;   // phone / email stored at creation time
@@ -101,6 +103,8 @@ export const MarketplaceItemSchema = new Schema<IMarketplaceItem>(
     isDonation: { type: Boolean, default: false },
 
     imageUrls: [{ type: String }],
+    videoUrl: { type: String, default: null },
+    videoPosterUrl: { type: String, default: null },
 
     contactInfo:        { type: String,  default: null },
     showContactOnOffer: { type: Boolean, default: false },

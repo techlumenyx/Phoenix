@@ -29,6 +29,8 @@ export interface IEventSeries {
   endDate: Date | null;
   capacity: number | null;
   imageUrls: string[];
+  videoUrls: string[];
+  videoPosterUrls: string[];
   ticketUrl: string | null;
   status: EventStatus;
   adminSuspended: boolean;
@@ -70,6 +72,8 @@ export const EventSeriesSchema = new Schema<IEventSeries>({
   endDate: { type: Date, default: null },
   capacity: { type: Number, default: null },
   imageUrls: [{ type: String }],
+  videoUrls: [{ type: String }],
+  videoPosterUrls: [{ type: String }],
   ticketUrl: { type: String, default: null },
   status: { type: String, default: 'PUBLISHED' },
   adminSuspended: { type: Boolean, default: false, index: true },

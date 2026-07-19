@@ -5,6 +5,7 @@ import SceneHeader from '../../components/layout/SceneHeader';
 import { getAuth } from 'firebase/auth';
 import { useAuthStore } from '../../store/authStore';
 import { userSafeError } from '../../lib/user-safe-error';
+import { uploadMedia } from '../../lib/mediaUpload';
 
 const CREATE_ORGANISATION = gql`
   mutation CreateOrganisation($input: CreateOrganisationInput!) {
@@ -65,11 +66,17 @@ export default function OrgVerificationPage() {
         },
       });
 
+      await getAuth().currentUser?.getIdToken(true);
+
       if (!skip && regNumber) {
+        const documentUrls = docFile
+          ? [(await uploadMedia(docFile, 'VERIFICATION_DOCUMENT', data.createOrganisation.id)).url]
+          : [];
+        if (documentUrls.length === 0) throw new Error('Upload a verification document before submitting.');
         await submitVerification({
           variables: {
             organisationId: data.createOrganisation.id,
-            documentUrls: [],
+            documentUrls,
           },
         });
       }

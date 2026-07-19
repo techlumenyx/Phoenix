@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/ToastProvider';
 import DirectoryState from '../components/ui/DirectoryState';
+import { uploadMedia } from '../lib/mediaUpload';
 
 const PROFILE = gql`
   query EditableMemberProfile {
@@ -73,6 +74,7 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [avatarPreviewFailed, setAvatarPreviewFailed] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [preferences, setPreferences] = useState<string[]>([]);
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY);
   const [social, setSocial] = useState({ whatsapp: '', instagram: '', facebook: '', twitter: '', website: '' });
@@ -144,13 +146,14 @@ export default function ProfilePage() {
               <label className="text-sm font-semibold sm:col-span-2">Region<input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="City, country" className={fieldClass} /></label>
               <label className="text-sm font-semibold sm:col-span-2">Avatar image URL<input type="url" value={avatarUrl} onChange={(event) => { setAvatarUrl(event.target.value); setAvatarPreviewFailed(false); }} placeholder="https://cdn.example.org/avatar.jpg" className={fieldClass} /></label>
               <div className="sm:col-span-2">
+                <label className="mr-3 inline-block cursor-pointer rounded-lg bg-[#302530] px-4 py-2 text-xs font-semibold text-white">{avatarUploading ? 'Uploading…' : 'Upload avatar'}<input disabled={avatarUploading} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setAvatarUploading(true); try { const uploaded = await uploadMedia(file, 'MEMBER_AVATAR'); setAvatarUrl(uploaded.url); setAvatarPreviewFailed(false); } catch (value) { showToast(value instanceof Error ? value.message : 'Avatar upload failed.', 'error'); } finally { setAvatarUploading(false); event.target.value = ''; } }} /></label>
                 <button type="button" disabled={!avatarUrl} onClick={() => { setAvatarUrl(''); setAvatarPreviewFailed(false); }} className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-40">Remove avatar</button>
                 {avatarPreviewFailed && <span className="ml-3 text-xs text-red-600">This image could not be previewed.</span>}
               </div>
             </div>
           </div>
           <label className="mt-5 block text-sm font-semibold">Bio<textarea rows={4} maxLength={500} value={bio} onChange={(event) => setBio(event.target.value)} className={`${fieldClass} resize-none`} /><span className="mt-1 block text-right text-xs font-normal text-gray-400">{bio.length}/500</span></label>
-          <p className="mt-3 rounded-xl bg-[#FAF6ED] px-4 py-3 text-xs leading-5 text-gray-600">Direct avatar file upload remains part of the separate Cloudinary media feature. The current control stores a public HTTPS image URL.</p>
+          <p className="mt-3 rounded-xl bg-[#FAF6ED] px-4 py-3 text-xs leading-5 text-gray-600">Uploaded avatars are optimised and delivered securely through the platform media service.</p>
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-6">

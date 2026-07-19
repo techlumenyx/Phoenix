@@ -6,11 +6,12 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin, getFirebaseAdmin, isInternalServiceRequest } from '@christian-listings/auth';
+import { buildAuthContext, buildAuthPlugin, canAccessOrganisation, getFirebaseAdmin, isInternalServiceRequest } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
+import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
 import { resolvers } from './resolvers';
-import { setupModels } from './models';
+import { MediaAssetModel, setupModels } from './models';
 import { applyIdentityAccountAction, applyVerificationDecision, identityDirectory } from './services/admin-identity.service';
 
 const typeDefs = parse(
@@ -41,6 +42,18 @@ async function bootstrap() {
   await apollo.start();
 
   await fastify.register(buildAuthPlugin({ optional: true }));
+
+  registerMediaUploadRoutes(fastify, {
+    service: 'identity', purposes: ['MEMBER_AVATAR', 'ORGANISATION_LOGO', 'ORGANISATION_GALLERY', 'VERIFICATION_DOCUMENT'],
+    authorize: (request, purpose, ownerId) => {
+      const auth = buildAuthContext(request);
+      if (!auth.isAuthenticated) return false;
+      if (purpose === 'MEMBER_AVATAR') return !ownerId || ownerId === auth.firebaseUid;
+      return Boolean(ownerId && canAccessOrganisation(auth, ownerId, ['master_admin', 'site_admin']));
+    },
+    onUploaded: async (request, purpose, ownerId, result) => { await MediaAssetModel.create({ ...result, cloudinaryAssetId: result.assetId, purpose, ownerId, uploadedBy: request.firebaseUser?.uid ?? 'unknown', status: 'ACTIVE' }); },
+    onDeleted: async (publicId) => { await MediaAssetModel.updateOne({ publicId }, { $set: { status: 'DELETED' } }); },
+  });
 
   fastify.post('/internal/admin/verification-decision', async (request, reply) => {
     if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });

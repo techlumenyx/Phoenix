@@ -8,7 +8,7 @@ services:
   gateway:
     image: ghcr.io/techlumenyx/phoenix/gateway:latest
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -34,11 +34,17 @@ services:
 
   identity:
     image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
+    ports:
+      - "127.0.0.1:4001:4001"
     environment:
       - NODE_ENV=production
       - PORT=4001
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
       - APP_SECRET=${APP_SECRET}
       - APP_URL=${APP_URL}
       - SMTP_HOST=${SMTP_HOST}
@@ -55,11 +61,17 @@ services:
 
   events:
     image: ghcr.io/techlumenyx/phoenix/subgraph-events:latest
+    ports:
+      - "127.0.0.1:4002:4002"
     environment:
       - NODE_ENV=production
       - PORT=4002
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
       interval: 10s
@@ -69,6 +81,8 @@ services:
 
   classifieds:
     image: ghcr.io/techlumenyx/phoenix/subgraph-classifieds:latest
+    ports:
+      - "127.0.0.1:4003:4003"
     environment:
       - NODE_ENV=production
       - PORT=4003
@@ -77,6 +91,7 @@ services:
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
       interval: 10s
@@ -86,11 +101,17 @@ services:
 
   admin:
     image: ghcr.io/techlumenyx/phoenix/subgraph-admin:latest
+    ports:
+      - "127.0.0.1:4004:4004"
     environment:
       - NODE_ENV=production
       - PORT=4004
       - MONGO_URI=${MONGO_URI}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/health"]
       interval: 10s

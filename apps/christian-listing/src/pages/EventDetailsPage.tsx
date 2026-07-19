@@ -10,7 +10,7 @@ const EVENT_DETAILS = gql`
     event(id: $id) {
       id title description category date endDate region
       rsvpCount interestedCount savedCount confirmedCount capacityLimit waitlistCount
-      status imageUrls isPromoted externalTicketUrl isRecurring seriesId occurrenceNumber isSeriesException
+      status imageUrls videoUrls videoPosterUrls isPromoted externalTicketUrl isRecurring seriesId occurrenceNumber isSeriesException
       location { type address city country virtualLink }
       hosts { id name description logoUrl region isVerified verificationTier websiteUrl }
       mySeriesRsvp { id stage }
@@ -56,7 +56,7 @@ interface EventDetailsData {
   event: null | {
     id: string; title: string; description: string; category: string; date: string; endDate?: string | null; region: string;
     rsvpCount: number; interestedCount: number; savedCount: number; confirmedCount: number; capacityLimit?: number | null; waitlistCount: number;
-    status: string; imageUrls: string[]; isPromoted: boolean; externalTicketUrl?: string | null;
+    status: string; imageUrls: string[]; videoUrls: string[]; videoPosterUrls: string[]; isPromoted: boolean; externalTicketUrl?: string | null;
     isRecurring: boolean; seriesId?: string | null; occurrenceNumber?: number | null; isSeriesException: boolean;
     mySeriesRsvp?: { id: string; stage: RsvpStage } | null;
     series?: { id: string; recurrence: { frequency: 'WEEKLY' | 'MONTHLY'; interval: number; daysOfWeek: number[]; dayOfMonth?: number | null; timezone: string; endsAt?: string | null; occurrenceCount?: number | null }; occurrences: { edges: Array<{ id: string; date: string; status: string; rsvpCount: number; capacityLimit?: number | null }> } } | null;
@@ -154,6 +154,7 @@ export default function EventDetailsPage() {
             {event.isRecurring && <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#42113f]">Recurring series · #{event.occurrenceNumber}</span>}
             {host?.isVerified && <span className="absolute right-4 top-4 rounded-full bg-[#7acb37] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#17310b]">✓ Verified</span>}
           </div>
+          {event.videoUrls.length > 0 && <section className="mt-5 grid gap-4 sm:grid-cols-2">{event.videoUrls.map((url, index) => <video key={url} src={url} poster={event.videoPosterUrls[index] ?? undefined} controls preload="metadata" className="aspect-video w-full rounded-xl bg-black object-contain" aria-label={`${event.title} video ${index + 1}`} />)}</section>}
 
           <article className="py-8">
             <h2 className="font-serif text-3xl font-bold">About the Experience</h2>

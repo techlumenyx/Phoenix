@@ -166,6 +166,8 @@ type MarketplaceItem @key(fields: "id") {
   area: String
   region: String!
   imageUrls: [String!]!
+  videoUrl: String
+  videoPosterUrl: String
   status: ListingStatus!
   isDonation: Boolean!
   isPromoted: Boolean!
@@ -371,6 +373,7 @@ input SubmitJobApplicationInput {
   yearsOfExperience: Float
   currentSalary: String
   expectedSalary: String
+  cvUrl: String
   portfolioUrl: String
   linkedInProfile: String
   acknowledged: Boolean!
@@ -387,6 +390,8 @@ input CreateMarketplaceItemInput {
   area: String
   region: String!
   imageUrls: [String!]!
+  videoUrl: String
+  videoPosterUrl: String
   isDonation: Boolean!
 }
 
@@ -399,5 +404,7 @@ input UpdateMarketplaceItemInput {
   category: MarketplaceCategory
   region: String
   imageUrls: [String!]
+  videoUrl: String
+  videoPosterUrl: String
   isDonation: Boolean
 }

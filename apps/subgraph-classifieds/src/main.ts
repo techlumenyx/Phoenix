@@ -6,10 +6,11 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin, isInternalServiceRequest } from '@christian-listings/auth';
+import { buildAuthContext, buildAuthPlugin, canAccessOrganisation, isInternalServiceRequest } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
+import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
-import { setupModels } from './models';
+import { MediaAssetModel, setupModels } from './models';
 import { resolvers } from './resolvers';
 import { executeMarketplaceModerationCommand, type MarketplaceModerationCommand } from './services/moderation-command.service';
 import { applyAdminOrganisationClassifiedsAction, classifiedsDirectory } from './services/admin-directory.service';
@@ -40,6 +41,18 @@ async function bootstrap() {
   await apollo.start();
 
   await fastify.register(buildAuthPlugin({ optional: true }));
+
+  registerMediaUploadRoutes(fastify, {
+    service: 'classifieds', purposes: ['MARKETPLACE_IMAGE', 'MARKETPLACE_VIDEO', 'JOB_CV'],
+    authorize: (request, purpose, ownerId) => {
+      const auth = buildAuthContext(request);
+      if (!auth.isAuthenticated) return false;
+      if (purpose === 'JOB_CV' || !ownerId) return true;
+      return canAccessOrganisation(auth, ownerId, ['master_admin', 'site_admin', 'classifieds_manager']);
+    },
+    onUploaded: async (request, purpose, ownerId, result) => { await MediaAssetModel.create({ ...result, cloudinaryAssetId: result.assetId, purpose, ownerId, uploadedBy: request.firebaseUser?.uid ?? 'unknown', status: 'ACTIVE' }); },
+    onDeleted: async (publicId) => { await MediaAssetModel.updateOne({ publicId }, { $set: { status: 'DELETED' } }); },
+  });
 
   fastify.post('/internal/moderation/marketplace', async (request, reply) => {
     if (!isInternalServiceRequest(request)) {

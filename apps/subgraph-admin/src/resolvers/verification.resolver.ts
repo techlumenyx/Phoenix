@@ -4,6 +4,7 @@ import { requirePlatformAdmin } from '@christian-listings/auth';
 import type { GraphQLContext } from '../context';
 import { AdminNotificationModel, AuditEventModel, ModerationCaseModel, VerificationSubmissionModel } from '../models';
 import type { VerificationSubmissionDocument } from '../models/verification-submission.model';
+import { resolvePrivateMediaRef } from '@christian-listings/utils';
 
 const REVIEW_ROLES = ['VERIFICATION_REVIEWER'] as const;
 
@@ -58,7 +59,7 @@ export const verificationResolvers = {
       const url = doc?.documentUrls[documentIndex];
       if (!doc || !url) throw new GraphQLError('Verification document not found', { extensions: { code: 'NOT_FOUND' } });
       await audit(ctx, admin.firebaseUid, 'ACCESS_DOCUMENT', doc.organisationId, 'ORGANISATION_VERIFICATION', `Accessed verification document ${documentIndex + 1}`, doc.status, doc.status);
-      return url;
+      return resolvePrivateMediaRef(url);
     },
     decideVerificationSubmission: async (_: unknown, args: { id: string; action: 'APPROVE' | 'REJECT' | 'NEEDS_INFORMATION'; tier?: 'NONE' | 'STANDARD' | 'CHARITY' | 'NGO'; reason: string }, ctx: GraphQLContext) => {
       const admin = requirePlatformAdmin(ctx.auth, [...REVIEW_ROLES]);

@@ -6,6 +6,7 @@ import type { IJobApplication } from '../models/job-application.model';
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
 import { mapJob } from './job.resolver';
+import { resolvePrivateMediaRef } from '@christian-listings/utils';
 
 interface EducationInput {
   highestQualification?: string;
@@ -28,6 +29,7 @@ interface SubmitApplicationInput {
   yearsOfExperience?: number;
   currentSalary?: string;
   expectedSalary?: string;
+  cvUrl?: string;
   portfolioUrl?: string;
   linkedInProfile?: string;
   acknowledged: boolean;
@@ -47,8 +49,8 @@ function mapApplication(doc: HydratedDocument<IJobApplication>) {
     applicant: { firebaseUid: doc.applicantFirebaseUid },
     status: doc.status,
     experience: doc.experienceDescription ?? null,
-    resumeUrl: doc.cvUrl ?? null,
-    cvUrl: doc.cvUrl ?? null,
+    resumeUrl: doc.cvUrl ? resolvePrivateMediaRef(doc.cvUrl) : null,
+    cvUrl: doc.cvUrl ? resolvePrivateMediaRef(doc.cvUrl) : null,
     fullName: doc.fullName,
     phoneNumber: doc.phoneNumber ?? null,
     email: doc.email,
@@ -108,7 +110,7 @@ export const jobApplicationResolvers = {
           yearsOfExperience: input.yearsOfExperience ?? null,
           currentSalary: input.currentSalary?.trim() || null,
           expectedSalary: input.expectedSalary?.trim() || null,
-          cvUrl: null,
+          cvUrl: input.cvUrl?.trim() || null,
           portfolioUrl: input.portfolioUrl?.trim() || null,
           linkedInProfile: input.linkedInProfile?.trim() || null,
           acknowledged: true,

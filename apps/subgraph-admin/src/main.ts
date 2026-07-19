@@ -8,8 +8,9 @@ import { join } from 'path';
 import { NoSchemaIntrospectionCustomRule, parse } from 'graphql';
 import { buildAuthPlugin } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
+import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
-import { setupModels } from './models';
+import { MediaAssetModel, setupModels } from './models';
 import { resolvers } from './resolvers';
 import { ingestMarketplaceReport, ReportRateLimitError, type MarketplaceReportInput } from './services/report-intake.service';
 import { ingestVerificationSubmission, type VerificationIntakeInput } from './services/verification-intake.service';
@@ -50,6 +51,13 @@ async function bootstrap() {
     optional: false,
     internalPaths: ['/internal/reports/marketplace', '/internal/verifications'],
   }));
+
+  registerMediaUploadRoutes(fastify, {
+    service: 'admin', purposes: ['FEATURED_PLACEMENT_IMAGE'],
+    authorize: (request) => Boolean(request.firebaseUser),
+    onUploaded: async (request, purpose, ownerId, result) => { await MediaAssetModel.create({ ...result, cloudinaryAssetId: result.assetId, purpose, ownerId, uploadedBy: request.firebaseUser?.uid ?? 'unknown', status: 'ACTIVE' }); },
+    onDeleted: async (publicId) => { await MediaAssetModel.updateOne({ publicId }, { $set: { status: 'DELETED' } }); },
+  });
 
   fastify.post('/internal/reports/marketplace', async (request, reply) => {
     const input = request.body as MarketplaceReportInput;

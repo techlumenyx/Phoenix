@@ -22,6 +22,8 @@ export function mapItem(doc: ItemDocument) {
     area:        null,
     region:      doc.region ?? '',
     imageUrls:   doc.imageUrls ?? [],
+    videoUrl:    doc.videoUrl ?? null,
+    videoPosterUrl: doc.videoPosterUrl ?? null,
     status:      doc.status,
     isDonation:  doc.isDonation,
     isPromoted:  doc.isPromoted,
@@ -48,13 +50,15 @@ interface CreateItemInput {
   area?:       string;
   region:      string;
   imageUrls:   string[];
+  videoUrl?: string;
+  videoPosterUrl?: string;
   isDonation:  boolean;
   organisationId?: string;
 }
 
 type UpdateItemInput = Partial<Pick<CreateItemInput,
   'title' | 'description' | 'price' | 'currency' | 'condition' | 'category' |
-  'region' | 'imageUrls' | 'isDonation'
+  'region' | 'imageUrls' | 'videoUrl' | 'videoPosterUrl' | 'isDonation'
 >>;
 
 const LISTING_MANAGER_ROLES = ['master_admin', 'site_admin', 'classifieds_manager'] as const;
@@ -144,6 +148,7 @@ export const marketplaceResolvers = {
 
   Mutation: {
     createMarketplaceItem: async (_: unknown, { input }: { input: CreateItemInput }, ctx: GraphQLContext) => {
+      if (input.imageUrls.length > 8) throw new GraphQLError('Listings support up to 8 images', { extensions: { code: 'BAD_USER_INPUT' } });
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
@@ -164,6 +169,8 @@ export const marketplaceResolvers = {
         currency:     input.currency,
         isDonation:   input.isDonation,
         imageUrls:    input.imageUrls,
+        videoUrl:     input.videoUrl ?? null,
+        videoPosterUrl: input.videoPosterUrl ?? null,
         status:       'AVAILABLE',
       });
       return mapItem(doc);
@@ -184,6 +191,8 @@ export const marketplaceResolvers = {
         update['regionCode'] = region?.code ?? null;
       }
       if (input.imageUrls)   update['imageUrls'] = input.imageUrls;
+      if (input.videoUrl !== undefined) update['videoUrl'] = input.videoUrl || null;
+      if (input.videoPosterUrl !== undefined) update['videoPosterUrl'] = input.videoPosterUrl || null;
       if (input.isDonation !== undefined) {
         update['isDonation'] = input.isDonation;
         if (input.isDonation) update['sellingPrice'] = 0;

@@ -1,32 +1,583 @@
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { useState, type FormEvent } from 'react';
 import { formatDate, label, StatusBadge } from '../moderation/ModerationQueuePage';
+import { firebaseAuth } from '../../firebase';
 
-const QUERY = gql`query AdminPlacements($status: PlacementStatus, $region: String) { featuredPlacements(status: $status, region: $region) { id targetType targetId regions rank label title imageUrl imageAlt destinationUrl startsAt endsAt status placementSource createdByFirebaseUid updatedByFirebaseUid createdAt updatedAt } }`;
-const CREATE = gql`mutation CreatePlacement($input: FeaturedPlacementInput!) { createFeaturedPlacement(input: $input) { id } }`;
-const UPDATE = gql`mutation UpdatePlacement($id: ID!, $input: FeaturedPlacementInput!) { updateFeaturedPlacement(id: $id, input: $input) { id } }`;
-const PAUSE = gql`mutation PausePlacement($id: ID!, $paused: Boolean!) { pauseFeaturedPlacement(id: $id, paused: $paused) { id status } }`;
-const DUPLICATE = gql`mutation DuplicatePlacement($id: ID!, $startsAt: DateTime!, $endsAt: DateTime!, $rank: Int!) { duplicateFeaturedPlacement(id: $id, startsAt: $startsAt, endsAt: $endsAt, rank: $rank) { id } }`;
-const REORDER = gql`mutation ReorderPlacement($id: ID!, $rank: Int!) { reorderFeaturedPlacement(id: $id, rank: $rank) { id rank } }`;
-type Placement = { id: string; targetType: string; targetId: string | null; regions: string[]; rank: number; label: string; title: string; imageUrl: string | null; imageAlt: string | null; destinationUrl: string; startsAt: string; endsAt: string; status: string; placementSource: string; createdByFirebaseUid: string; updatedByFirebaseUid: string; createdAt: string; updatedAt: string };
-type Form = { targetType: string; targetId: string; regions: string; rank: number; label: string; title: string; imageUrl: string; imageAlt: string; destinationUrl: string; startsAt: string; endsAt: string; placementSource: string };
-function localValue(date: Date) { const offset = date.getTimezoneOffset() * 60_000; return new Date(date.getTime() - offset).toISOString().slice(0, 16); }
-const now = new Date(); const initial: Form = { targetType: 'ANNOUNCEMENT', targetId: '', regions: 'GLOBAL', rank: 1, label: 'Community highlight', title: '', imageUrl: '', imageAlt: '', destinationUrl: '/', startsAt: localValue(now), endsAt: localValue(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)), placementSource: 'EDITORIAL' };
+const QUERY = gql`
+  query AdminPlacements($status: PlacementStatus, $region: String) {
+    featuredPlacements(status: $status, region: $region) {
+      id
+      targetType
+      targetId
+      regions
+      rank
+      label
+      title
+      imageUrl
+      imageAlt
+      destinationUrl
+      startsAt
+      endsAt
+      status
+      placementSource
+      createdByFirebaseUid
+      updatedByFirebaseUid
+      createdAt
+      updatedAt
+    }
+  }
+`;
+const CREATE = gql`
+  mutation CreatePlacement($input: FeaturedPlacementInput!) {
+    createFeaturedPlacement(input: $input) {
+      id
+    }
+  }
+`;
+const UPDATE = gql`
+  mutation UpdatePlacement($id: ID!, $input: FeaturedPlacementInput!) {
+    updateFeaturedPlacement(id: $id, input: $input) {
+      id
+    }
+  }
+`;
+const PAUSE = gql`
+  mutation PausePlacement($id: ID!, $paused: Boolean!) {
+    pauseFeaturedPlacement(id: $id, paused: $paused) {
+      id
+      status
+    }
+  }
+`;
+const DUPLICATE = gql`
+  mutation DuplicatePlacement($id: ID!, $startsAt: DateTime!, $endsAt: DateTime!, $rank: Int!) {
+    duplicateFeaturedPlacement(id: $id, startsAt: $startsAt, endsAt: $endsAt, rank: $rank) {
+      id
+    }
+  }
+`;
+const REORDER = gql`
+  mutation ReorderPlacement($id: ID!, $rank: Int!) {
+    reorderFeaturedPlacement(id: $id, rank: $rank) {
+      id
+      rank
+    }
+  }
+`;
+type Placement = {
+  id: string;
+  targetType: string;
+  targetId: string | null;
+  regions: string[];
+  rank: number;
+  label: string;
+  title: string;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  destinationUrl: string;
+  startsAt: string;
+  endsAt: string;
+  status: string;
+  placementSource: string;
+  createdByFirebaseUid: string;
+  updatedByFirebaseUid: string;
+  createdAt: string;
+  updatedAt: string;
+};
+type Form = {
+  targetType: string;
+  targetId: string;
+  regions: string;
+  rank: number;
+  label: string;
+  title: string;
+  imageUrl: string;
+  imageAlt: string;
+  destinationUrl: string;
+  startsAt: string;
+  endsAt: string;
+  placementSource: string;
+};
+function localValue(date: Date) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+const now = new Date();
+const initial: Form = {
+  targetType: 'ANNOUNCEMENT',
+  targetId: '',
+  regions: 'GLOBAL',
+  rank: 1,
+  label: 'Community highlight',
+  title: '',
+  imageUrl: '',
+  imageAlt: '',
+  destinationUrl: '/',
+  startsAt: localValue(now),
+  endsAt: localValue(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)),
+  placementSource: 'EDITORIAL',
+};
+
+async function uploadPlacementImage(file: File) {
+  const token = await firebaseAuth.currentUser?.getIdToken();
+  if (!token) throw new Error('Sign in before uploading.');
+  const endpoint = process.env['CL_ADMIN_MEDIA_URL'] ?? 'http://localhost:4004/media/upload';
+  const response = await fetch(`${endpoint}?purpose=FEATURED_PLACEMENT_IMAGE`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream', 'X-File-Name': file.name, 'X-File-Type': file.type },
+    body: file,
+  });
+  const result = await response.json() as { url?: string; error?: string };
+  if (!response.ok || !result.url) throw new Error(result.error ?? 'Image upload failed.');
+  return result.url;
+}
 
 export default function CurationPage() {
-  const [status, setStatus] = useState(''); const [region, setRegion] = useState(''); const [form, setForm] = useState(initial); const [editing, setEditing] = useState<string | null>(null); const [open, setOpen] = useState(false); const [preview, setPreview] = useState<Placement | null>(null); const [message, setMessage] = useState('');
-  const { data, loading, error, refetch } = useQuery<{ featuredPlacements: Placement[] }>(QUERY, { variables: { status: status || null, region: region || null } }); const [create, createState] = useMutation(CREATE); const [update, updateState] = useMutation(UPDATE); const [pause] = useMutation(PAUSE); const [duplicate] = useMutation(DUPLICATE); const [reorder] = useMutation(REORDER); const rows = data?.featuredPlacements ?? [];
-  function input() { return { targetType: form.targetType, targetId: form.targetType === 'ANNOUNCEMENT' ? null : form.targetId.trim(), regions: form.regions.split(',').map((value) => value.trim()).filter(Boolean), rank: Number(form.rank), label: form.label, title: form.title, imageUrl: form.imageUrl || null, imageAlt: form.imageAlt || null, destinationUrl: form.destinationUrl, startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString(), placementSource: form.placementSource }; }
-  async function submit(event: FormEvent) { event.preventDefault(); try { setMessage(''); if (editing) await update({ variables: { id: editing, input: input() } }); else await create({ variables: { input: input() } }); setOpen(false); setEditing(null); setForm(initial); await refetch(); } catch (value) { setMessage(errorText(value)); } }
-  function edit(item: Placement) { setEditing(item.id); setForm({ targetType: item.targetType, targetId: item.targetId ?? '', regions: item.regions.join(', '), rank: item.rank, label: item.label, title: item.title, imageUrl: item.imageUrl ?? '', imageAlt: item.imageAlt ?? '', destinationUrl: item.destinationUrl, startsAt: localValue(new Date(item.startsAt)), endsAt: localValue(new Date(item.endsAt)), placementSource: item.placementSource }); setOpen(true); }
-  async function clone(item: Placement) { const duration = new Date(item.endsAt).getTime() - new Date(item.startsAt).getTime(); const startsAt = new Date(new Date(item.endsAt).getTime() + 60 * 60 * 1000); const endsAt = new Date(startsAt.getTime() + duration); try { await duplicate({ variables: { id: item.id, startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString(), rank: item.rank } }); await refetch(); } catch (value) { setMessage(errorText(value)); } }
-  return <div className="mx-auto max-w-[1440px]"><div className="flex flex-wrap items-end justify-between gap-3 border-b pb-5"><div><p className="text-xs font-semibold uppercase tracking-[.12em] text-slate-500">Editorial operations</p><h2 className="mt-1 text-2xl font-semibold">Highlights and featured placements</h2><p className="mt-1 text-sm text-slate-600">Schedule global or regional cards independently from paid promotion.</p></div><button onClick={() => { setEditing(null); setForm(initial); setOpen(true); }} className="h-9 rounded bg-[#0C66E4] px-4 text-sm font-semibold text-white">New placement</button></div>
-  {message && <p className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">{message}</p>}<div className="mt-5 flex flex-wrap gap-2"><select value={status} onChange={(event) => setStatus(event.target.value)} className="h-9 rounded border bg-white px-3 text-sm"><option value="">All statuses</option>{['SCHEDULED','ACTIVE','PAUSED','EXPIRED'].map((value) => <option key={value}>{value}</option>)}</select><input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="Region code, e.g. GB-LND" className="h-9 rounded border bg-white px-3 text-sm" /><button onClick={() => void refetch()} className="h-9 rounded border px-3 text-sm font-semibold">Apply</button></div>
-  <section className="mt-4 overflow-hidden rounded-lg border bg-white">{loading ? <State text="Loading placements…" /> : error ? <State text={error.message} /> : !rows.length ? <State text="No featured placements match this view." /> : <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left text-sm"><thead className="bg-[#F7F8FA] text-[11px] uppercase text-slate-500"><tr><th className="px-4 py-3">Rank</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3">Target</th><th className="px-4 py-3">Regions</th><th className="px-4 py-3">Schedule</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y">{rows.map((item) => <tr key={item.id}><td className="px-4 py-3 text-lg font-semibold">{item.rank}</td><td className="px-4 py-3"><p className="font-semibold">{item.title}</p><p className="text-xs text-slate-500">{item.label} · {label(item.placementSource)}</p></td><td className="px-4 py-3 text-xs">{label(item.targetType)}<p className="max-w-52 truncate text-slate-500">{item.targetId ?? item.destinationUrl}</p></td><td className="px-4 py-3 text-xs">{item.regions.join(', ')}</td><td className="px-4 py-3 text-xs">{formatDate(item.startsAt)}<br />to {formatDate(item.endsAt)}</td><td className="px-4 py-3"><StatusBadge value={item.status} /></td><td className="px-4 py-3"><div className="flex flex-wrap gap-2 text-xs font-semibold"><button onClick={() => setPreview(item)} className="text-blue-700">Preview</button><button onClick={() => edit(item)} className="text-blue-700">Edit</button><button onClick={() => void pause({ variables: { id: item.id, paused: item.status !== 'PAUSED' } }).then(() => refetch())} className="text-amber-700">{item.status === 'PAUSED' ? 'Resume' : 'Pause'}</button><button onClick={() => void clone(item)} className="text-blue-700">Duplicate</button><button disabled={item.rank <= 1} onClick={() => void reorder({ variables: { id: item.id, rank: item.rank - 1 } }).then(() => refetch()).catch((value) => setMessage(errorText(value)))} className="text-slate-600 disabled:opacity-30">Move up</button><button disabled={item.rank >= 100} onClick={() => void reorder({ variables: { id: item.id, rank: item.rank + 1 } }).then(() => refetch()).catch((value) => setMessage(errorText(value)))} className="text-slate-600 disabled:opacity-30">Move down</button></div></td></tr>)}</tbody></table></div>}</section>
-  {open && <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/40 p-4"><form onSubmit={submit} role="dialog" aria-modal="true" className="my-8 w-full max-w-3xl rounded-lg bg-white p-6"><h3 className="text-lg font-semibold">{editing ? 'Edit placement' : 'Create placement'}</h3><div className="mt-4 grid gap-x-4 sm:grid-cols-2"><Field label="Target type"><select value={form.targetType} onChange={(event) => setForm({ ...form, targetType: event.target.value })} className="control">{['ANNOUNCEMENT','EVENT','JOB','MARKETPLACE_ITEM','ORGANISATION'].map((value) => <option key={value}>{value}</option>)}</select></Field>{form.targetType !== 'ANNOUNCEMENT' && <Field label="Canonical target ID"><input required value={form.targetId} onChange={(event) => setForm({ ...form, targetId: event.target.value })} className="control" /></Field>}<Field label="Regions"><input required value={form.regions} onChange={(event) => setForm({ ...form, regions: event.target.value })} className="control" /><span className="mt-1 block text-xs font-normal text-slate-500">Comma-separated region codes or GLOBAL.</span></Field><Field label="Rank"><input type="number" min={1} max={100} required value={form.rank} onChange={(event) => setForm({ ...form, rank: Number(event.target.value) })} className="control" /></Field><Field label="Label"><input required value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} className="control" /></Field><Field label="Card title"><input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="control" /></Field><Field label="Destination"><input required value={form.destinationUrl} onChange={(event) => setForm({ ...form, destinationUrl: event.target.value })} className="control" /></Field><Field label="Source"><select value={form.placementSource} onChange={(event) => setForm({ ...form, placementSource: event.target.value })} className="control"><option>EDITORIAL</option><option>PROMOTION</option></select></Field><Field label="Starts"><input type="datetime-local" required value={form.startsAt} onChange={(event) => setForm({ ...form, startsAt: event.target.value })} className="control" /></Field><Field label="Ends"><input type="datetime-local" required value={form.endsAt} onChange={(event) => setForm({ ...form, endsAt: event.target.value })} className="control" /></Field><Field label="Image URL"><input value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} className="control" /></Field><Field label="Image alt text"><input value={form.imageAlt} onChange={(event) => setForm({ ...form, imageAlt: event.target.value })} className="control" /></Field></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="h-9 rounded border px-4 text-sm font-semibold">Cancel</button><button disabled={createState.loading || updateState.loading} className="h-9 rounded bg-[#0C66E4] px-4 text-sm font-semibold text-white disabled:opacity-50">Save placement</button></div></form></div>}
-  {preview && <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/40 p-4"><div role="dialog" aria-modal="true" className="w-full max-w-4xl rounded-lg bg-white p-6"><div className="flex justify-between"><h3 className="text-lg font-semibold">Card preview</h3><button onClick={() => setPreview(null)} className="font-semibold">Close</button></div><div className="mt-5 grid gap-6 md:grid-cols-[1fr_320px]"><PreviewCard item={preview} title="Desktop card" /><PreviewCard item={preview} title="Mobile card" mobile /></div></div></div>}</div>;
+  const [status, setStatus] = useState('');
+  const [region, setRegion] = useState('');
+  const [form, setForm] = useState(initial);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState<Placement | null>(null);
+  const [message, setMessage] = useState('');
+  const { data, loading, error, refetch } = useQuery<{ featuredPlacements: Placement[] }>(QUERY, {
+    variables: { status: status || null, region: region || null },
+  });
+  const [create, createState] = useMutation(CREATE);
+  const [update, updateState] = useMutation(UPDATE);
+  const [pause] = useMutation(PAUSE);
+  const [duplicate] = useMutation(DUPLICATE);
+  const [reorder] = useMutation(REORDER);
+  const rows = data?.featuredPlacements ?? [];
+  function input() {
+    return {
+      targetType: form.targetType,
+      targetId: form.targetType === 'ANNOUNCEMENT' ? null : form.targetId.trim(),
+      regions: form.regions
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean),
+      rank: Number(form.rank),
+      label: form.label,
+      title: form.title,
+      imageUrl: form.imageUrl || null,
+      imageAlt: form.imageAlt || null,
+      destinationUrl: form.destinationUrl,
+      startsAt: new Date(form.startsAt).toISOString(),
+      endsAt: new Date(form.endsAt).toISOString(),
+      placementSource: form.placementSource,
+    };
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    try {
+      setMessage('');
+      if (editing) await update({ variables: { id: editing, input: input() } });
+      else await create({ variables: { input: input() } });
+      setOpen(false);
+      setEditing(null);
+      setForm(initial);
+      await refetch();
+    } catch (value) {
+      setMessage(errorText(value));
+    }
+  }
+  function edit(item: Placement) {
+    setEditing(item.id);
+    setForm({
+      targetType: item.targetType,
+      targetId: item.targetId ?? '',
+      regions: item.regions.join(', '),
+      rank: item.rank,
+      label: item.label,
+      title: item.title,
+      imageUrl: item.imageUrl ?? '',
+      imageAlt: item.imageAlt ?? '',
+      destinationUrl: item.destinationUrl,
+      startsAt: localValue(new Date(item.startsAt)),
+      endsAt: localValue(new Date(item.endsAt)),
+      placementSource: item.placementSource,
+    });
+    setOpen(true);
+  }
+  async function clone(item: Placement) {
+    const duration = new Date(item.endsAt).getTime() - new Date(item.startsAt).getTime();
+    const startsAt = new Date(new Date(item.endsAt).getTime() + 60 * 60 * 1000);
+    const endsAt = new Date(startsAt.getTime() + duration);
+    try {
+      await duplicate({
+        variables: {
+          id: item.id,
+          startsAt: startsAt.toISOString(),
+          endsAt: endsAt.toISOString(),
+          rank: item.rank,
+        },
+      });
+      await refetch();
+    } catch (value) {
+      setMessage(errorText(value));
+    }
+  }
+  return (
+    <div className="mx-auto max-w-[1440px]">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b pb-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[.12em] text-slate-500">
+            Editorial operations
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold">Highlights and featured placements</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Schedule global or regional cards independently from paid promotion.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setEditing(null);
+            setForm(initial);
+            setOpen(true);
+          }}
+          className="h-9 rounded bg-[#0C66E4] px-4 text-sm font-semibold text-white"
+        >
+          New placement
+        </button>
+      </div>
+      {message && (
+        <p className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {message}
+        </p>
+      )}
+      <div className="mt-5 flex flex-wrap gap-2">
+        <select
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
+          className="h-9 rounded border bg-white px-3 text-sm"
+        >
+          <option value="">All statuses</option>
+          {['SCHEDULED', 'ACTIVE', 'PAUSED', 'EXPIRED'].map((value) => (
+            <option key={value}>{value}</option>
+          ))}
+        </select>
+        <input
+          value={region}
+          onChange={(event) => setRegion(event.target.value)}
+          placeholder="Region code, e.g. GB-LND"
+          className="h-9 rounded border bg-white px-3 text-sm"
+        />
+        <button
+          onClick={() => void refetch()}
+          className="h-9 rounded border px-3 text-sm font-semibold"
+        >
+          Apply
+        </button>
+      </div>
+      <section className="mt-4 overflow-hidden rounded-lg border bg-white">
+        {loading ? (
+          <State text="Loading placements…" />
+        ) : error ? (
+          <State text={error.message} />
+        ) : !rows.length ? (
+          <State text="No featured placements match this view." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1100px] text-left text-sm">
+              <thead className="bg-[#F7F8FA] text-[11px] uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Rank</th>
+                  <th className="px-4 py-3">Placement</th>
+                  <th className="px-4 py-3">Target</th>
+                  <th className="px-4 py-3">Regions</th>
+                  <th className="px-4 py-3">Schedule</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {rows.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-3 text-lg font-semibold">{item.rank}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold">{item.title}</p>
+                      <p className="text-xs text-slate-500">
+                        {item.label} · {label(item.placementSource)}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {label(item.targetType)}
+                      <p className="max-w-52 truncate text-slate-500">
+                        {item.targetId ?? item.destinationUrl}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 text-xs">{item.regions.join(', ')}</td>
+                    <td className="px-4 py-3 text-xs">
+                      {formatDate(item.startsAt)}
+                      <br />
+                      to {formatDate(item.endsAt)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge value={item.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                        <button onClick={() => setPreview(item)} className="text-blue-700">
+                          Preview
+                        </button>
+                        <button onClick={() => edit(item)} className="text-blue-700">
+                          Edit
+                        </button>
+                        <button
+                          onClick={() =>
+                            void pause({
+                              variables: { id: item.id, paused: item.status !== 'PAUSED' },
+                            }).then(() => refetch())
+                          }
+                          className="text-amber-700"
+                        >
+                          {item.status === 'PAUSED' ? 'Resume' : 'Pause'}
+                        </button>
+                        <button onClick={() => void clone(item)} className="text-blue-700">
+                          Duplicate
+                        </button>
+                        <button
+                          disabled={item.rank <= 1}
+                          onClick={() =>
+                            void reorder({ variables: { id: item.id, rank: item.rank - 1 } })
+                              .then(() => refetch())
+                              .catch((value) => setMessage(errorText(value)))
+                          }
+                          className="text-slate-600 disabled:opacity-30"
+                        >
+                          Move up
+                        </button>
+                        <button
+                          disabled={item.rank >= 100}
+                          onClick={() =>
+                            void reorder({ variables: { id: item.id, rank: item.rank + 1 } })
+                              .then(() => refetch())
+                              .catch((value) => setMessage(errorText(value)))
+                          }
+                          className="text-slate-600 disabled:opacity-30"
+                        >
+                          Move down
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      {open && (
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/40 p-4">
+          <form
+            onSubmit={submit}
+            role="dialog"
+            aria-modal="true"
+            className="my-8 w-full max-w-3xl rounded-lg bg-white p-6"
+          >
+            <h3 className="text-lg font-semibold">
+              {editing ? 'Edit placement' : 'Create placement'}
+            </h3>
+            <div className="mt-4 grid gap-x-4 sm:grid-cols-2">
+              <Field label="Target type">
+                <select
+                  value={form.targetType}
+                  onChange={(event) => setForm({ ...form, targetType: event.target.value })}
+                  className="control"
+                >
+                  {['ANNOUNCEMENT', 'EVENT', 'JOB', 'MARKETPLACE_ITEM', 'ORGANISATION'].map(
+                    (value) => (
+                      <option key={value}>{value}</option>
+                    ),
+                  )}
+                </select>
+              </Field>
+              {form.targetType !== 'ANNOUNCEMENT' && (
+                <Field label="Canonical target ID">
+                  <input
+                    required
+                    value={form.targetId}
+                    onChange={(event) => setForm({ ...form, targetId: event.target.value })}
+                    className="control"
+                  />
+                </Field>
+              )}
+              <Field label="Regions">
+                <input
+                  required
+                  value={form.regions}
+                  onChange={(event) => setForm({ ...form, regions: event.target.value })}
+                  className="control"
+                />
+                <span className="mt-1 block text-xs font-normal text-slate-500">
+                  Comma-separated region codes or GLOBAL.
+                </span>
+              </Field>
+              <Field label="Rank">
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  required
+                  value={form.rank}
+                  onChange={(event) => setForm({ ...form, rank: Number(event.target.value) })}
+                  className="control"
+                />
+              </Field>
+              <Field label="Label">
+                <input
+                  required
+                  value={form.label}
+                  onChange={(event) => setForm({ ...form, label: event.target.value })}
+                  className="control"
+                />
+              </Field>
+              <Field label="Card title">
+                <input
+                  required
+                  value={form.title}
+                  onChange={(event) => setForm({ ...form, title: event.target.value })}
+                  className="control"
+                />
+              </Field>
+              <Field label="Destination">
+                <input
+                  required
+                  value={form.destinationUrl}
+                  onChange={(event) => setForm({ ...form, destinationUrl: event.target.value })}
+                  className="control"
+                />
+              </Field>
+              <Field label="Source">
+                <select
+                  value={form.placementSource}
+                  onChange={(event) => setForm({ ...form, placementSource: event.target.value })}
+                  className="control"
+                >
+                  <option>EDITORIAL</option>
+                  <option>PROMOTION</option>
+                </select>
+              </Field>
+              <Field label="Starts">
+                <input
+                  type="datetime-local"
+                  required
+                  value={form.startsAt}
+                  onChange={(event) => setForm({ ...form, startsAt: event.target.value })}
+                  className="control"
+                />
+              </Field>
+              <Field label="Ends">
+                <input
+                  type="datetime-local"
+                  required
+                  value={form.endsAt}
+                  onChange={(event) => setForm({ ...form, endsAt: event.target.value })}
+                  className="control"
+                />
+              </Field>
+              <Field label="Image URL">
+                <input
+                  value={form.imageUrl}
+                  onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
+                  className="control"
+                />
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="mt-2 block w-full text-xs font-normal" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { setMessage('Uploading image…'); const imageUrl = await uploadPlacementImage(file); setForm((current) => ({ ...current, imageUrl })); setMessage('Image uploaded.'); } catch (value) { setMessage(errorText(value)); } finally { event.target.value = ''; } }} />
+              </Field>
+              <Field label="Image alt text">
+                <input
+                  value={form.imageAlt}
+                  onChange={(event) => setForm({ ...form, imageAlt: event.target.value })}
+                  className="control"
+                />
+              </Field>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="h-9 rounded border px-4 text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={createState.loading || updateState.loading}
+                className="h-9 rounded bg-[#0C66E4] px-4 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Save placement
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      {preview && (
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/40 p-4">
+          <div role="dialog" aria-modal="true" className="w-full max-w-4xl rounded-lg bg-white p-6">
+            <div className="flex justify-between">
+              <h3 className="text-lg font-semibold">Card preview</h3>
+              <button onClick={() => setPreview(null)} className="font-semibold">
+                Close
+              </button>
+            </div>
+            <div className="mt-5 grid gap-6 md:grid-cols-[1fr_320px]">
+              <PreviewCard item={preview} title="Desktop card" />
+              <PreviewCard item={preview} title="Mobile card" mobile />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
-function PreviewCard({ item, title, mobile }: { item: Placement; title: string; mobile?: boolean }) { return <div><p className="mb-2 text-xs font-semibold uppercase text-slate-500">{title}</p><article className={`overflow-hidden rounded-lg border bg-white shadow-sm ${mobile ? 'max-w-[320px]' : ''}`}>{item.imageUrl ? <img src={item.imageUrl} alt={item.imageAlt ?? ''} className={`w-full object-cover ${mobile ? 'h-36' : 'h-52'}`} /> : <div className={`grid place-items-center bg-slate-100 text-xs text-slate-500 ${mobile ? 'h-36' : 'h-52'}`}>No image</div>}<div className="p-4"><p className="text-xs font-semibold uppercase text-blue-700">{item.label}</p><h4 className="mt-1 text-lg font-semibold">{item.title}</h4><p className="mt-3 text-sm font-semibold text-blue-700">View highlight →</p></div></article></div>; }
-function Field({ label: text, children }: { label: string; children: React.ReactNode }) { return <label className="mt-3 block text-sm font-semibold text-slate-700">{text}{children}</label>; }
-function State({ text }: { text: string }) { return <p className="p-14 text-center text-sm text-slate-500">{text}</p>; }
-function errorText(value: unknown) { return value instanceof Error ? value.message : 'Action failed.'; }
+function PreviewCard({
+  item,
+  title,
+  mobile,
+}: {
+  item: Placement;
+  title: string;
+  mobile?: boolean;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase text-slate-500">{title}</p>
+      <article
+        className={`overflow-hidden rounded-lg border bg-white shadow-sm ${mobile ? 'max-w-[320px]' : ''}`}
+      >
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.imageAlt ?? ''}
+            className={`w-full object-cover ${mobile ? 'h-36' : 'h-52'}`}
+          />
+        ) : (
+          <div
+            className={`grid place-items-center bg-slate-100 text-xs text-slate-500 ${mobile ? 'h-36' : 'h-52'}`}
+          >
+            No image
+          </div>
+        )}
+        <div className="p-4">
+          <p className="text-xs font-semibold uppercase text-blue-700">{item.label}</p>
+          <h4 className="mt-1 text-lg font-semibold">{item.title}</h4>
+          <p className="mt-3 text-sm font-semibold text-blue-700">View highlight →</p>
+        </div>
+      </article>
+    </div>
+  );
+}
+function Field({ label: text, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="mt-3 block text-sm font-semibold text-slate-700">
+      {text}
+      {children}
+    </label>
+  );
+}
+function State({ text }: { text: string }) {
+  return <p className="p-14 text-center text-sm text-slate-500">{text}</p>;
+}
+function errorText(value: unknown) {
+  return value instanceof Error ? value.message : 'Action failed.';
+}

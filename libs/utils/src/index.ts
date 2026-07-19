@@ -12,3 +12,5 @@ export { SUPPORTED_REGIONS, DEFAULT_REGION, LOCATION_REGIONS } from './lib/regio
 export type { Region, LocationRegion } from './lib/region/regions.constants';
 
 export { cloudinaryClient } from './lib/cloudinary/cloudinary-client';
+export { MEDIA_POLICIES, MEDIA_PURPOSES, registerMediaUploadRoutes, resolvePrivateMediaRef } from './lib/cloudinary/media-upload';
+export type { MediaPurpose, MediaUploadResult } from './lib/cloudinary/media-upload';

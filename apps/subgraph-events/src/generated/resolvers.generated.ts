@@ -33,6 +33,8 @@ export type CreateEventInput = {
   recurrence?: InputMaybe<RecurrenceRuleInput>;
   region: Scalars['String']['input'];
   title: Scalars['String']['input'];
+  videoPosterUrls?: InputMaybe<Array<Scalars['String']['input']>>;
+  videoUrls?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type Event = {
@@ -64,6 +66,8 @@ export type Event = {
   status: EventStatus;
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
+  videoPosterUrls: Array<Scalars['String']['output']>;
+  videoUrls: Array<Scalars['String']['output']>;
   waitlistCount: Scalars['Int']['output'];
 };
 
@@ -377,6 +381,8 @@ export type UpdateEventInput = {
   location?: InputMaybe<EventLocationInput>;
   status?: InputMaybe<EventStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
+  videoPosterUrls?: InputMaybe<Array<Scalars['String']['input']>>;
+  videoUrls?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type User = {
@@ -555,6 +561,8 @@ export type EventResolvers<ContextType = GraphQLContext, ParentType extends Reso
   status?: Resolver<ResolversTypes['EventStatus'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  videoPosterUrls?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  videoUrls?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   waitlistCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

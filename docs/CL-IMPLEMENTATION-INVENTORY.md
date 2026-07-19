@@ -47,8 +47,8 @@ Add Figma links in the Design column as they become available.
 | Page / feature | Route | Status | Design | Notes |
 |---|---|---:|---|---|
 | Member dashboard | `/dashboard` | Implemented |  | Links only to active CL workflows. |
-| Member profile and privacy | `/profile` | Implemented |  | Persisted editing for name, region, bio, interests, avatar URL and social links. Audience controls and per-field visibility are enforced on federated member presentation; direct avatar file upload remains deferred. |
-| Internal job application | `/jobs/:id/apply` | Implemented |  | Authentication redirect, duplicate prevention and backend persistence included. CV upload is deferred. |
+| Member profile and privacy | `/profile` | Implemented |  | Persisted editing for name, region, bio, interests, uploaded avatar and social links. Audience controls and per-field visibility are enforced on federated member presentation. |
+| Internal job application | `/jobs/:id/apply` | Implemented |  | Authentication redirect, duplicate prevention, private PDF CV upload and authorized employer download are included. |
 | My applications | `/dashboard/applications` | Implemented |  | Displays job, organisation and live application status. |
 | Public member profile | — | Deferred |  | Not required for launch; deferred until community networking or reputation features need it. |
 
@@ -58,7 +58,7 @@ Add Figma links in the Design column as they become available.
 |---|---|---:|---|---|
 | Organisation authentication | `/org/signup` | Implemented |  | Organisation account sign-in/sign-up. |
 | Organisation identity | `/org/onboarding/identity` | Implemented |  | Captures organisation identity details. |
-| Organisation verification | `/org/onboarding/verification`, admin `/verifications` | Implemented with URL-based documents |  | Versioned submissions, reviewer assignment, audited document access, SLA tracking, approve/reject/needs-information decisions, trust tiers, and persistent organisation notifications are wired end to end. Direct Cloudinary upload remains deferred. |
+| Organisation verification | `/org/onboarding/verification`, admin `/verifications` | Implemented |  | Private document upload, short-lived audited reviewer access, versioned submissions, assignment, SLA tracking and decisions are wired end to end. |
 | Organisation success | `/org/onboarding/success` | Implemented |  | Completion handoff into the protected organisation portal. |
 | Organisation route protection | Shared component | Implemented |  | Requires a signed-in organisation member and validates organisation membership. |
 
@@ -73,7 +73,7 @@ Add Figma links in the Design column as they become available.
 | Applicant review drawer | `/org/jobs` component | Implemented |  | Review, shortlist, hire and reject actions. |
 | Applicant CSV export | `/org/jobs` component | Implemented |  | Downloads current organisation application data. |
 | Notification centre | `/org/notifications` | Implemented |  | Persistent new-follower, RSVP-milestone, listing-report and verification-update notifications with filters and read/unread controls. |
-| Organisation settings | `/org/settings` | Implemented |  | Profile, contact details, social links, logo URL preview/removal, and reversible deactivation persist with role authorization. Direct logo file upload remains part of the deferred Cloudinary feature. | [Figma] (https://www.figma.com/design/Gj7fCzq27sJU0gUhlRrAbY/Christian-Listings?node-id=6-20857&m=dev)
+| Organisation settings | `/org/settings` | Implemented |  | Profile, contact details, social links, managed logo upload/removal, and reversible deactivation persist with role authorization. | [Figma] (https://www.figma.com/design/Gj7fCzq27sJU0gUhlRrAbY/Christian-Listings?node-id=6-20857&m=dev)
 | Public organisation profile | `/organisations/:id` | Implemented | [Figma](https://www.figma.com/design/Gj7fCzq27sJU0gUhlRrAbY/Christian-Listings?node-id=6-15455&m=dev) | Live organisation identity, contact/social links, events, jobs and marketplace listings. Deactivated profiles are hidden. |
 | Information board | — | Not implemented |  | Phase 1 announcements, prayer requests and community updates. |
 
@@ -98,10 +98,10 @@ Add Figma links in the Design column as they become available.
 
 | Feature | Status | Design needed? | Notes |
 |---|---:|---:|---|
-| Marketplace photo uploads and compression | Deferred | Yes, for uploader states | Cloudinary was explicitly postponed. |
-| Event cover/gallery uploads | Deferred | Yes, for uploader states | Cloudinary was explicitly postponed. |
-| CV upload | Deferred | Yes, for upload/progress/error states | Application data works without CV files. |
-| Organisation logo file upload and verification documents | Partially implemented | Yes, for upload states | Versioned URL-based submissions and the complete admin approval flow are implemented. Cloudinary file upload remains intentionally postponed. |
+| Marketplace photo/video uploads and compression | Implemented | Existing uploader states assumed | Up to 8 images and one 30-second video. |
+| Event cover/gallery image and video uploads | Implemented | Existing uploader states assumed | Up to 10 items including up to 3 two-minute videos. |
+| CV upload | Implemented | Existing uploader states assumed | Private PDF upload with authorized employer download. |
+| Organisation logo file upload and verification documents | Implemented | Existing uploader states assumed | Public optimized logos and private audited verification documents. |
 | RSVP confirmation and reminder emails | Not implemented | Email templates | Requires transactional email provider and scheduling. |
 | Job deadline auto-archive/reminder | Deferred | No | Explicitly skipped; expired jobs still reject applications. |
 | Public organisation profiles | Implemented | No | Event and job organiser links now open the live profile. |
@@ -212,13 +212,12 @@ Status: **Not implemented**
 - Organisation profile feed:
 - Home feed card:
 
-### 10. Saved Searches, Wanted Ads and Marketplace Video
+### 10. Saved Searches and Wanted Ads
 
 Status: **Not implemented**
 
 - Saved search creation/management:
 - Wanted-ad creation/details:
-- Marketplace video uploader/player:
 
 ## Design handoff checklist
 

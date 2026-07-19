@@ -234,6 +234,7 @@ function escapeRegex(value: string) {
 }
 
 function isSecureDocumentUrl(value: string) {
+  if (value.startsWith('cl-private:raw:')) return true;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' || (process.env['NODE_ENV'] !== 'production' && ['localhost', '127.0.0.1'].includes(url.hostname));

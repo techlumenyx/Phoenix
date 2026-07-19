@@ -37,6 +37,8 @@ function mapEvent(doc: EventDocument, counts?: EventCounts) {
     waitlistCount:  counts?.waitlisted ?? 0,
     status:         doc.status,
     imageUrls:      doc.imageUrls ?? [],
+    videoUrls:      doc.videoUrls ?? [],
+    videoPosterUrls: doc.videoPosterUrls ?? [],
     isPromoted:     doc.isPromoted,
     isRecurring:    Boolean(doc.seriesId),
     seriesId:       doc.seriesId?.toString() ?? null,
@@ -100,6 +102,8 @@ interface CreateEventInput {
   region:              string;
   capacityLimit?:      number;
   imageUrls?:          string[];
+  videoUrls?:          string[];
+  videoPosterUrls?:    string[];
   isRecurring?:        boolean;
   recurrence?:         RecurrenceInput;
   externalTicketUrl?:  string;
@@ -160,6 +164,8 @@ function eventUpdate(input: Partial<CreateEventInput>) {
   }
   if (input.capacityLimit !== undefined) update['capacity'] = input.capacityLimit;
   if (input.imageUrls !== undefined) update['imageUrls'] = input.imageUrls;
+  if (input.videoUrls !== undefined) update['videoUrls'] = input.videoUrls;
+  if (input.videoPosterUrls !== undefined) update['videoPosterUrls'] = input.videoPosterUrls;
   if (input.externalTicketUrl !== undefined) {
     update['ticketUrl'] = input.externalTicketUrl;
     update['isTicketed'] = Boolean(input.externalTicketUrl);
@@ -308,6 +314,9 @@ export const eventResolvers = {
       if (!input.hostOrganisationIds[0]) {
         throw new GraphQLError('hostOrganisationIds must contain at least one ID', { extensions: { code: 'BAD_REQUEST' } });
       }
+      if ((input.imageUrls?.length ?? 0) + (input.videoUrls?.length ?? 0) > 10 || (input.videoUrls?.length ?? 0) > 3) {
+        throw new GraphQLError('Events support up to 10 media items including up to 3 videos', { extensions: { code: 'BAD_USER_INPUT' } });
+      }
       if (!canAccessOrganisation(ctx.auth, input.hostOrganisationIds[0], ['master_admin', 'site_admin', 'events_manager'])) {
         throw new GraphQLError('You cannot create events for this organisation', { extensions: { code: 'FORBIDDEN' } });
       }
@@ -329,6 +338,8 @@ export const eventResolvers = {
         regionCode: region?.code ?? null,
         capacity: input.capacityLimit ?? null,
         imageUrls: input.imageUrls ?? [],
+        videoUrls: input.videoUrls?.slice(0, 3) ?? [],
+        videoPosterUrls: input.videoPosterUrls?.slice(0, 3) ?? [],
         ticketUrl: input.externalTicketUrl ?? null,
         isTicketed: Boolean(input.externalTicketUrl),
         status: 'PUBLISHED' as const,

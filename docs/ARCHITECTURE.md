@@ -103,16 +103,16 @@ Each subgraph connects to a **separate named database** on the shared MongoDB At
 ```
 [Web App]
   → User selects image/video
-  → POST to subgraph mutation (e.g. createMarketplaceItem)
-  → Subgraph receives file buffer
-  → Calls cloudinaryClient.upload() from @christian-listings/utils
-  → Cloudinary returns CDN URL
-  → URL stored in MongoDB document
-  → URL returned in GraphQL response
-  → Web app renders image from Cloudinary CDN
+  → POST raw stream to the authenticated owning-subgraph media endpoint
+  → Subgraph validates purpose, role, MIME type, size and video duration
+  → @christian-listings/utils streams the file to Cloudinary
+  → MediaAsset metadata is stored in the owning subgraph database
+  → Existing create/update GraphQL mutation attaches the returned media URL
+  → Public assets render from Cloudinary CDN
+  → Private documents resolve to short-lived downloads after GraphQL authorization
 ```
 
-Cloudinary handles compression, resizing, format conversion, and CDN delivery. The web app never calls Cloudinary directly.
+Cloudinary handles compression, resizing, video transcoding, poster generation, format conversion, and CDN delivery. The web app never calls Cloudinary directly.
 
 ## Identity Subgraph Data Model
 

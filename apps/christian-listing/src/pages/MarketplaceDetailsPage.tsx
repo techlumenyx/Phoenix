@@ -9,7 +9,7 @@ import ReportListingModal from '../components/marketplace/ReportListingModal';
 const MARKETPLACE_DETAILS = gql`
   query MarketplaceDetails($id: ID!, $region: String, $category: MarketplaceCategory) {
     marketplaceItem(id: $id) {
-      id title description price currency condition category area region imageUrls status
+      id title description price currency condition category area region imageUrls videoUrl videoPosterUrl status
       isDonation isPromoted flagCount subCategory dimensions otherAttributes maxRetailPrice
       contactInfo showContactOnOffer createdAt
       seller { id name avatarUrl bio isVerified region socialLinks { whatsapp instagram facebook website } }
@@ -33,7 +33,7 @@ const START_CONVERSATION = gql`mutation StartListingConversation($listingId: ID!
 interface MarketplaceDetailsData {
   marketplaceItem: null | {
     id: string; title: string; description: string; price: number; currency: string; condition: string; category: string; area?: string | null; region: string;
-    imageUrls: string[]; status: string; isDonation: boolean; isPromoted: boolean; flagCount: number; subCategory?: string | null;
+    imageUrls: string[]; videoUrl?: string | null; videoPosterUrl?: string | null; status: string; isDonation: boolean; isPromoted: boolean; flagCount: number; subCategory?: string | null;
     dimensions?: string | null; otherAttributes?: string | null; maxRetailPrice?: number | null; contactInfo?: string | null; showContactOnOffer: boolean; createdAt: string;
     seller: { id: string; name: string; avatarUrl?: string | null; bio?: string | null; isVerified: boolean; region: string; socialLinks?: { whatsapp?: string | null; instagram?: string | null; facebook?: string | null; website?: string | null } | null };
   };
@@ -101,6 +101,7 @@ export default function MarketplaceDetailsPage() {
               {item.seller.isVerified && <span className="absolute right-4 top-4 rounded-full bg-[#83d34c] px-3 py-1 text-[10px] font-bold uppercase text-[#17310b]">✓ Verified</span>}
             </div>
             <div className="mt-2 grid grid-cols-5 gap-2">{images.slice(0, 5).map((image, index) => <button key={`${image}-${index}`} onClick={() => setSelectedImage(index)} className={`aspect-[4/3] overflow-hidden rounded-lg border-2 ${selectedImage === index ? 'border-[#4b143f]' : 'border-transparent'}`}><img src={image} alt={`${item.title} view ${index + 1}`} className="h-full w-full object-cover" /></button>)}</div>
+            {item.videoUrl && <video src={item.videoUrl} poster={item.videoPosterUrl ?? undefined} controls preload="metadata" className="mt-4 aspect-video w-full rounded-xl bg-black object-contain" aria-label={`${item.title} video`} />}
 
             <section className="mt-9"><h2 className="font-serif text-2xl font-bold">Product Description</h2>{item.description.split(/\n\n+/).map((paragraph, index) => <p key={index} className="mt-3 text-sm leading-6 text-gray-600">{paragraph}</p>)}</section>
             <section className="mt-7 border-t border-gray-200 pt-6"><h2 className="font-serif text-xl font-bold">Details &amp; Dimensions</h2><dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-6 text-xs sm:grid-cols-4"><Detail label="Material" value={item.otherAttributes || 'Not specified'} /><Detail label="Dimensions" value={item.dimensions || 'Not specified'} /><Detail label="Condition" value={item.condition.replaceAll('_', ' ')} /><Detail label="Location" value={item.area ? `${item.area}, ${item.region}` : item.region} /><Detail label="Category" value={item.category.replaceAll('_', ' ')} /><Detail label="Sub category" value={item.subCategory || 'General'} /><Detail label="Type" value={item.isDonation ? 'Donation' : 'For Sale'} /><Detail label="Listed" value={new Date(item.createdAt).toLocaleDateString()} /></dl></section>

@@ -269,7 +269,7 @@ Use `Reopened`, `Blocked`, `Duplicate`, or `Won't Fix` only with a reason. A def
 
 ## 12. Deferred/non-testable scope
 
-Do not report absence of these explicitly deferred features as defects: password reset, email verification experience, direct Cloudinary uploads, CV upload, job alerts, marketplace offers/counteroffers, event/job templates, public member profiles, information board, transactional email, wanted ads, saved searches, and marketplace video.
+Do not report absence of these explicitly deferred features as defects: password reset, email verification experience, job alerts, marketplace offers/counteroffers, event/job templates, public member profiles, information board, transactional email, wanted ads, and saved searches.
 
 ## 13. Defects resolved during initial E2E testing
 

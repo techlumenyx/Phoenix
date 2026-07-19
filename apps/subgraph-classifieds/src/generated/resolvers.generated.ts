@@ -76,6 +76,8 @@ export type CreateMarketplaceItemInput = {
   price: Scalars['Float']['input'];
   region: Scalars['String']['input'];
   title: Scalars['String']['input'];
+  videoPosterUrl?: InputMaybe<Scalars['String']['input']>;
+  videoUrl?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type EducationEntry = {
@@ -234,6 +236,8 @@ export type MarketplaceItem = {
   subCategory?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
+  videoPosterUrl?: Maybe<Scalars['String']['output']>;
+  videoUrl?: Maybe<Scalars['String']['output']>;
 };
 
 export type MarketplaceItemConnection = {
@@ -592,6 +596,7 @@ export type SalaryRangeInput = {
 export type SubmitJobApplicationInput = {
   acknowledged: Scalars['Boolean']['input'];
   currentSalary?: InputMaybe<Scalars['String']['input']>;
+  cvUrl?: InputMaybe<Scalars['String']['input']>;
   dateOfBirth?: InputMaybe<Scalars['DateTime']['input']>;
   education: Array<EducationEntryInput>;
   email: Scalars['String']['input'];
@@ -627,6 +632,8 @@ export type UpdateMarketplaceItemInput = {
   price?: InputMaybe<Scalars['Float']['input']>;
   region?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
+  videoPosterUrl?: InputMaybe<Scalars['String']['input']>;
+  videoUrl?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type User = {
@@ -929,6 +936,8 @@ export type MarketplaceItemResolvers<ContextType = GraphQLContext, ParentType ex
   subCategory?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  videoPosterUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  videoUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

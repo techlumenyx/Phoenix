@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
 import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING } from '../../graphql/mutations';
 import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
+import { deleteUploadedMedia, uploadMedia, type UploadedMedia } from '../../lib/mediaUpload';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -23,6 +24,10 @@ interface OrgData {
   region:       string | null;
   isVerified:   boolean;
   followerCount: number;
+}
+
+function MediaPreview({ item, onRemove }: { item: UploadedMedia; onRemove: () => void }) {
+  return <div className="relative overflow-hidden rounded-lg border bg-gray-50"><div className="aspect-video">{item.resourceType === 'video' ? <video src={item.url} poster={item.posterUrl ?? undefined} controls className="h-full w-full object-cover" /> : <img src={item.url} alt="Uploaded preview" className="h-full w-full object-cover" />}</div><button type="button" onClick={onRemove} className="absolute right-1 top-1 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white" aria-label="Remove media">Remove</button></div>;
 }
 
 const ORG_MARKETPLACE_MESSAGES = gql`
@@ -752,6 +757,9 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState('');
   const [success, setSuccess]       = useState(false);
+  const [eventImages, setEventImages] = useState<UploadedMedia[]>([]);
+  const [eventVideos, setEventVideos] = useState<UploadedMedia[]>([]);
+  const [mediaProgress, setMediaProgress] = useState('');
 
   const [createEvent] = useMutation(CREATE_EVENT);
 
@@ -810,6 +818,9 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
             hostOrganisationIds: [orgId],
             region:             region.trim(),
             capacityLimit:      capacity ? parseInt(capacity, 10) : undefined,
+            imageUrls: eventImages.map((item) => item.url),
+            videoUrls: eventVideos.map((item) => item.url),
+            videoPosterUrls: eventVideos.map((item) => item.posterUrl).filter(Boolean),
             isRecurring,
             recurrence: isRecurring ? {
               frequency: recurrenceFrequency,
@@ -830,6 +841,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
       setCategory(null); setEventType('PHYSICAL'); setIsTicketed(false);
       setIsRecurring(false); setRecurrenceFrequency('WEEKLY'); setRecurrenceInterval('1');
       setRecurrenceDays([]); setRecurrenceEnd('COUNT'); setOccurrenceCount('12'); setRecurrenceUntil('');
+      setEventImages([]); setEventVideos([]); setMediaProgress('');
     } catch {
       setError('Failed to publish event — please try again.');
     } finally {
@@ -1011,9 +1023,11 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">
           Media Gallery <span className="text-gray-400 font-normal">(up to 10)</span>
         </label>
-        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-xs text-gray-400">Click to upload gallery images / videos</p>
-        </div>
+        <label className="block cursor-pointer border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#C9A96E]/50">
+          <p className="text-xs text-gray-500">Choose images or videos</p><p className="mt-1 text-[11px] text-gray-400">10 items total, up to 3 videos</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#8b6a2f]">{mediaProgress}</p>}
+          <input className="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" onChange={async (event) => { const files = Array.from(event.target.files ?? []); let images = [...eventImages]; let videos = [...eventVideos]; for (const file of files) { if (images.length + videos.length >= 10) break; const isVideo = file.type.startsWith('video/'); if (isVideo && videos.length >= 3) continue; try { setMediaProgress(`Uploading ${file.name}…`); const uploaded = await uploadMedia(file, isVideo ? 'EVENT_VIDEO' : 'EVENT_IMAGE', orgId, (value) => setMediaProgress(`Uploading ${file.name}: ${value}%`)); if (isVideo) videos = [...videos, uploaded]; else images = [...images, uploaded]; setEventImages(images); setEventVideos(videos); } catch (value) { setError(value instanceof Error ? value.message : 'Media upload failed.'); break; } } setMediaProgress(''); event.target.value = ''; }} />
+        </label>
+        {(eventImages.length > 0 || eventVideos.length > 0) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{eventImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { void deleteUploadedMedia(item, 'EVENT_IMAGE', orgId); setEventImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{eventVideos.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { void deleteUploadedMedia(item, 'EVENT_VIDEO', orgId); setEventVideos((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}</div>}
       </div>
 
       {/* RSVP Configuration */}
@@ -1117,6 +1131,9 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]       = useState('');
   const [success, setSuccess]   = useState(false);
+  const [listingImages, setListingImages] = useState<UploadedMedia[]>([]);
+  const [listingVideo, setListingVideo] = useState<UploadedMedia | null>(null);
+  const [mediaProgress, setMediaProgress] = useState('');
 
   const [createItem] = useMutation(CREATE_MARKETPLACE_ITEM);
 
@@ -1144,7 +1161,9 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
             category:    LISTING_CATEGORY_TO_ENUM[selectedCategory] ?? 'OTHER',
             area:        area.trim() || undefined,
             region:      region.trim(),
-            imageUrls:   [],
+            imageUrls:   listingImages.map((item) => item.url),
+            videoUrl: listingVideo?.url,
+            videoPosterUrl: listingVideo?.posterUrl,
             isDonation,
           },
         },
@@ -1153,6 +1172,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
       setSuccess(true);
       setTitle(''); setDesc(''); setPrice(''); setArea(''); setRegion('');
       setCategory(null); setCondition('New'); setIsDonation(false);
+      setListingImages([]); setListingVideo(null); setMediaProgress('');
     } catch {
       setError('Failed to publish listing. Please try again.');
     } finally {
@@ -1334,13 +1354,15 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">
           Photos <span className="text-gray-400 font-normal">(up to 8)</span>
         </label>
-        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#C9A96E]/50 transition-colors cursor-pointer">
+        <label className="block border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#C9A96E]/50 transition-colors cursor-pointer">
           <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5M21 3.75H3M12 3v9m0 0l-3-3m3 3l3-3" />
           </svg>
-          <p className="text-xs text-gray-400">Click to upload photos</p>
-          <p className="text-[11px] text-gray-300 mt-0.5">Images are automatically compressed for fast loading</p>
-        </div>
+          <p className="text-xs text-gray-400">Click to upload photos or one short video</p>
+          <p className="text-[11px] text-gray-300 mt-0.5">Up to 8 images and one video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#8b6a2f]">{mediaProgress}</p>}
+          <input className="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" onChange={async (event) => { const files = Array.from(event.target.files ?? []); let images = [...listingImages]; let video = listingVideo; for (const file of files) { const isVideo = file.type.startsWith('video/'); if ((!isVideo && images.length >= 8) || (isVideo && video)) continue; try { setMediaProgress(`Uploading ${file.name}…`); const uploaded = await uploadMedia(file, isVideo ? 'MARKETPLACE_VIDEO' : 'MARKETPLACE_IMAGE', orgId, (value) => setMediaProgress(`Uploading ${file.name}: ${value}%`)); if (isVideo) video = uploaded; else images = [...images, uploaded]; setListingImages(images); setListingVideo(video); } catch (value) { setError(value instanceof Error ? value.message : 'Media upload failed.'); break; } } setMediaProgress(''); event.target.value = ''; }} />
+        </label>
+        {(listingImages.length > 0 || listingVideo) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{listingImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { void deleteUploadedMedia(item, 'MARKETPLACE_IMAGE', orgId); setListingImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{listingVideo && <MediaPreview item={listingVideo} onRemove={() => { void deleteUploadedMedia(listingVideo, 'MARKETPLACE_VIDEO', orgId); setListingVideo(null); }} />}</div>}
       </div>
 
       {/* Submit */}

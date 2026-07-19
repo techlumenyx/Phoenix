@@ -29,13 +29,16 @@ base64 -i path/to/serviceAccount.json | tr -d '\n'
 echo "$FIREBASE_SERVICE_ACCOUNT_JSON" | base64 -d | head -5
 ```
 
-## subgraph-classifieds and subgraph-events (Media Uploads)
+## Media uploads (identity, events, classifieds and admin)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary account cloud name. Found in Cloudinary Console → Settings |
 | `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
+| `CL_MEDIA_ALLOWED_ORIGINS` | No | Comma-separated browser origins allowed to call service media endpoints. |
+
+The browser builds accept `CL_IDENTITY_MEDIA_URL`, `CL_EVENTS_MEDIA_URL`, `CL_CLASSIFIEDS_MEDIA_URL`, and `CL_ADMIN_MEDIA_URL`. They default to the corresponding local service ports.
 
 ## apps/gateway (Apollo Router)
 

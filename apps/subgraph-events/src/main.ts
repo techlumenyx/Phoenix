@@ -6,10 +6,11 @@ import Fastify from 'fastify';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
-import { buildAuthPlugin, isInternalServiceRequest } from '@christian-listings/auth';
+import { buildAuthContext, buildAuthPlugin, canAccessOrganisation, isInternalServiceRequest } from '@christian-listings/auth';
 import { createMongoConnection } from '@christian-listings/db';
+import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
-import { setupModels } from './models';
+import { MediaAssetModel, setupModels } from './models';
 import { resolvers } from './resolvers';
 import { applyAdminEventAction, applyAdminOrganisationEventAction, eventDirectory } from './services/admin-events.service';
 
@@ -39,6 +40,13 @@ async function bootstrap() {
   await apollo.start();
 
   await fastify.register(buildAuthPlugin({ optional: true }));
+
+  registerMediaUploadRoutes(fastify, {
+    service: 'events', purposes: ['EVENT_IMAGE', 'EVENT_VIDEO'],
+    authorize: (request, _purpose, ownerId) => Boolean(ownerId && canAccessOrganisation(buildAuthContext(request), ownerId, ['master_admin', 'site_admin', 'events_manager'])),
+    onUploaded: async (request, purpose, ownerId, result) => { await MediaAssetModel.create({ ...result, cloudinaryAssetId: result.assetId, purpose, ownerId, uploadedBy: request.firebaseUser?.uid ?? 'unknown', status: 'ACTIVE' }); },
+    onDeleted: async (publicId) => { await MediaAssetModel.updateOne({ publicId }, { $set: { status: 'DELETED' } }); },
+  });
 
   fastify.post('/internal/admin/directory', async (request, reply) => {
     if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });

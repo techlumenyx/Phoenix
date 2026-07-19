@@ -12,6 +12,7 @@ export function buildAuthPlugin(options: AuthPluginOptions = {}) {
   return fp(async (fastify: FastifyInstance) => {
     fastify.addHook('onRequest', async (request, reply) => {
       if (request.url.split('?')[0] === '/health') return;
+      if (request.method === 'OPTIONS') return;
 
       const path = request.url.split('?')[0];
       if (options.internalPaths?.includes(path)) {
