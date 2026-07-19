@@ -1,7 +1,9 @@
 import { useState, FormEvent } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { gql, useQuery, useMutation } from '@apollo/client';
+import { Link } from 'react-router-dom';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
 import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING } from '../../graphql/mutations';
+import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -23,6 +25,30 @@ interface OrgData {
   followerCount: number;
 }
 
+const ORG_MARKETPLACE_MESSAGES = gql`
+  query OrganisationOverviewMarketplaceMessages {
+    myMessageThreads(role: SELLER, limit: 5) {
+      edges {
+        id
+        lastMessage
+        lastMessageAt
+        unreadCount
+        buyer { id name avatarUrl }
+        listing { id title imageUrls status }
+      }
+    }
+  }
+`;
+
+interface MarketplaceMessageThread {
+  id: string;
+  lastMessage?: string | null;
+  lastMessageAt?: string | null;
+  unreadCount: number;
+  buyer: { id: string; name: string; avatarUrl?: string | null };
+  listing: { id: string; title: string; imageUrls: string[]; status: string };
+}
+
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}k`;
@@ -36,6 +62,16 @@ function OrgAvatarInitials({ name }: { name: string }) {
       {initials || '?'}
     </div>
   );
+}
+
+function socialHref(key: keyof OrgSocialLinks, value: string) {
+  if (/^https?:\/\//i.test(value)) return value;
+  if (key === 'whatsapp') return `https://wa.me/${value.replace(/\D/g, '')}`;
+  const handle = value.replace(/^@/, '');
+  const hosts: Partial<Record<keyof OrgSocialLinks, string>> = {
+    instagram: 'instagram.com', twitter: 'x.com', facebook: 'facebook.com',
+  };
+  return hosts[key] ? `https://${hosts[key]}/${handle}` : `https://${value}`;
 }
 
 // ── Org Profile Header ────────────────────────────────────────────────────────
@@ -135,20 +171,20 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
             </h3>
             <div className="flex items-center gap-3">
               {socialEntries.length > 0 ? socialEntries.map(({ key, handle }) => (
-                <button key={key} className="bg-[#FCEBBB] hover:bg-[#F9DF9F] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+                <a key={key} href={socialHref(key, handle)} target="_blank" rel="noreferrer" className="bg-[#FCEBBB] hover:bg-[#F9DF9F] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
                   <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
                   </svg>
                   {handle}
-                </button>
+                </a>
               )) : (
                 <p className="text-sm text-gray-400 italic">No social links added yet.</p>
               )}
-              <button className="w-9 h-9 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors shrink-0">
+              <Link to="/org/settings#social-links" aria-label="Add social connections" className="w-9 h-9 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-400 transition-colors shrink-0">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -319,9 +355,9 @@ function NotificationCentre() {
 
       {/* Footer / View All Link */}
       <div className="border-t border-gray-100 pt-5 pb-3 text-center">
-        <button className="text-[12px] font-semibold text-gray-400 hover:text-gray-700 transition-colors">
+        <Link to="/org/notifications" className="text-[12px] font-semibold text-gray-400 hover:text-gray-700 transition-colors">
           View All Notifications
-        </button>
+        </Link>
       </div>
 
       {/* Promo Box */}
@@ -338,6 +374,70 @@ function NotificationCentre() {
       </div>
       
     </div>
+  );
+}
+
+function MarketplaceMessagesPanel() {
+  const { data, loading, error } = useQuery<{
+    myMessageThreads: { edges: MarketplaceMessageThread[] };
+  }>(ORG_MARKETPLACE_MESSAGES, { pollInterval: 30_000 });
+  const threads = data?.myMessageThreads.edges ?? [];
+  const unreadCount = threads.reduce((total, thread) => total + thread.unreadCount, 0);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+        <div>
+          <h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Marketplace Messages</h2>
+          <p className="mt-1 text-xs text-gray-500">Buyer enquiries about your listings</p>
+        </div>
+        {unreadCount > 0 && (
+          <span className="rounded-full bg-[#41331C] px-3 py-1 text-[11px] font-bold text-white">
+            {unreadCount} unread
+          </span>
+        )}
+      </div>
+
+      {loading && !data && <p className="px-6 py-12 text-center text-sm text-gray-400">Loading conversations…</p>}
+      {error && <p className="px-6 py-12 text-center text-sm text-red-600">Messages could not be loaded. Please try again.</p>}
+      {!loading && !error && threads.length === 0 && (
+        <div className="px-6 py-12 text-center">
+          <p className="text-sm font-semibold text-gray-700">No marketplace messages yet</p>
+          <p className="mt-1 text-xs text-gray-400">Buyer enquiries will appear here.</p>
+        </div>
+      )}
+
+      {threads.map((thread) => (
+        <Link
+          key={thread.id}
+          to={`/org/messages/${thread.id}`}
+          className="flex items-center gap-4 border-b border-gray-100 px-6 py-4 last:border-0 hover:bg-gray-50"
+        >
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#EAEAF5] font-serif font-bold">
+            {thread.buyer.avatarUrl
+              ? <img src={thread.buyer.avatarUrl} alt="" className="h-full w-full object-cover" />
+              : thread.buyer.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <strong className="truncate text-sm text-[#1B1B1B]">{thread.buyer.name}</strong>
+              <time className="shrink-0 text-[10px] text-gray-400">
+                {thread.lastMessageAt ? new Date(thread.lastMessageAt).toLocaleDateString('en-GB') : ''}
+              </time>
+            </div>
+            <p className="mt-1 truncate text-xs font-semibold text-gray-600">{thread.listing.title}</p>
+            <p className="mt-1 truncate text-xs text-gray-400">{thread.lastMessage || 'New marketplace enquiry'}</p>
+          </div>
+          {thread.unreadCount > 0 && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#9C5177]" aria-label="Unread" />}
+        </Link>
+      ))}
+
+      <div className="border-t border-gray-100 px-6 py-4 text-center">
+        <Link to="/org/messages" className="text-xs font-semibold text-gray-500 hover:text-gray-800">
+          View all marketplace messages →
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -624,7 +724,12 @@ function zonedLocalDateTime(date: string, time: string, timezone: string) {
   return result;
 }
 
-function CreateEventForm({ orgId }: { orgId?: string }) {
+interface CreateFormProps {
+  orgId?: string;
+  onCreated?: () => void;
+}
+
+export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
   const [title, setTitle]           = useState('');
   const [description, setDesc]      = useState('');
   const [date, setDate]             = useState('');
@@ -650,6 +755,20 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
 
   const [createEvent] = useMutation(CREATE_EVENT);
 
+  const effectiveRecurrenceDays = recurrenceDays.length > 0
+    ? recurrenceDays
+    : date ? [calendarWeekday(date)] : [];
+  const minimumRecurrenceEnd = date
+    ? recurrenceFrequency === 'WEEKLY'
+      ? firstWeeklyDateOnOrAfter(date, effectiveRecurrenceDays)
+      : date
+    : undefined;
+  const recurrenceEndInvalid = isRecurring
+    && recurrenceEnd === 'UNTIL'
+    && Boolean(recurrenceUntil)
+    && Boolean(minimumRecurrenceEnd)
+    && recurrenceUntil < (minimumRecurrenceEnd as string);
+
   const toggleCategory = (cat: string) =>
     setCategory((prev) => (prev === cat ? null : cat));
 
@@ -658,6 +777,17 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
     if (!orgId) { setError('No organisation found — set one up first.'); return; }
     if (!title.trim() || !description.trim() || !date || !selectedCategory || !region.trim()) {
       setError('Please fill in all required fields (title, description, category, date, region).');
+      return;
+    }
+    if (isRecurring && recurrenceEnd === 'UNTIL' && !recurrenceUntil) {
+      setError('Choose the date on which this recurring series should end.');
+      return;
+    }
+    if (isRecurring && recurrenceEnd === 'UNTIL' && minimumRecurrenceEnd && recurrenceUntil < minimumRecurrenceEnd) {
+      const label = new Date(`${minimumRecurrenceEnd}T12:00:00.000Z`).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric',
+      });
+      setError(`This recurrence first occurs on ${label}. Choose that date or a later series end date.`);
       return;
     }
     setError('');
@@ -684,7 +814,7 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
             recurrence: isRecurring ? {
               frequency: recurrenceFrequency,
               interval: Math.max(1, parseInt(recurrenceInterval, 10) || 1),
-              daysOfWeek: recurrenceFrequency === 'WEEKLY' ? recurrenceDays : undefined,
+              daysOfWeek: recurrenceFrequency === 'WEEKLY' ? effectiveRecurrenceDays : undefined,
               dayOfMonth: recurrenceFrequency === 'MONTHLY' ? new Date(`${date}T12:00:00`).getDate() : undefined,
               timezone,
               occurrenceCount: recurrenceEnd === 'COUNT' ? Math.min(100, Math.max(1, parseInt(occurrenceCount, 10) || 1)) : undefined,
@@ -693,6 +823,7 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
           },
         },
       });
+      onCreated?.();
       setSuccess(true);
       setTitle(''); setDesc(''); setDate(''); setTime('');
       setAddress(''); setVirtual(''); setRegion(''); setCapacity('');
@@ -783,7 +914,13 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
             type="date"
             required
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              const nextDate = e.target.value;
+              setDate(nextDate);
+              if (isRecurring && recurrenceFrequency === 'WEEKLY' && recurrenceDays.length === 0 && nextDate) {
+                setRecurrenceDays([calendarWeekday(nextDate)]);
+              }
+            }}
             className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
         </div>
@@ -836,15 +973,23 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
       <section className="rounded-xl border border-gray-200 bg-[#FAF6ED] p-4">
         <label className="flex cursor-pointer items-center justify-between gap-4">
           <span><span className="block text-sm font-semibold text-[#1B1B1B]">Recurring event</span><span className="mt-1 block text-xs text-gray-500">Create a managed weekly or monthly series.</span></span>
-          <input type="checkbox" checked={isRecurring} onChange={(event) => setIsRecurring(event.target.checked)} className="h-4 w-4 accent-[#1B1B1B]" />
+          <input type="checkbox" checked={isRecurring} onChange={(event) => {
+            const checked = event.target.checked;
+            setIsRecurring(checked);
+            if (checked && date && recurrenceDays.length === 0) setRecurrenceDays([calendarWeekday(date)]);
+          }} className="h-4 w-4 accent-[#1B1B1B]" />
         </label>
         {isRecurring && <div className="mt-4 grid gap-4 border-t border-gray-200 pt-4 md:grid-cols-3">
-          <label className="text-xs font-semibold text-gray-600">Frequency<select value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as 'WEEKLY' | 'MONTHLY')} className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"><option value="WEEKLY">Weekly</option><option value="MONTHLY">Monthly</option></select></label>
+          <label className="text-xs font-semibold text-gray-600">Frequency<select value={recurrenceFrequency} onChange={(event) => {
+            const frequency = event.target.value as 'WEEKLY' | 'MONTHLY';
+            setRecurrenceFrequency(frequency);
+            if (frequency === 'WEEKLY' && date && recurrenceDays.length === 0) setRecurrenceDays([calendarWeekday(date)]);
+          }} className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"><option value="WEEKLY">Weekly</option><option value="MONTHLY">Monthly</option></select></label>
           <label className="text-xs font-semibold text-gray-600">Repeat every<input type="number" min="1" max={recurrenceFrequency === 'WEEKLY' ? 52 : 12} value={recurrenceInterval} onChange={(event) => setRecurrenceInterval(event.target.value)} className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm" /><span className="mt-1 block font-normal text-gray-400">{recurrenceFrequency === 'WEEKLY' ? 'week(s)' : 'month(s)'}</span></label>
           <label className="text-xs font-semibold text-gray-600">Timezone<input value={timezone} onChange={(event) => setTimezone(event.target.value)} placeholder="Europe/London" className="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm" /></label>
           {recurrenceFrequency === 'WEEKLY' && <div className="md:col-span-3"><p className="text-xs font-semibold text-gray-600">Repeat on</p><div className="mt-2 flex flex-wrap gap-2">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((label, day) => <button key={label} type="button" onClick={() => setRecurrenceDays((current) => current.includes(day) ? current.filter((value) => value !== day) : [...current, day])} className={`h-9 w-11 rounded-full text-xs font-semibold ${recurrenceDays.includes(day) ? 'bg-[#1B1B1B] text-white' : 'border border-gray-200 bg-white text-gray-600'}`}>{label}</button>)}</div></div>}
           {recurrenceFrequency === 'MONTHLY' && <p className="self-end text-xs leading-5 text-gray-500 md:col-span-3">Repeats on day {date ? new Date(`${date}T12:00:00`).getDate() : '—'} of each selected month. Shorter months use their last valid day.</p>}
-          <div className="md:col-span-3"><p className="text-xs font-semibold text-gray-600">Series ends</p><div className="mt-2 flex flex-wrap items-center gap-4"><label className="flex items-center gap-2 text-xs"><input type="radio" checked={recurrenceEnd === 'COUNT'} onChange={() => setRecurrenceEnd('COUNT')} className="accent-[#1B1B1B]" />After</label><input type="number" min="1" max="100" disabled={recurrenceEnd !== 'COUNT'} value={occurrenceCount} onChange={(event) => setOccurrenceCount(event.target.value)} className="w-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40" /><span className="text-xs text-gray-500">occurrences</span><label className="ml-3 flex items-center gap-2 text-xs"><input type="radio" checked={recurrenceEnd === 'UNTIL'} onChange={() => setRecurrenceEnd('UNTIL')} className="accent-[#1B1B1B]" />On date</label><input type="date" disabled={recurrenceEnd !== 'UNTIL'} min={date} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40" /></div></div>
+          <div className="md:col-span-3"><p className="text-xs font-semibold text-gray-600">Series ends</p><div className="mt-2 flex flex-wrap items-center gap-4"><label className="flex items-center gap-2 text-xs"><input type="radio" checked={recurrenceEnd === 'COUNT'} onChange={() => setRecurrenceEnd('COUNT')} className="accent-[#1B1B1B]" />After</label><input type="number" min="1" max="100" disabled={recurrenceEnd !== 'COUNT'} value={occurrenceCount} onChange={(event) => setOccurrenceCount(event.target.value)} className="w-20 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:opacity-40" /><span className="text-xs text-gray-500">occurrences</span><label className="ml-3 flex items-center gap-2 text-xs"><input type="radio" checked={recurrenceEnd === 'UNTIL'} onChange={() => setRecurrenceEnd('UNTIL')} className="accent-[#1B1B1B]" />On date</label><input type="date" disabled={recurrenceEnd !== 'UNTIL'} min={minimumRecurrenceEnd} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className={`rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40 ${recurrenceEndInvalid ? 'border-red-400' : 'border-gray-200'}`} /></div>{recurrenceEnd === 'UNTIL' && minimumRecurrenceEnd && <p className={`mt-2 text-[11px] ${recurrenceEndInvalid ? 'font-semibold text-red-600' : 'text-gray-500'}`}>{recurrenceEndInvalid ? 'The selected end date is before the first occurrence. ' : ''}Earliest valid end date for the selected schedule: {new Date(`${minimumRecurrenceEnd}T12:00:00.000Z`).toLocaleDateString('en-GB')}.</p>}</div>
         </div>}
       </section>
 
@@ -928,7 +1073,7 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={submitting || !orgId}
+          disabled={submitting || !orgId || recurrenceEndInvalid}
           className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-50"
         >
           {submitting ? 'Publishing…' : 'Publish Event'}
@@ -958,7 +1103,7 @@ const CURRENCY_CODE: Record<string, string> = {
   'GBP (£)': 'GBP', 'NGN (₦)': 'NGN', 'USD ($)': 'USD', 'EUR (€)': 'EUR',
 };
 
-function CreateListingForm({ orgId }: { orgId?: string }) {
+export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
   const [condition, setCondition]       = useState<typeof LISTING_CONDITIONS[number]>('New');
   const [currency, setCurrency]         = useState<typeof LISTING_CURRENCIES[number]>('GBP (£)');
   const [selectedCategory, setCategory] = useState<string | null>(null);
@@ -1004,6 +1149,7 @@ function CreateListingForm({ orgId }: { orgId?: string }) {
           },
         },
       });
+      onCreated?.();
       setSuccess(true);
       setTitle(''); setDesc(''); setPrice(''); setArea(''); setRegion('');
       setCategory(null); setCondition('New'); setIsDonation(false);
@@ -1231,7 +1377,7 @@ const FAITH_TAG_TO_ENUM: Record<string, string> = {
   'Open to All': 'OPEN_TO_ALL', 'Faith Background Preferred': 'FAITH_BACKGROUND_PREFERRED',
 };
 
-function CreateJobsForm({ orgId }: { orgId?: string }) {
+export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
   const [roleType, setRoleType]         = useState<typeof JOB_ROLE_TYPES[number]>('Paid');
   const [locationType, setLocationType] = useState<typeof JOB_LOCATION_TYPES[number]>('Physical');
   const [faithTag, setFaithTag]         = useState<typeof JOB_FAITH_TAGS[number]>('Open to All');
@@ -1293,6 +1439,7 @@ function CreateJobsForm({ orgId }: { orgId?: string }) {
           },
         },
       });
+      onCreated?.();
       setSuccess(true);
       setTitle(''); setDesc(''); setDeadline(''); setRegion(''); setExternalUrl('');
       setSalaryMin(''); setSalaryMax(''); setSkills([]);
@@ -1627,6 +1774,7 @@ export default function OrgOverviewPage() {
       <div className="px-8 py-6 space-y-6">
         <div className="grid grid-cols-3 gap-6 items-start">
           <div className="col-span-2">
+            <MarketplaceMessagesPanel />
           </div>
           <NotificationCentre />
         </div>

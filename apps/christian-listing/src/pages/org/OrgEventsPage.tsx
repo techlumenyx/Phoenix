@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CANCEL_EVENT, MY_ORG_EVENTS, UPDATE_MANAGED_EVENT } from '../../graphql/mutations';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
 import { useToast } from '../../components/ui/ToastProvider';
+import { CreateEventForm } from './OrgOverviewPage';
 
 interface EventLocation { type: string; city?: string | null; country?: string | null; }
 interface OrgEvent {
@@ -63,6 +64,7 @@ export default function OrgEventsPage() {
   const [page, setPage] = useState(0);
 
   const { data, loading, error, refetch } = useQuery(MY_ORG_EVENTS);
+  const organisationId = data?.myOrganisations?.[0]?.id as string | undefined;
   const [cancelEvent, { loading: cancelling }] = useMutation(CANCEL_EVENT);
   const [updateEvent, { loading: updating }] = useMutation(UPDATE_MANAGED_EVENT);
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -195,7 +197,7 @@ export default function OrgEventsPage() {
         {!loading && !error && sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
             <p className="text-sm font-semibold text-gray-600">No events here</p>
-            <p className="text-xs text-gray-400">Create your first event from the Overview page.</p>
+            <p className="text-xs text-gray-400">Use the form below to create your first event.</p>
           </div>
         )}
 
@@ -274,6 +276,10 @@ export default function OrgEventsPage() {
         )}
       </div>
       {editTarget && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => event.target === event.currentTarget && !updating && setEditTarget(null)}><form onSubmit={saveEdit} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><h2 className="font-serif text-2xl font-bold">Edit event</h2><p className="mt-2 text-xs leading-5 text-gray-500">Individual edits become occurrence exceptions. Series edits preserve existing individual exceptions.</p><label className="mt-5 block text-sm font-semibold">Apply changes to<select value={editTarget.scope} onChange={(event) => setEditTarget((current) => current ? { ...current, scope: event.target.value as typeof current.scope } : current)} disabled={!editTarget.event.isRecurring} className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm disabled:bg-gray-100"><option value="THIS_OCCURRENCE">This occurrence</option>{editTarget.event.isRecurring && <><option value="THIS_AND_FUTURE">This and future occurrences</option><option value="ENTIRE_SERIES">Entire series (future dates)</option></>}</select></label><label className="mt-4 block text-sm font-semibold">Title<input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className="mt-2 w-full rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none" /></label><label className="mt-4 block text-sm font-semibold">Description<textarea rows={5} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} className="mt-2 w-full resize-none rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none" /></label><div className="mt-6 flex justify-end gap-3"><button type="button" disabled={updating} onClick={() => setEditTarget(null)} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="submit" disabled={updating || !editTitle.trim() || !editDescription.trim()} className="rounded-lg bg-[#302D2E] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{updating ? 'Saving…' : 'Save changes'}</button></div></form></div>}
+      <section id="create-event" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="border-b border-gray-100 px-6 py-5"><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Create an Event</h2><p className="mt-1 text-sm text-gray-500">Publish a one-time event or manage a recurring series.</p></div>
+        <div className="px-6 py-6"><CreateEventForm orgId={organisationId} onCreated={() => { void refetch(); }} /></div>
+      </section>
       <ConfirmationDialog open={Boolean(cancelTarget)} title={cancelTarget?.scope === 'THIS_OCCURRENCE' ? 'Cancel this occurrence?' : cancelTarget?.scope === 'THIS_AND_FUTURE' ? 'Cancel this and future occurrences?' : 'Cancel the entire series?'} description="Cancelled occurrences remain in the event history and existing RSVP records are retained." confirmLabel="Cancel event" tone="danger" busy={cancelling} onClose={() => setCancelTarget(null)} onConfirm={confirmCancel} />
     </div>
   );

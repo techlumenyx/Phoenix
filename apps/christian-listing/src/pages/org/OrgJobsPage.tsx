@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { MY_ORG_JOB_LISTINGS } from '../../graphql/mutations';
+import { CreateJobsForm } from './OrgOverviewPage';
 
 interface JobListing {
   id: string;
@@ -71,7 +72,7 @@ export default function OrgJobsPage() {
   const [page, setPage] = useState(0);
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
 
-  const { data, loading, error } = useQuery(MY_ORG_JOB_LISTINGS);
+  const { data, loading, error, refetch } = useQuery(MY_ORG_JOB_LISTINGS);
   const organisationId = data?.myOrganisations?.[0]?.id as string | undefined;
   const { data: applicationsData, loading: applicationsLoading, error: applicationsError, refetch: refetchApplications } = useQuery<{ organisationJobApplications: JobApplication[] }>(ORG_APPLICATIONS, { variables: { organisationId }, skip: !organisationId });
   const [updateApplicationStatus, { loading: updatingStatus }] = useMutation(UPDATE_APPLICATION_STATUS);
@@ -197,7 +198,7 @@ export default function OrgJobsPage() {
             {!loading && !error && sorted.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <p className="text-sm font-semibold text-gray-600">No listings here</p>
-                <p className="text-xs text-gray-400">Post a job from the Overview page.</p>
+                <p className="text-xs text-gray-400">Use the form below to post a job.</p>
               </div>
             )}
 
@@ -278,6 +279,10 @@ export default function OrgJobsPage() {
           </>
         )}
       </div>
+      <section id="create-job" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="border-b border-gray-100 px-6 py-5"><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Create a Job Listing</h2><p className="mt-1 text-sm text-gray-500">Post a paid role, volunteer opportunity, or internship.</p></div>
+        <div className="px-6 py-6"><CreateJobsForm orgId={organisationId} onCreated={() => { void refetch(); }} /></div>
+      </section>
       {selectedApplication && <ApplicationDrawer application={selectedApplication} updating={updatingStatus} onClose={() => setSelectedApplication(null)} onStatusChange={(status) => changeApplicationStatus(selectedApplication, status)} />}
     </div>
   );

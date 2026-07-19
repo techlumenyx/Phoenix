@@ -270,9 +270,9 @@ export const marketplaceResolvers = {
   },
 
   User: {
-    __resolveReference: ({ id }: { id: string }) => ({ id }),
-    marketplaceListings: async ({ id }: { id: string }) => {
-      const docs = await MarketplaceItemModel.find({ createdBy: id }).sort({ _id: -1 });
+    __resolveReference: ({ firebaseUid }: { firebaseUid: string }) => ({ firebaseUid }),
+    marketplaceListings: async ({ firebaseUid }: { firebaseUid: string }) => {
+      const docs = await MarketplaceItemModel.find({ createdBy: firebaseUid }).sort({ _id: -1 });
       return docs.map(mapItem);
     },
     jobApplications: () => [],

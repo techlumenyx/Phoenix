@@ -5,6 +5,7 @@ import type { HydratedDocument } from 'mongoose';
 import type { IJobApplication } from '../models/job-application.model';
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
+import { mapJob } from './job.resolver';
 
 interface EducationInput {
   highestQualification?: string;
@@ -136,10 +137,14 @@ export const jobApplicationResolvers = {
       const doc = await JobApplicationModel.findById(id);
       return doc ? mapApplication(doc) : null;
     },
+    listing: async ({ listing }: { listing: { id: string } }) => {
+      const doc = await JobListingModel.findById(listing.id);
+      return doc ? mapJob(doc) : null;
+    },
   },
   User: {
-    jobApplications: async ({ id }: { id: string }) => {
-      const docs = await JobApplicationModel.find({ applicantFirebaseUid: id }).sort({ createdAt: -1 });
+    jobApplications: async ({ firebaseUid }: { firebaseUid: string }) => {
+      const docs = await JobApplicationModel.find({ applicantFirebaseUid: firebaseUid }).sort({ createdAt: -1 });
       return docs.map(mapApplication);
     },
   },

@@ -290,3 +290,12 @@ These defects were found after this tracker was created. `Closed` means the corr
 | BUG-0011 | ORG-005 | P2 | Ready for Retest | Contact/social capsules displayed GraphQL metadata as `__typename` | Social-link rendering now allowlists supported network fields |
 | BUG-0012 | JOB-006 | P2 | Ready for Retest | Dashboard and member subpages rendered beneath the fixed navbar | Added consistent top spacing to Dashboard, Applications, Saved Items, Following, and Messages |
 | BUG-0013 | JOB-004 | P0 | Closed | Job application deep link repeatedly requested the organisation URL and produced service-worker 404s | Development startup unregisters stale workers once and Webpack serves SPA history fallbacks; user retest passed |
+| BUG-0014 | JOB-004 | P1 | Ready for Retest | Job detail retained Apply to Job after a successful submission | Added `myJobApplication` state to the detail query and render an Application Submitted state |
+| BUG-0015 | JOB-006 | P0 | Ready for Retest | `me.jobApplications` returned empty despite a persisted application | Federated User lookups now use `firebaseUid`; resolver regression coverage added |
+| BUG-0016 | JOB-006 | P0 | Ready for Retest | Application history failed because `JobListing.title` completed as null | `JobApplication.listing` now hydrates the local listing before GraphQL completion |
+| BUG-0017 | JOB-006 | P2 | Ready for Retest | Members could not review their submitted application response | Added submitted fields and an accessible read-only response modal to My Applications |
+| BUG-0018 | ORG-003 | P2 | Ready for Retest | Organisation Social Connection add action was inert | Linked the control to anchored social settings and made existing social capsules actionable |
+| BUG-0019 | MSG-002 | P1 | Ready for Retest | Organisation overview omitted marketplace buyer messages | Added a live seller conversation panel with unread, loading, empty, error, and inbox states |
+| BUG-0020 | NOT-001 | P2 | Ready for Retest | View All Notifications did nothing | Connected the overview footer to `/org/notifications` |
+| BUG-0021 | EVT-009 | P1 | Ready for Retest | Recurring-event form allowed a rule that ended before its first occurrence | Added event-weekday defaults, schedule-aware minimum dates, inline validation, and regression tests |
+| BUG-0022 | ORG-002 | P2 | Ready for Retest | Events, Listings, and Jobs manager pages lacked local create forms | Reused the wired forms below each manager table with automatic post-create refetch |

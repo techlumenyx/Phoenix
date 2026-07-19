@@ -7,6 +7,7 @@ import {
   UPDATE_MARKETPLACE_ITEM,
   UPDATE_MARKETPLACE_ITEM_STATUS,
 } from '../../graphql/mutations';
+import { CreateListingForm } from './OrgOverviewPage';
 
 type ListingStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD' | 'PENDING_REVIEW';
 
@@ -195,6 +196,7 @@ export default function OrgListingsPage() {
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const { data, loading, error, refetch } = useQuery(MY_MARKETPLACE_LISTINGS, { fetchPolicy: 'cache-and-network' });
+  const organisationId = data?.myOrganisations?.[0]?.id as string | undefined;
   const [updateItem, updateState] = useMutation(UPDATE_MARKETPLACE_ITEM);
   const [updateStatus, statusState] = useMutation(UPDATE_MARKETPLACE_ITEM_STATUS);
   const [deleteItem, deleteState] = useMutation(DELETE_MARKETPLACE_ITEM);
@@ -265,7 +267,7 @@ export default function OrgListingsPage() {
             <h1 className="font-serif text-3xl font-bold text-[#1B1B1B]">Listings Manager</h1>
             <p className="mt-1 text-sm text-gray-500">Edit inventory and keep availability up to date.</p>
           </div>
-          <Link to="/org?create=listing#creation-centre" className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]">Create new listing +</Link>
+          <a href="#create-listing" className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]">Create new listing +</a>
         </div>
 
         <div className="mt-6 flex gap-7 overflow-x-auto border-b border-gray-200 px-5 sm:px-6">
@@ -335,6 +337,10 @@ export default function OrgListingsPage() {
         )}
       </div>
 
+      <section id="create-listing" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="border-b border-gray-100 px-6 py-5"><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Create a Marketplace Listing</h2><p className="mt-1 text-sm text-gray-500">List an item for sale or share it as a community donation.</p></div>
+        <div className="px-6 py-6"><CreateListingForm orgId={organisationId} onCreated={() => { void refetch(); }} /></div>
+      </section>
       {modal && <ListingModal listing={modal.listing} mode={modal.mode} busy={busy} onClose={() => !busy && setModal(null)} onSave={saveListing} onDelete={removeListing} />}
     </div>
   );

@@ -84,6 +84,14 @@ export default function OrgSettingsPage() {
     setLogoPreviewFailed(false);
   }, [org]);
 
+  useEffect(() => {
+    if (window.location.hash !== '#social-links') return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('social-links')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading]);
+
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!org || !name.trim()) {
@@ -255,7 +263,7 @@ export default function OrgSettingsPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <section id="social-links" className="scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
           <div className="border-b border-gray-200 px-6 py-4">
             <h2 className="font-serif text-xl font-bold">Social links</h2>
             <p className="mt-1 text-xs text-gray-500">These links appear on the public organisation profile.</p>

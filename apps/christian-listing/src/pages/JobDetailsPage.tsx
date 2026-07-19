@@ -17,6 +17,11 @@ const JOB_DETAILS = gql`
   }
 `;
 const JOB_SAVED = gql`query JobSavedState($id: ID!) { isJobSaved(id: $id) }`;
+const JOB_APPLICATION_STATE = gql`
+  query JobApplicationState($id: ID!) {
+    myJobApplication(jobId: $id) { id status createdAt }
+  }
+`;
 const SAVE_JOB = gql`mutation SaveJobDetails($id: ID!) { saveJob(id: $id) }`;
 const UNSAVE_JOB = gql`mutation UnsaveJobDetails($id: ID!) { unsaveJob(id: $id) }`;
 
@@ -37,8 +42,15 @@ export default function JobDetailsPage() {
   const [notice, setNotice] = useState('');
   const { data, loading, error } = useQuery<JobDetailsData>(JOB_DETAILS, { variables: { id }, skip: !id });
   const { data: savedData, refetch: refetchSaved } = useQuery<{ isJobSaved: boolean }>(JOB_SAVED, { variables: { id }, skip: !id || !user });
+  const { data: applicationData, loading: applicationLoading } = useQuery<{ myJobApplication: { id: string; status: string; createdAt: string } | null }>(JOB_APPLICATION_STATE, {
+    variables: { id },
+    skip: !id || !user,
+    fetchPolicy: 'network-only',
+    nextFetchPolicy: 'cache-first',
+  });
   const [saveJob, { loading: saving }] = useMutation(SAVE_JOB); const [unsaveJob] = useMutation(UNSAVE_JOB);
   const saved = savedData?.isJobSaved ?? false;
+  const hasApplied = Boolean(applicationData?.myJobApplication);
   const job = data?.jobListing;
 
   const share = async () => {
@@ -115,7 +127,7 @@ export default function JobDetailsPage() {
 
             <div className="my-6 flex justify-between border-t border-gray-200 pt-4 text-[10px] text-gray-500"><span>Posted {daysAgo === 0 ? 'Today' : `${daysAgo} Day${daysAgo === 1 ? '' : 's'} Ago`}</span><strong className="text-gray-900">{job.applicationCount}+ Applications</strong></div>
 
-            {isActive ? <Link to={`/jobs/${job.id}/apply`} className="block w-full rounded-lg bg-[#11167b] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#181e96]">Apply Now →</Link> : <button disabled className="w-full rounded-lg bg-gray-300 px-4 py-3 text-sm font-medium text-gray-600">Applications Closed</button>}
+            {isActive && user && applicationLoading ? <button disabled className="w-full rounded-lg bg-gray-200 px-4 py-3 text-sm font-medium text-gray-600">Checking application…</button> : hasApplied ? <div><button disabled className="w-full rounded-lg bg-green-100 px-4 py-3 text-sm font-semibold text-green-800">Application Submitted ✓</button><Link to="/dashboard/applications" className="mt-2 block text-center text-xs font-medium text-[#11167b] hover:underline">View application</Link></div> : isActive ? <Link to={`/jobs/${job.id}/apply`} className="block w-full rounded-lg bg-[#11167b] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#181e96]">Apply Now →</Link> : <button disabled className="w-full rounded-lg bg-gray-300 px-4 py-3 text-sm font-medium text-gray-600">Applications Closed</button>}
             <button disabled={saving} onClick={toggleSaved} className="mt-4 w-full py-2 text-xs text-gray-600 hover:text-gray-900 disabled:opacity-50">{saved ? '♥ Saved' : '♡ Save Job'}</button>
             <button className="w-full py-2 text-xs text-gray-600 hover:text-gray-900">◈ Report the listing</button>
             {notice && <p role="status" className="mt-2 text-center text-xs text-green-700">{notice}</p>}
