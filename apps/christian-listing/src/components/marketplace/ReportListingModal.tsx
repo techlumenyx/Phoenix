@@ -29,8 +29,8 @@ export default function ReportListingModal({ listingTitle, submitting, onClose, 
     const reportText = details.trim() ? `${reason}: ${details.trim()}` : reason;
     try {
       await onSubmit(reportText);
-    } catch (submitError: unknown) {
-      setError(submitError instanceof Error ? submitError.message : 'The report could not be submitted. Please try again.');
+    } catch {
+      setError('The report could not be submitted. Please try again.');
     }
   };
 

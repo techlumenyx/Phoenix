@@ -3,6 +3,7 @@ import { type HydratedDocument } from 'mongoose';
 import { type IUser } from '../models/user.model';
 import { UserModel as _UserModel } from '../models';
 import type { GraphQLContext } from '../context';
+import { resolveLocationRegion } from '@christian-listings/utils';
 
 function UserModel() { return _UserModel; }
 
@@ -40,6 +41,7 @@ function mapUser(doc: HydratedDocument<IUser>, ctx?: GraphQLContext, enforcePriv
     roles: doc.roles ?? [],
     orgId: doc.orgId?.toString() ?? null,
     region: canViewExtended && privacy.showRegion ? doc.region ?? '' : '',
+    regionCode: canViewExtended && privacy.showRegion ? doc.regionCode ?? null : null,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -80,9 +82,17 @@ export const userResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      const update = { ...input };
+      if (typeof input['region'] === 'string') {
+        const resolved = resolveLocationRegion(input['region']);
+        if (resolved) {
+          update['region'] = resolved.displayName;
+          update['regionCode'] = resolved.code;
+        }
+      }
       const doc = await UserModel().findOneAndUpdate(
         { firebaseUid: ctx.auth.firebaseUid },
-        { $set: input },
+        { $set: update },
         { new: true },
       );
       if (!doc) throw new GraphQLError('User not found', { extensions: { code: 'NOT_FOUND' } });

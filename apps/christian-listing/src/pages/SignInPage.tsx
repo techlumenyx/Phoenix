@@ -6,6 +6,7 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { firebaseAuth } from '../firebase';
+import { userSafeError } from '../lib/user-safe-error';
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function SignInPage() {
       await signInWithEmailAndPassword(firebaseAuth, email, password);
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign in failed.');
+      setError(userSafeError(err, 'Sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +39,7 @@ export default function SignInPage() {
       await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+      setError(userSafeError(err, 'Google sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }

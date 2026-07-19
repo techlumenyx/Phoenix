@@ -1,6 +1,6 @@
 # Christian Listings End-to-End Test Plan
 
-Last updated: 18 July 2026  
+Last updated: 19 July 2026
 Companion workbook: `outputs/e2e-testing/E2E-TEST-TRACKER.xlsx`
 
 ## 1. Purpose
@@ -270,3 +270,23 @@ Use `Reopened`, `Blocked`, `Duplicate`, or `Won't Fix` only with a reason. A def
 ## 12. Deferred/non-testable scope
 
 Do not report absence of these explicitly deferred features as defects: password reset, email verification experience, direct Cloudinary uploads, CV upload, job alerts, marketplace offers/counteroffers, event/job templates, public member profiles, information board, transactional email, wanted ads, saved searches, and marketplace video.
+
+## 13. Defects resolved during initial E2E testing
+
+These defects were found after this tracker was created. `Closed` means the corrected flow was subsequently observed working; `Ready for Retest` means the code fix is present but the complete linked flow still needs a formal retest and inline DB validation where applicable. The Excel Defects sheet contains full reproduction, evidence, root-cause, and resolution details.
+
+| Defect ID | Flow ID | Severity | Status | Summary | Resolution / evidence |
+|---|---|---:|---|---|---|
+| BUG-0001 | EVT-001 | P0 | Closed | Events, Jobs, and Marketplace landing pages entered repeated render/query cycles | Stabilised Apollo variables and empty preference references; commit `54ad9af`; Events retest passed |
+| BUG-0002 | DISC-001 | P2 | Ready for Retest | Spotlight and Events at a Glance used hardcoded content | Replaced static cards with published event/job/listing discovery and deterministic selection |
+| BUG-0003 | DISC-001 | P1 | Closed | Homepage failed to compile because `SpotlightSection` could not be resolved | Added `HomepageSpotlightSection` and corrected the import |
+| BUG-0004 | DISC-001 | P1 | Ready for Retest | Selecting a location with no exact matches left discovery sections blank | Regional results now fall back to global active content while retaining regional priority |
+| BUG-0005 | DISC-002 | P1 | Closed | The `me` operation queried a `regionCode` field absent from the federated `User` contract | Aligned identity schema, resolver, generated types, and consuming operation |
+| BUG-0006 | DISC-002 | P0 | Closed | Discovery failed when a seeded marketplace seller reference returned a null non-nullable `User.id` | Removed the unused seller selection from discovery and hardened federated reference identity mapping |
+| BUG-0007 | DISC-004 | P2 | Closed | Job detail and member profile content rendered beneath the fixed navbar | Added the shared fixed-header top offset to affected public routes |
+| BUG-0008 | MEM-003 | P2 | Ready for Retest | Saved Items Hub existed but had no discoverable navigation entry | Added Dashboard and Saved Items actions to desktop and mobile user menus |
+| BUG-0009 | ORG-005 | P0 | Closed | Organisation profile failed on non-null `Organisation.marketplaceListings` | Merged job and marketplace federation resolvers for `Organisation`; resolver regression test added |
+| BUG-0010 | ORG-005 | P1 | Ready for Retest | Public pages exposed raw GraphQL and backend error messages | Added a user-safe error mapper and replaced raw error rendering across public/member flows |
+| BUG-0011 | ORG-005 | P2 | Ready for Retest | Contact/social capsules displayed GraphQL metadata as `__typename` | Social-link rendering now allowlists supported network fields |
+| BUG-0012 | JOB-006 | P2 | Ready for Retest | Dashboard and member subpages rendered beneath the fixed navbar | Added consistent top spacing to Dashboard, Applications, Saved Items, Following, and Messages |
+| BUG-0013 | JOB-004 | P0 | Closed | Job application deep link repeatedly requested the organisation URL and produced service-worker 404s | Development startup unregisters stale workers once and Webpack serves SPA history fallbacks; user retest passed |

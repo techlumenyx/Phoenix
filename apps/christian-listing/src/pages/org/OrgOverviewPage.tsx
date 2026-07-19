@@ -699,8 +699,8 @@ function CreateEventForm({ orgId }: { orgId?: string }) {
       setCategory(null); setEventType('PHYSICAL'); setIsTicketed(false);
       setIsRecurring(false); setRecurrenceFrequency('WEEKLY'); setRecurrenceInterval('1');
       setRecurrenceDays([]); setRecurrenceEnd('COUNT'); setOccurrenceCount('12'); setRecurrenceUntil('');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to publish event — please try again.');
+    } catch {
+      setError('Failed to publish event — please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -1007,8 +1007,8 @@ function CreateListingForm({ orgId }: { orgId?: string }) {
       setSuccess(true);
       setTitle(''); setDesc(''); setPrice(''); setArea(''); setRegion('');
       setCategory(null); setCondition('New'); setIsDonation(false);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to publish listing.');
+    } catch {
+      setError('Failed to publish listing. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -1297,8 +1297,8 @@ function CreateJobsForm({ orgId }: { orgId?: string }) {
       setTitle(''); setDesc(''); setDeadline(''); setRegion(''); setExternalUrl('');
       setSalaryMin(''); setSalaryMax(''); setSkills([]);
       setRoleType('Paid'); setLocationType('Physical'); setFaithTag('Open to All');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to post job.');
+    } catch {
+      setError('Failed to post job. Please try again.');
     } finally {
       setSubmitting(false);
     }

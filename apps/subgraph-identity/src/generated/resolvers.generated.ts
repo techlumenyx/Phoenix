@@ -380,6 +380,7 @@ export type UpdateProfileInput = {
   preferences?: InputMaybe<Array<Scalars['String']['input']>>;
   privacySettings?: InputMaybe<ProfilePrivacySettingsInput>;
   region?: InputMaybe<Scalars['String']['input']>;
+  regionCode?: InputMaybe<Scalars['String']['input']>;
   socialLinks?: InputMaybe<SocialLinksInput>;
 };
 
@@ -398,6 +399,7 @@ export type User = {
   preferences: Array<Scalars['String']['output']>;
   privacySettings: ProfilePrivacySettings;
   region: Scalars['String']['output'];
+  regionCode?: Maybe<Scalars['String']['output']>;
   roles: Array<Scalars['String']['output']>;
   socialLinks?: Maybe<SocialLinks>;
   updatedAt: Scalars['DateTime']['output'];
@@ -744,6 +746,7 @@ export type UserResolvers<ContextType = GraphQLContext, ParentType extends Resol
   preferences?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   privacySettings?: Resolver<ResolversTypes['ProfilePrivacySettings'], ParentType, ContextType>;
   region?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  regionCode?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   roles?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   socialLinks?: Resolver<Maybe<ResolversTypes['SocialLinks']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;

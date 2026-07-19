@@ -1,23 +1,12 @@
-import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import App from './app';
+import router from './app';
 
-describe('App', () => {
-  it('renders without crashing', () => {
-    const { baseElement } = render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    );
-    expect(baseElement).toBeTruthy();
+describe('application router', () => {
+  it('defines the root application route', () => {
+    expect(router.routes.some((route) => route.path === '/')).toBe(true);
   });
 
-  it('displays the app heading', () => {
-    const { getByRole } = render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    );
-    expect(getByRole('heading', { name: /christian listings/i })).toBeTruthy();
+  it('includes the public home route', () => {
+    const rootRoute = router.routes.find((route) => route.path === '/');
+    expect(rootRoute?.children?.some((route) => route.index)).toBe(true);
   });
 });

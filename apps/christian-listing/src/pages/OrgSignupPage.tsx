@@ -7,6 +7,7 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { firebaseAuth } from '../firebase';
+import { userSafeError } from '../lib/user-safe-error';
 
 export default function OrgSignupPage() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function OrgSignupPage() {
       }
       navigate('/org/setup', { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Authentication failed.');
+      setError(userSafeError(err, 'Authentication failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,7 @@ export default function OrgSignupPage() {
       await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
       navigate('/org/setup', { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+      setError(userSafeError(err, 'Google sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }

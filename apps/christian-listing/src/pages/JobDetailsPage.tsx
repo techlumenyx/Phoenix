@@ -52,7 +52,7 @@ export default function JobDetailsPage() {
   const toggleSaved = async () => { if (!user) { navigate('/signin', { state: { from: location.pathname } }); return; } await (saved ? unsaveJob : saveJob)({ variables: { id } }); setNotice(saved ? 'Removed from saved items.' : 'Job saved.'); await refetchSaved(); };
 
   if (loading) return <PageMessage title="Loading job…" />;
-  if (error) return <PageMessage title="We couldn’t load this job" detail={error.message} />;
+  if (error) return <PageMessage title="We couldn’t load this job" detail="Please try again in a moment." />;
   if (!job) return <PageMessage title="Job not found" detail="This role may have closed or the link may be incorrect." />;
 
   const organisation = job.organisation;
@@ -65,7 +65,7 @@ export default function JobDetailsPage() {
   const isActive = job.status === 'ACTIVE' && deadline.getTime() >= Date.now();
 
   return (
-    <main className="min-h-screen bg-[#fbfbfa] px-5 py-8 text-[#19141c] md:px-10 lg:px-16">
+    <main className="min-h-screen bg-[#fbfbfa] px-5 pb-8 pt-28 text-[#19141c] md:px-10 lg:px-16">
       <nav className="mx-auto mb-7 max-w-7xl text-sm font-serif text-gray-600" aria-label="Breadcrumb">
         <Link to="/jobs" className="hover:text-black">Jobs</Link> <span>›</span> <Link to="/jobs/all" className="hover:text-black">All Jobs</Link> <span>›</span> <span className="text-gray-900">Job Description</span>
       </nav>
@@ -156,5 +156,5 @@ function OrganisationCard({ organisation }: { organisation: NonNullable<JobDetai
 }
 
 function PageMessage({ title, detail }: { title: string; detail?: string }) {
-  return <main className="flex min-h-[65vh] items-center justify-center bg-[#fbfbfa] px-6 text-center"><div><h1 className="font-serif text-3xl font-bold">{title}</h1>{detail && <p className="mt-3 text-sm text-gray-500">{detail}</p>}<Link to="/jobs" className="mt-6 inline-block rounded-full bg-[#11167b] px-5 py-2.5 text-sm text-white">Browse jobs</Link></div></main>;
+  return <main className="flex min-h-[65vh] items-center justify-center bg-[#fbfbfa] px-6 pt-20 text-center"><div><h1 className="font-serif text-3xl font-bold">{title}</h1>{detail && <p className="mt-3 text-sm text-gray-500">{detail}</p>}<Link to="/jobs" className="mt-6 inline-block rounded-full bg-[#11167b] px-5 py-2.5 text-sm text-white">Browse jobs</Link></div></main>;
 }

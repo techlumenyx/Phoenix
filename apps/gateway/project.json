@@ -8,7 +8,7 @@
       "continuous": true,
       "executor": "nx:run-commands",
       "options": {
-        "command": ".\\router.exe --config apps/gateway/router.yaml --supergraph apps/gateway/supergraph.graphql --log info --listen 0.0.0.0:4000",
+        "command": "node tools/scripts/start-gateway.js",
         "cwd": "{workspaceRoot}"
       }
     },

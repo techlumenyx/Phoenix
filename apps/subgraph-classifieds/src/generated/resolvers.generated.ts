@@ -632,7 +632,6 @@ export type UpdateMarketplaceItemInput = {
 export type User = {
   __typename?: 'User';
   firebaseUid: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
   jobApplications: Array<JobApplication>;
   marketplaceListings: Array<MarketplaceItem>;
   savedJobs: Array<JobListing>;
@@ -1041,12 +1040,11 @@ export type SalaryRangeResolvers<ContextType = GraphQLContext, ParentType extend
 }>;
 
 export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & (GraphQLRecursivePick<ParentType, {"id":true}> | GraphQLRecursivePick<ParentType, {"firebaseUid":true}>), ContextType>;
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"firebaseUid":true}>, ContextType>;
 
-
-  jobApplications?: Resolver<Array<ResolversTypes['JobApplication']>, { __typename: 'User' } & (GraphQLRecursivePick<ParentType, {"id":true}> | GraphQLRecursivePick<ParentType, {"firebaseUid":true}>), ContextType>;
-  marketplaceListings?: Resolver<Array<ResolversTypes['MarketplaceItem']>, { __typename: 'User' } & (GraphQLRecursivePick<ParentType, {"id":true}> | GraphQLRecursivePick<ParentType, {"firebaseUid":true}>), ContextType>;
-  savedJobs?: Resolver<Array<ResolversTypes['JobListing']>, { __typename: 'User' } & (GraphQLRecursivePick<ParentType, {"id":true}> | GraphQLRecursivePick<ParentType, {"firebaseUid":true}>), ContextType>;
+  jobApplications?: Resolver<Array<ResolversTypes['JobApplication']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"firebaseUid":true}>, ContextType>;
+  marketplaceListings?: Resolver<Array<ResolversTypes['MarketplaceItem']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"firebaseUid":true}>, ContextType>;
+  savedJobs?: Resolver<Array<ResolversTypes['JobListing']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"firebaseUid":true}>, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

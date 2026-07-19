@@ -172,7 +172,7 @@ export default function OrgJobsPage() {
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3"><p className="text-sm text-gray-500">{applications.length} application{applications.length === 1 ? '' : 's'}</p><button type="button" disabled={applications.length === 0} onClick={downloadApplicationsCsv} className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-40">Download CSV</button></div>
             <div className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-gray-200 bg-[#FAF6ED] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500"><span>Candidate</span><span>Job</span><span>Email</span><span>Applied</span><span>Status</span><span>Details</span></div>
             {applicationsLoading && <div className="py-16 text-center text-sm text-gray-400">Loading applications…</div>}
-            {applicationsError && <div className="py-16 text-center text-sm text-red-500">{applicationsError.message}</div>}
+            {applicationsError && <div className="py-16 text-center text-sm text-red-500">We couldn’t load job applications. Please try again.</div>}
             {!applicationsLoading && !applicationsError && applications.length === 0 && <div className="py-16 text-center"><p className="text-sm font-semibold text-gray-600">No applications yet</p><p className="mt-1 text-xs text-gray-400">New candidate applications will appear here.</p></div>}
             {applications.map((application) => <div key={application.id} className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] items-center gap-4 border-b border-gray-100 px-6 py-4 text-[13px]"><strong>{application.fullName}</strong><span className="truncate text-gray-600">{application.listing.title}</span><a href={`mailto:${application.email}`} className="truncate text-gray-500 hover:underline">{application.email}</a><span className="text-gray-500">{formatDate(application.createdAt)}</span><span className="rounded-full bg-blue-50 px-2 py-1 text-center text-[11px] font-semibold text-blue-700">{application.status.replaceAll('_', ' ')}</span><button onClick={() => setSelectedApplication(application)} className="rounded-lg border px-3 py-1.5 text-xs hover:bg-gray-50">View</button></div>)}
           </div>
@@ -193,7 +193,7 @@ export default function OrgJobsPage() {
             </div>
 
             {loading && <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading jobs...</div>}
-            {error   && <div className="flex items-center justify-center py-16 text-sm text-red-500">{error.message}</div>}
+            {error   && <div className="flex items-center justify-center py-16 text-sm text-red-500">We couldn’t load your jobs. Please try again.</div>}
             {!loading && !error && sorted.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <p className="text-sm font-semibold text-gray-600">No listings here</p>

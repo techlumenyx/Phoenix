@@ -6,8 +6,9 @@ export type { CursorQuery } from './lib/pagination/cursor-pagination';
 export { buildOffsetQuery } from './lib/pagination/offset-pagination';
 export type { OffsetPaginationArgs, OffsetPaginationQuery } from './lib/pagination/offset-pagination';
 
-export { getRegionFromRequest, normaliseRegion } from './lib/region/region-helpers';
-export { SUPPORTED_REGIONS, DEFAULT_REGION } from './lib/region/regions.constants';
-export type { Region } from './lib/region/regions.constants';
+export { getRegionFromRequest, normaliseRegion, resolveLocationRegion } from './lib/region/region-helpers';
+export type { ResolvedLocationRegion } from './lib/region/region-helpers';
+export { SUPPORTED_REGIONS, DEFAULT_REGION, LOCATION_REGIONS } from './lib/region/regions.constants';
+export type { Region, LocationRegion } from './lib/region/regions.constants';
 
 export { cloudinaryClient } from './lib/cloudinary/cloudinary-client';

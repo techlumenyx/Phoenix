@@ -1,144 +1,25 @@
 import { Link } from 'react-router-dom';
-import { LocationMarkerIcon, ClockIcon, UsersIcon, HeartIcon, ArrowRightIcon } from '../layout/icons';
+import { LocationMarkerIcon, ClockIcon, UsersIcon, ArrowRightIcon } from '../layout/icons';
+import { HomepageEvent } from '../../lib/homepage-selection';
 
-function LightEventCard() {
-  return (
-    <div className="flex rounded-2xl overflow-hidden bg-[#F5EAFF] h-full">
-      {/* Left: image */}
-      <div className="w-[45%] shrink-0 relative">
-        <img
-          src="/assets/event-theology.png"
-          alt="Theology of Work event"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
-      </div>
+interface Props { events?: HomepageEvent[]; loading: boolean; error?: Error }
 
-      {/* Right: content */}
-      <div className="flex flex-col p-5 gap-3 flex-1 min-w-0">
-        {/* Badge + date row */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#A460A5] text-white">
-            STUDY/WORSHIP
-          </span>
-          <span className="text-xs text-dark/60 font-medium shrink-0">24 OCT 2026</span>
-        </div>
-
-        {/* Title */}
-        <h3 className="font-serif font-bold text-dark text-xl leading-snug line-clamp-3">
-          Theology of Work: A Masterclass for Professionals
-        </h3>
-
-        {/* Description */}
-        <p className="text-xs text-dark/60 line-clamp-2">
-          An evening of peace and calm aimed to help youngsters learn the word of God.
-        </p>
-
-        {/* Meta */}
-        <div className="flex flex-col gap-1.5 mt-auto">
-          <span className="flex items-center gap-1.5 text-xs text-dark/60">
-            <LocationMarkerIcon className="w-3.5 h-3.5 shrink-0" />
-            Lagos City Centre
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-dark/60">
-            <ClockIcon className="w-3.5 h-3.5 shrink-0" />
-            09:30 AM To 06:00 PM
-          </span>
-        </div>
-
-        <hr className="border-dark/10" />
-
-        {/* Bottom row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-dark/50">
-            <span className="flex items-center gap-1">
-              <UsersIcon className="w-3.5 h-3.5" /> 3500 Invites
-            </span>
-            <span className="flex items-center gap-1">
-              <HeartIcon className="w-3.5 h-3.5" /> 15K Likes
-            </span>
-          </div>
-          <button className="flex items-center gap-1 text-xs font-semibold text-dark hover:text-dark/70 transition-colors">
-            RSVP Now <ArrowRightIcon className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function eventLocation(event: HomepageEvent) { return [event.location.city, event.location.country].filter(Boolean).join(', ') || event.region; }
+function eventDate(event: HomepageEvent) { return new Date(event.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }); }
+function eventTime(event: HomepageEvent) {
+  const start = new Date(event.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  if (!event.endDate) return start;
+  return `${start} – ${new Date(event.endDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function DarkEventCard() {
-  return (
-    <div className="relative rounded-2xl overflow-hidden bg-[#1A1A1A] h-full">
-      {/* Full bleed image */}
-      <img
-        src="/assets/event-theology.png"
-        alt="Theology of Work event"
-        className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-      {/* Verified dot */}
-      <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-[#22C55E] z-10" />
-
-      {/* Category badge */}
-      <div className="absolute top-4 left-4 z-10">
-        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#A460A5] text-white">
-          STUDY/WORSHIP
-        </span>
-      </div>
-
-      {/* Content at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-5 flex flex-col gap-3">
-        <h3 className="font-serif font-bold text-white text-xl leading-snug">
-          Theology of Work: A Masterclass for Professionals
-        </h3>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-white/60">
-            <span className="flex items-center gap-1">
-              <UsersIcon className="w-3.5 h-3.5" /> 3500 Invites
-            </span>
-            <span className="flex items-center gap-1">
-              <HeartIcon className="w-3.5 h-3.5" /> 15K Likes
-            </span>
-          </div>
-          <button className="flex items-center gap-1 text-xs font-semibold text-white hover:text-white/80 transition-colors">
-            RSVP Now <ArrowRightIcon className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function LightEventCard({ event }: { event: HomepageEvent }) {
+  return <div className="flex h-full overflow-hidden rounded-2xl bg-[#F5EAFF]"><div className="relative w-[45%] shrink-0"><img src={event.imageUrls[0] || '/assets/event-theology.png'} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" /></div><div className="flex min-w-0 flex-1 flex-col gap-3 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-[#A460A5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{event.category.replaceAll('_', ' ')}</span><span className="shrink-0 text-xs font-medium text-dark/60">{eventDate(event)}</span></div><h3 className="line-clamp-3 font-serif text-xl font-bold leading-snug text-dark">{event.title}</h3><p className="line-clamp-2 text-xs text-dark/60">{event.description}</p><div className="mt-auto flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-xs text-dark/60"><LocationMarkerIcon className="h-3.5 w-3.5 shrink-0" />{eventLocation(event)}</span><span className="flex items-center gap-1.5 text-xs text-dark/60"><ClockIcon className="h-3.5 w-3.5 shrink-0" />{eventTime(event)}</span></div><hr className="border-dark/10" /><div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-dark/50"><UsersIcon className="h-3.5 w-3.5" />{event.rsvpCount} RSVPs</span><Link to={`/events/${event.id}`} className="flex items-center gap-1 text-xs font-semibold text-dark transition-colors hover:text-dark/70">RSVP Now <ArrowRightIcon className="h-3.5 w-3.5" /></Link></div></div></div>;
 }
 
-export default function EventsGlanceSection() {
-  return (
-    <section className="w-full bg-white px-6 md:px-10 lg:px-16 py-16">
-      {/* Section header */}
-      <div className="flex items-end justify-between mb-8">
-        <div>
-          <p className="font-display text-xs font-medium text-dark/40 tracking-wider uppercase mb-1">
-            The trending events of this week
-          </p>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-dark">
-            Events at a Glance
-          </h2>
-        </div>
+function DarkEventCard({ event }: { event: HomepageEvent }) {
+  return <div className="relative h-full overflow-hidden rounded-2xl bg-[#1A1A1A]"><img src={event.imageUrls[0] || '/assets/event-theology.png'} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center opacity-60" /><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />{event.hosts.some((host) => host.isVerified) && <span className="absolute right-4 top-4 z-10 h-2.5 w-2.5 rounded-full bg-[#22C55E]" />}<span className="absolute left-4 top-4 z-10 rounded-full bg-[#A460A5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{event.category.replaceAll('_', ' ')}</span><div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-3 p-5"><p className="text-xs font-medium text-white/70">{eventDate(event)} · {eventLocation(event)}</p><h3 className="font-serif text-xl font-bold leading-snug text-white">{event.title}</h3><div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-white/60"><UsersIcon className="h-3.5 w-3.5" />{event.rsvpCount} RSVPs</span><Link to={`/events/${event.id}`} className="flex items-center gap-1 text-xs font-semibold text-white transition-colors hover:text-white/80">RSVP Now <ArrowRightIcon className="h-3.5 w-3.5" /></Link></div></div></div>;
+}
 
-        <Link
-          to="/events"
-          className="font-display text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark transition-colors flex items-center gap-1 shrink-0 mb-1"
-        >
-          VIEW ALL EVENTS
-          <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
-        </Link>
-      </div>
-
-      {/* Fixed 2-up grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[400px]">
-        <LightEventCard />
-        <DarkEventCard />
-      </div>
-    </section>
-  );
+export default function EventsGlanceSection({ events = [], loading, error }: Props) {
+  return <section className="w-full bg-white px-6 py-16 md:px-10 lg:px-16"><div className="mb-8 flex items-end justify-between"><div><p className="mb-1 font-display text-xs font-medium uppercase tracking-wider text-dark/40">Popular upcoming gatherings</p><h2 className="font-serif text-3xl font-bold text-dark md:text-4xl">Events at a Glance</h2></div><Link to="/events" className="mb-1 flex shrink-0 items-center gap-1 font-display text-xs font-semibold uppercase tracking-wider text-dark/50 transition-colors hover:text-dark">View all events <ArrowRightIcon className="h-3.5 w-3.5 -rotate-45" /></Link></div>{loading && events.length === 0 && <div className="grid h-[400px] gap-4 lg:grid-cols-2"><div className="animate-pulse rounded-2xl bg-gray-100" /><div className="animate-pulse rounded-2xl bg-gray-100" /></div>}{error && events.length === 0 && <p className="text-sm text-red-600">Upcoming events are temporarily unavailable.</p>}{!loading && !error && events.length === 0 && <div className="rounded-2xl border border-dashed border-gray-300 p-10 text-center"><p className="text-sm text-gray-500">No upcoming events are available right now.</p><Link to="/events" className="mt-4 inline-block text-sm font-semibold text-dark underline">Browse all events</Link></div>}{events.length > 0 && <div className="grid min-h-[400px] gap-4 lg:grid-cols-2">{events[0] && <LightEventCard event={events[0]} />}{events[1] && <DarkEventCard event={events[1]} />}</div>}</section>;
 }

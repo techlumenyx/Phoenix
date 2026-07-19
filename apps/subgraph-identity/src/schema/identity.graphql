@@ -41,6 +41,7 @@ type User @key(fields: "id") @key(fields: "firebaseUid") {
   email: String!
   name: String!
   region: String!
+  regionCode: String
   isVerified: Boolean!
   onboardingCompleted: Boolean!
   preferences: [String!]!
@@ -185,6 +186,7 @@ type Mutation {
 input UpdateProfileInput {
   name: String
   region: String
+  regionCode: String
   bio: String
   avatarUrl: String
   socialLinks: SocialLinksInput

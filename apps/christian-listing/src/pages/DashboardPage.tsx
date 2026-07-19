@@ -5,7 +5,7 @@ export default function DashboardPage() {
   const { user, logout } = useAuthStore();
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-10 py-12">
+    <main className="mx-auto max-w-7xl px-6 pb-12 pt-28 md:px-10">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-serif font-bold text-gray-900">Dashboard</h1>
@@ -37,6 +37,6 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
-    </div>
+    </main>
   );
 }

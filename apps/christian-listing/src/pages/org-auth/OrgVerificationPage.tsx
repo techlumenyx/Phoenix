@@ -4,6 +4,7 @@ import { useMutation, gql } from '@apollo/client';
 import SceneHeader from '../../components/layout/SceneHeader';
 import { getAuth } from 'firebase/auth';
 import { useAuthStore } from '../../store/authStore';
+import { userSafeError } from '../../lib/user-safe-error';
 
 const CREATE_ORGANISATION = gql`
   mutation CreateOrganisation($input: CreateOrganisationInput!) {
@@ -78,7 +79,7 @@ export default function OrgVerificationPage() {
 
       navigate('/org/onboarding/success');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(userSafeError(err, 'We couldn’t submit the verification request. Please try again.'));
     } finally {
       setLoading(false);
     }

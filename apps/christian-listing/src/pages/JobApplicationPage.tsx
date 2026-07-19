@@ -35,10 +35,18 @@ export default function JobApplicationPage() {
   const [form, setForm] = useState({ fullName: '', phoneNumber: '', email: '', gender: '', dateOfBirth: '', experienceDescription: '', yearsOfExperience: '', currentSalary: '', expectedSalary: '', portfolioUrl: '', linkedInProfile: '' });
   const [education, setEducation] = useState<EducationEntry[]>([emptyEducation(), emptyEducation()]);
   const [acknowledgements, setAcknowledgements] = useState([false, false, false, false]);
+  const accountName = dbUser?.name || firebaseUser?.displayName || '';
+  const accountEmail = dbUser?.email || firebaseUser?.email || '';
 
   useEffect(() => {
-    setForm((current) => ({ ...current, fullName: current.fullName || dbUser?.name || firebaseUser?.displayName || '', email: current.email || dbUser?.email || firebaseUser?.email || '' }));
-  }, [dbUser, firebaseUser]);
+    setForm((current) => {
+      const fullName = current.fullName || accountName;
+      const email = current.email || accountEmail;
+      return fullName === current.fullName && email === current.email
+        ? current
+        : { ...current, fullName, email };
+    });
+  }, [accountEmail, accountName]);
 
   const update = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
   const updateEducation = (index: number, field: keyof EducationEntry, value: string) => setEducation((entries) => entries.map((entry, entryIndex) => entryIndex === index ? { ...entry, [field]: value } : entry));
@@ -57,13 +65,13 @@ export default function JobApplicationPage() {
         linkedInProfile: form.linkedInProfile || null, acknowledged: true,
       } } });
       setSubmitted(true);
-    } catch (mutationError: unknown) {
-      setSubmitError(mutationError instanceof Error ? mutationError.message : 'Application could not be submitted.');
+    } catch {
+      setSubmitError('Application could not be submitted. Please try again.');
     }
   };
 
   if (loading) return <PageState title="Loading application form…" />;
-  if (error) return <PageState title="Couldn’t load the form" detail={error.message} />;
+  if (error) return <PageState title="Couldn’t load the form" detail="Please try again in a moment." />;
   if (!data?.jobListing) return <PageState title="Job not found" />;
   if (data.myJobApplication || submitted) return <SuccessState jobId={id} title={data.jobListing.title} date={data.myJobApplication?.createdAt} />;
 
@@ -72,7 +80,7 @@ export default function JobApplicationPage() {
   if (isClosed) return <PageState title="Applications are closed" detail="This role is no longer accepting applications." />;
 
   return (
-    <main className="min-h-screen bg-white px-5 py-10 text-[#030813] md:px-10 lg:px-16">
+    <main className="min-h-screen bg-white px-5 pb-10 pt-28 text-[#030813] md:px-10 lg:px-16">
       <div className="mx-auto max-w-6xl">
         <nav className="mb-8 text-sm font-serif text-gray-600"><Link to="/jobs">Jobs</Link> <span>›</span> <Link to={`/jobs/${id}`}>{job.title}</Link> <span>›</span> <span className="text-gray-900">Application Form</span></nav>
         <header className="mb-12"><h1 className="font-serif text-4xl font-medium">Application Form</h1><p className="mt-3 text-sm italic text-gray-600">Apply for {job.title} at {job.organisation.name}. Your details will be shared with the recruiting organisation.</p></header>

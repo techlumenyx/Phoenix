@@ -80,6 +80,18 @@ function UserMenu({ displayName }: { displayName: string }) {
       {open && (
         <div className="absolute right-0 mt-2 w-44 rounded-xl bg-[#1B1B1B] border border-white/10 shadow-xl overflow-hidden z-50">
           <button
+            onClick={() => { setOpen(false); navigate('/dashboard'); }}
+            className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => { setOpen(false); navigate('/dashboard/saved'); }}
+            className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            Saved Items
+          </button>
+          <button
             onClick={() => { setOpen(false); navigate('/profile'); }}
             className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
           >
@@ -205,6 +217,18 @@ export default function Navbar() {
                     <span className="text-white text-sm font-medium truncate max-w-[100px]">
                       {displayName}
                     </span>
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/dashboard'); }}
+                    className="self-start text-sm font-medium text-white/70 hover:text-white transition-colors"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/dashboard/saved'); }}
+                    className="self-start text-sm font-medium text-white/70 hover:text-white transition-colors"
+                  >
+                    Saved Items
                   </button>
                   <button
                     onClick={handleMobileSignOut}

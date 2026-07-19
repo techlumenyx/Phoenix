@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, updateProfile, getAuth } from 'firebase
 import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../firebase';
 import { CREATE_USER } from '../graphql/mutations';
+import { userSafeError } from '../lib/user-safe-error';
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function SignUpPage() {
       }
       navigate('/', { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed.');
+      setError(userSafeError(err, 'Sign up failed. Please try again.'));
     } finally {
       setLoading(false);
     }

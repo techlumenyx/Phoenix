@@ -490,7 +490,7 @@ export default function GlobalSearchPage() {
                   location={listing.region}
                   badge={listing.isDonation ? 'COMMUNITY GIVE' : titleCase(listing.condition)}
                   imageSrc={listing.imageUrls[0]}
-                  verified={listing.seller.isVerified}
+                  verified={listing.seller?.isVerified ?? false}
                   href={`/marketplace/${listing.id}`}
                 />
               ))}

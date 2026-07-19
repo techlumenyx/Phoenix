@@ -79,7 +79,7 @@ export default function MarketplaceDetailsPage() {
   };
 
   if (loading) return <PageMessage title="Loading listing…" />;
-  if (error) return <PageMessage title="We couldn’t load this listing" detail={error.message} />;
+  if (error) return <PageMessage title="We couldn’t load this listing" detail="Please try again in a moment." />;
   if (!item) return <PageMessage title="Listing not found" detail="This listing may have been removed or sold." />;
 
   const images = item.imageUrls.length ? item.imageUrls : ['/assets/car-ford.png'];

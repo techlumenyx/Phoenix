@@ -1,19 +1,32 @@
 import { gql, useQuery } from '@apollo/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { mergeUniqueById } from './homepage-selection';
 
 export const DISCOVERY_QUERY = gql`
-  query Discovery($region: String, $search: String, $limit: Int) {
-    events(region: $region, search: $search, status: PUBLISHED, limit: $limit) {
+  query Discovery($region: String, $search: String, $limit: Int, $hasRegion: Boolean!) {
+    regionalEvents: events(region: $region, search: $search, status: PUBLISHED, limit: $limit) @include(if: $hasRegion) {
       edges { id title description category date region rsvpCount imageUrls location { city country type } }
     }
-    jobListings(region: $region, search: $search, status: ACTIVE, limit: $limit) {
+    globalEvents: events(search: $search, status: PUBLISHED, limit: $limit) {
+      edges { id title description category date region rsvpCount imageUrls location { city country type } }
+    }
+    regionalJobs: jobListings(region: $region, search: $search, status: ACTIVE, limit: $limit) @include(if: $hasRegion) {
       edges { id title roleType workLocation region skillsRequired salaryRange { min max currency } organisation { id name isVerified } }
     }
-    marketplaceItems(region: $region, search: $search, status: AVAILABLE, limit: $limit) {
-      edges { id title description price currency condition region area imageUrls isDonation seller { id isVerified } }
+    globalJobs: jobListings(search: $search, status: ACTIVE, limit: $limit) {
+      edges { id title roleType workLocation region skillsRequired salaryRange { min max currency } organisation { id name isVerified } }
     }
-    organisations(region: $region, search: $search, limit: $limit) {
+    regionalListings: marketplaceItems(region: $region, search: $search, status: AVAILABLE, limit: $limit) @include(if: $hasRegion) {
+      edges { id title description price currency condition region area imageUrls isDonation }
+    }
+    globalListings: marketplaceItems(search: $search, status: AVAILABLE, limit: $limit) {
+      edges { id title description price currency condition region area imageUrls isDonation }
+    }
+    regionalOrganisations: organisations(region: $region, search: $search, limit: $limit) @include(if: $hasRegion) {
+      edges { id name description region logoUrl isVerified }
+    }
+    globalOrganisations: organisations(search: $search, limit: $limit) {
       edges { id name description region logoUrl isVerified }
     }
   }
@@ -94,8 +107,19 @@ export interface DiscoveryConnection<T> {
 export interface DiscoveryData {
   events: DiscoveryConnection<{ id: string; title: string; description: string; category: string; date: string; region: string; rsvpCount: number; imageUrls: string[]; location: { city?: string | null; country?: string | null; type: string } }>;
   jobListings: DiscoveryConnection<{ id: string; title: string; roleType: string; workLocation: string; region: string; skillsRequired: string[]; salaryRange?: { min: number; max: number; currency: string } | null; organisation: { id: string; name: string; isVerified: boolean } }>;
-  marketplaceItems: DiscoveryConnection<{ id: string; title: string; description: string; price: number; currency: string; condition: string; region: string; area?: string | null; imageUrls: string[]; isDonation: boolean; seller: { id: string; isVerified: boolean } }>;
+  marketplaceItems: DiscoveryConnection<{ id: string; title: string; description: string; price: number; currency: string; condition: string; region: string; area?: string | null; imageUrls: string[]; isDonation: boolean; seller?: { id: string; isVerified: boolean } }>;
   organisations: DiscoveryConnection<{ id: string; name: string; description?: string | null; region?: string | null; logoUrl?: string | null; isVerified: boolean }>;
+}
+
+interface DiscoveryQueryData {
+  regionalEvents?: DiscoveryData['events'];
+  globalEvents: DiscoveryData['events'];
+  regionalJobs?: DiscoveryData['jobListings'];
+  globalJobs: DiscoveryData['jobListings'];
+  regionalListings?: DiscoveryData['marketplaceItems'];
+  globalListings: DiscoveryData['marketplaceItems'];
+  regionalOrganisations?: DiscoveryData['organisations'];
+  globalOrganisations: DiscoveryData['organisations'];
 }
 
 const REGION_KEY = 'cl-preferred-region';
@@ -123,11 +147,27 @@ export function usePreferredRegion() {
 
 export function useDiscovery(search = '', limit = 4, skip = false) {
   const { region } = usePreferredRegion();
-  return useQuery<DiscoveryData>(DISCOVERY_QUERY, {
-    variables: { region: region || null, search: search.trim() || null, limit },
+  const trimmedSearch = search.trim();
+  const hasRegion = Boolean(region);
+  const query = useQuery<DiscoveryQueryData>(DISCOVERY_QUERY, {
+    variables: { region: region || null, search: trimmedSearch || null, limit, hasRegion },
     skip,
     fetchPolicy: 'cache-and-network',
   });
+  const data = useMemo<DiscoveryData | undefined>(() => {
+    if (!query.data) return undefined;
+    const select = <T extends { id: string }>(regional: DiscoveryConnection<T> | undefined, global: DiscoveryConnection<T>): DiscoveryConnection<T> => ({
+      edges: (trimmedSearch && hasRegion ? (regional?.edges ?? []) : mergeUniqueById(regional?.edges ?? [], global.edges)).slice(0, limit),
+    });
+    return {
+      events: select(query.data.regionalEvents, query.data.globalEvents),
+      jobListings: select(query.data.regionalJobs, query.data.globalJobs),
+      marketplaceItems: select(query.data.regionalListings, query.data.globalListings),
+      organisations: select(query.data.regionalOrganisations, query.data.globalOrganisations),
+    };
+  }, [hasRegion, limit, query.data, trimmedSearch]);
+
+  return { ...query, data };
 }
 
 export function formatPrice(value: number, currency: string) {

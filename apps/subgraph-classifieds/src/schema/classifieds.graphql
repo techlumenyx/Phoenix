@@ -59,8 +59,7 @@ enum MessageParticipantRole { BUYER SELLER }
 
 # ─── Federation Entity Stubs ──────────────────────────────────────────────────
 
-type User @key(fields: "id") @key(fields: "firebaseUid") @extends {
-  id: ID! @external
+type User @key(fields: "firebaseUid") @extends {
   firebaseUid: String! @external
   jobApplications: [JobApplication!]!
   marketplaceListings: [MarketplaceItem!]!

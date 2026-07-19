@@ -109,11 +109,8 @@ export default function OrgSettingsPage() {
         },
       });
       showToast('Organisation settings saved.', 'success');
-    } catch (saveError) {
-      showToast(
-        saveError instanceof Error ? saveError.message : 'Settings could not be saved.',
-        'error',
-      );
+    } catch {
+      showToast('Settings could not be saved. Please try again.', 'error');
     }
   }
 
@@ -130,13 +127,8 @@ export default function OrgSettingsPage() {
           : 'Organisation reactivated and visible publicly again.',
         'success',
       );
-    } catch (statusError) {
-      showToast(
-        statusError instanceof Error
-          ? statusError.message
-          : 'Organisation status could not be changed.',
-        'error',
-      );
+    } catch {
+      showToast('Organisation status could not be changed. Please try again.', 'error');
     }
   }
 

@@ -6,6 +6,11 @@ module.exports = composePlugins(
   withNx(),
   withReact({ svgr: true }),
   (config) => {
+    config.devServer = {
+      ...config.devServer,
+      historyApiFallback: true,
+    };
+
     const clEnvVars = Object.fromEntries(
       Object.entries(process.env)
         .filter(([k]) => k.startsWith('CL_') || k.startsWith('VITE_'))

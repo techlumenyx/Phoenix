@@ -62,8 +62,7 @@ type Organisation @key(fields: "id") @extends {
   events(limit: Int, after: String): EventConnection!
 }
 
-type User @key(fields: "id") @key(fields: "firebaseUid") @extends {
-  id: ID! @external
+type User @key(fields: "firebaseUid") @extends {
   firebaseUid: String! @external
 }
 

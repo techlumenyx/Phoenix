@@ -128,7 +128,7 @@ export default function EventDetailsPage() {
   };
 
   if (loading) return <PageMessage title="Loading event…" />;
-  if (error) return <PageMessage title="We couldn’t load this event" detail={error.message} />;
+  if (error) return <PageMessage title="We couldn’t load this event" detail="Please try again in a moment." />;
   if (!event || !date) return <PageMessage title="Event not found" detail="This event may have been removed or the link may be incorrect." />;
 
   const host = event.hosts[0];

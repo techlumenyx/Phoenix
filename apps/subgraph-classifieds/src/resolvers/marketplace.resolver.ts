@@ -5,6 +5,7 @@ import { ClassifiedOrganisationNotificationModel, MarketplaceItemModel } from '.
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
 import { sendMarketplaceReport } from '../services/admin-report.service';
+import { resolveLocationRegion } from '@christian-listings/utils';
 
 type ItemDocument = HydratedDocument<IMarketplaceItem>;
 
@@ -103,10 +104,13 @@ export const marketplaceResolvers = {
 
     marketplaceItems: async (_: unknown, { region, search, category, condition, subCategory, minPrice, maxPrice, isDonation, status, sort = 'NEWEST', limit = 20, after }: ItemsArgs, ctx: GraphQLContext) => {
       const filter: Record<string, unknown> = {};
-      if (region)                 filter['region'] = region;
+      if (region) {
+        const resolved = resolveLocationRegion(region);
+        if (resolved) filter['$and'] = [{ $or: [{ region: resolved.displayName }, { regionCode: { $in: resolved.codes } }] }];
+      }
       if (search?.trim()) {
         const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
-        filter['$or'] = [{ title: pattern }, { description: pattern }, { area: pattern }];
+        filter['$and'] = [...((filter['$and'] as unknown[]) ?? []), { $or: [{ title: pattern }, { description: pattern }, { area: pattern }] }];
       }
       if (category)               filter['category'] = category;
       if (condition)              filter['condition'] = condition;
@@ -129,7 +133,10 @@ export const marketplaceResolvers = {
 
     communityGives: async (_: unknown, { region, limit = 10 }: { region?: string; limit?: number }) => {
       const filter: Record<string, unknown> = { isDonation: true, status: 'AVAILABLE' };
-      if (region) filter['region'] = region;
+      if (region) {
+        const resolved = resolveLocationRegion(region);
+        if (resolved) filter['$or'] = [{ region: resolved.displayName }, { regionCode: { $in: resolved.codes } }];
+      }
       const docs = await MarketplaceItemModel.find(filter).limit(limit).sort({ _id: -1 });
       return docs.map(mapItem);
     },
@@ -143,6 +150,7 @@ export const marketplaceResolvers = {
       if (input.organisationId && !canAccessOrganisation(ctx.auth, input.organisationId, ['master_admin', 'site_admin', 'classifieds_manager'])) {
         throw new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } });
       }
+      const region = resolveLocationRegion(input.region);
       const doc = await MarketplaceItemModel.create({
         createdBy:    ctx.auth.firebaseUid,
         organisationId: input.organisationId ? new mongoose.Types.ObjectId(input.organisationId) : null,
@@ -150,7 +158,8 @@ export const marketplaceResolvers = {
         description:  input.description,
         category:     input.category,
         condition:    input.condition,
-        region:       input.region,
+        region:       region?.displayName ?? input.region.trim(),
+        regionCode:   region?.code ?? null,
         sellingPrice: input.isDonation ? 0 : input.price,
         currency:     input.currency,
         isDonation:   input.isDonation,
@@ -169,7 +178,11 @@ export const marketplaceResolvers = {
       if (input.currency?.trim()) update['currency'] = input.currency.trim().toUpperCase();
       if (input.condition)   update['condition'] = input.condition;
       if (input.category)    update['category'] = input.category;
-      if (input.region?.trim()) update['region'] = input.region.trim();
+      if (input.region?.trim()) {
+        const region = resolveLocationRegion(input.region);
+        update['region'] = region?.displayName ?? input.region.trim();
+        update['regionCode'] = region?.code ?? null;
+      }
       if (input.imageUrls)   update['imageUrls'] = input.imageUrls;
       if (input.isDonation !== undefined) {
         update['isDonation'] = input.isDonation;

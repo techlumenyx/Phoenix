@@ -220,8 +220,8 @@ export default function OrgListingsPage() {
       await updateStatus({ variables: { id: listing.id, status } });
       await refetch();
       showNotice('success', status === 'SOLD' ? 'Listing marked as sold.' : status === 'RESERVED' ? 'Listing reserved.' : 'Listing is available again.');
-    } catch (mutationError) {
-      showNotice('error', mutationError instanceof Error ? mutationError.message : 'Could not update listing status.');
+    } catch {
+      showNotice('error', 'Could not update listing status. Please try again.');
     }
   }
 
@@ -232,8 +232,8 @@ export default function OrgListingsPage() {
       await refetch();
       setModal(null);
       showNotice('success', 'Listing changes saved.');
-    } catch (mutationError) {
-      showNotice('error', mutationError instanceof Error ? mutationError.message : 'Could not save the listing.');
+    } catch {
+      showNotice('error', 'Could not save the listing. Please try again.');
     }
   }
 
@@ -244,8 +244,8 @@ export default function OrgListingsPage() {
       await refetch();
       setModal(null);
       showNotice('success', 'Listing deleted.');
-    } catch (mutationError) {
-      showNotice('error', mutationError instanceof Error ? mutationError.message : 'Could not delete the listing.');
+    } catch {
+      showNotice('error', 'Could not delete the listing. Please try again.');
     }
   }
 
@@ -278,7 +278,7 @@ export default function OrgListingsPage() {
         </div>
 
         {loading && !data && <div className="py-16 text-center text-sm text-gray-500">Loading listings…</div>}
-        {error && <div className="m-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error.message} <button onClick={() => refetch()} className="ml-2 font-semibold underline">Try again</button></div>}
+        {error && <div className="m-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">We couldn’t load your listings. <button onClick={() => refetch()} className="ml-2 font-semibold underline">Try again</button></div>}
         {!loading && !error && filtered.length === 0 && (
           <div className="flex flex-col items-center px-6 py-16 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FAF6ED] text-xl">◇</div>

@@ -6,6 +6,7 @@ import { EventModel, EventOrganisationNotificationModel, EventSeriesModel, RsvpM
 import type { GraphQLContext } from '../context';
 import { canAccessOrganisation, getOrganisationAccess } from '@christian-listings/auth';
 import { generateOccurrenceDates } from '../lib/recurrence';
+import { resolveLocationRegion } from '@christian-listings/utils';
 
 type EventDocument = HydratedDocument<IEvent>;
 
@@ -152,7 +153,11 @@ function eventUpdate(input: Partial<CreateEventInput>) {
     update['location'] = eventLocation(input.location);
     update['onlineUrl'] = input.location.type !== 'PHYSICAL' ? input.location.virtualLink ?? null : null;
   }
-  if (input.region !== undefined) update['region'] = input.region;
+  if (input.region !== undefined) {
+    const region = resolveLocationRegion(input.region);
+    update['region'] = region?.displayName ?? input.region.trim();
+    update['regionCode'] = region?.code ?? null;
+  }
   if (input.capacityLimit !== undefined) update['capacity'] = input.capacityLimit;
   if (input.imageUrls !== undefined) update['imageUrls'] = input.imageUrls;
   if (input.externalTicketUrl !== undefined) {
@@ -234,10 +239,13 @@ export const eventResolvers = {
 
     events: async (_: unknown, { region, search, category, organisationId, status, dateFrom, dateTo, locationType, ticketed, sort = 'DATE_ASC', limit = 20, after, collapseSeries = false }: EventsArgs) => {
       const filter: Record<string, unknown> = {};
-      if (region)         filter['region'] = region;
+      if (region) {
+        const resolved = resolveLocationRegion(region);
+        if (resolved) filter['$and'] = [{ $or: [{ region: resolved.displayName }, { regionCode: { $in: resolved.codes } }] }];
+      }
       if (search?.trim()) {
         const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
-        filter['$or'] = [{ title: pattern }, { description: pattern }];
+        filter['$and'] = [...((filter['$and'] as unknown[]) ?? []), { $or: [{ title: pattern }, { description: pattern }] }];
       }
       if (category)       filter['category'] = category;
       if (organisationId) filter['organisationId'] = new mongoose.Types.ObjectId(organisationId);
@@ -257,7 +265,10 @@ export const eventResolvers = {
 
     featuredEvents: async (_: unknown, { region }: { region?: string }) => {
       const filter: Record<string, unknown> = { isPromoted: true, status: 'PUBLISHED' };
-      if (region) filter['region'] = region;
+      if (region) {
+        const resolved = resolveLocationRegion(region);
+        if (resolved) filter['$or'] = [{ region: resolved.displayName }, { regionCode: { $in: resolved.codes } }];
+      }
       const docs = await EventModel.find(filter).limit(10).sort({ startDate: 1 });
       return docs.map((doc) => mapEvent(doc));
     },
@@ -304,6 +315,7 @@ export const eventResolvers = {
       const organisationId = new mongoose.Types.ObjectId(input.hostOrganisationIds[0]);
       const startDate = new Date(input.date);
       const endDate = input.endDate ? new Date(input.endDate) : null;
+      const region = resolveLocationRegion(input.region);
       const shared = {
         organisationId,
         createdBy: ctx.auth.firebaseUid,
@@ -313,7 +325,8 @@ export const eventResolvers = {
         eventType: input.location.type,
         location: eventLocation(input.location),
         onlineUrl: input.location.type !== 'PHYSICAL' ? input.location.virtualLink ?? null : null,
-        region: input.region,
+        region: region?.displayName ?? input.region.trim(),
+        regionCode: region?.code ?? null,
         capacity: input.capacityLimit ?? null,
         imageUrls: input.imageUrls ?? [],
         ticketUrl: input.externalTicketUrl ?? null,

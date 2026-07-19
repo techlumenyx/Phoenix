@@ -134,8 +134,8 @@ export default function OrgTeamPage() {
       setShowInvite(false);
       setEmail('');
       await refetch();
-    } catch (err) {
-      const text = err instanceof Error ? err.message : 'Invitation failed';
+    } catch {
+      const text = 'We couldn’t send the invitation. Check the details and try again.';
       setMessage(text);
       showToast(text, 'error');
     }
@@ -182,7 +182,7 @@ export default function OrgTeamPage() {
           <h2 className="font-serif text-xl font-bold">Members</h2>
         </div>
         {loading && <p className="p-10 text-center text-sm">Loading...</p>}
-        {error && <p className="p-10 text-center text-sm text-red-600">{error.message}</p>}
+        {error && <p className="p-10 text-center text-sm text-red-600">We couldn’t load the organisation team. Please try again.</p>}
         {members.map((member: TeamMember) => (
           <div
             key={member.user.id}

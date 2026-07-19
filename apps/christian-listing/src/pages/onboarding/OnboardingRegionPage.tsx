@@ -13,12 +13,12 @@ const UPDATE_PROFILE = gql`
 `;
 
 const SUGGESTED_REGIONS = [
-  { label: 'London, UK',       sub: 'Europe · GBP (£)',          value: 'GB-LDN' },
-  { label: 'New York, USA',    sub: 'North America · USD ($)',    value: 'US-NYC' },
-  { label: 'Lagos, Nigeria',   sub: 'Africa · NGN (₦)',           value: 'NG-LAG' },
-  { label: 'Nairobi, Kenya',   sub: 'Africa · KES (KSh)',         value: 'KE-NBI' },
-  { label: 'Toronto, Canada',  sub: 'North America · CAD ($)',    value: 'CA-TOR' },
-  { label: 'Accra, Ghana',     sub: 'Africa · GHS (₵)',           value: 'GH-ACC' },
+  { label: 'London, UK',       sub: 'Europe · GBP (£)',          value: 'GB-LND' },
+  { label: 'New York, USA',    sub: 'North America · USD ($)',    value: 'US-NY' },
+  { label: 'Lagos, Nigeria',   sub: 'Africa · NGN (₦)',           value: 'NG-LA' },
+  { label: 'Nairobi, Kenya',   sub: 'Africa · KES (KSh)',         value: 'KE-30' },
+  { label: 'Toronto, Canada',  sub: 'North America · CAD ($)',    value: 'CA-ON' },
+  { label: 'Accra, Ghana',     sub: 'Africa · GHS (₵)',           value: 'GH-AA' },
 ];
 
 export default function OnboardingRegionPage() {

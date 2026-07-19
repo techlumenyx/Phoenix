@@ -196,13 +196,8 @@ export default function OrgNotificationsPage() {
       await markAll({ variables: { organisationId } });
       await refetch();
       showToast('All notifications marked as read.', 'success');
-    } catch (mutationError) {
-      showToast(
-        mutationError instanceof Error
-          ? mutationError.message
-          : 'Notifications could not be updated.',
-        'error',
-      );
+    } catch {
+      showToast('Notifications could not be updated. Please try again.', 'error');
     }
   }
 

@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { userSafeError } from '../../lib/user-safe-error';
 import SceneHeader from './SceneHeader';
 import {
   signInWithEmailAndPassword,
@@ -69,7 +70,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
       await signInWithCustomToken(firebaseAuth, data.signUp.customToken);
       close();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed.');
+      setError(userSafeError(err, 'Sign up failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
       await signInWithEmailAndPassword(firebaseAuth, signinEmail, signinPassword);
       close();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign in failed.');
+      setError(userSafeError(err, 'Sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
       }
       close();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign in failed.');
+      setError(userSafeError(err, 'Sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -4,12 +4,15 @@ import { Link } from 'react-router-dom';
 import EventCard from '../components/cards/EventCard';
 import { ArrowRightIcon, SearchIcon } from '../components/layout/icons';
 import { usePreferredRegion } from '../lib/discovery';
+import { mergeUniqueById } from '../lib/homepage-selection';
 import { useAuthStore } from '../store/authStore';
 
 const EVENTS_HOME = gql`
-  query EventsHome($region: String, $search: String, $dateFrom: DateTime) {
-    trending: events(region: $region, search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: POPULAR, limit: 6, collapseSeries: true) { edges { ...HomeEvent } }
-    upcoming: events(region: $region, search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: DATE_ASC, limit: 20, collapseSeries: true) { edges { ...HomeEvent } }
+  query EventsHome($region: String, $search: String, $dateFrom: DateTime, $hasRegion: Boolean!) {
+    regionalTrending: events(region: $region, search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: POPULAR, limit: 6, collapseSeries: true) @include(if: $hasRegion) { edges { ...HomeEvent } }
+    globalTrending: events(search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: POPULAR, limit: 6, collapseSeries: true) { edges { ...HomeEvent } }
+    regionalUpcoming: events(region: $region, search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: DATE_ASC, limit: 20, collapseSeries: true) @include(if: $hasRegion) { edges { ...HomeEvent } }
+    globalUpcoming: events(search: $search, status: PUBLISHED, dateFrom: $dateFrom, sort: DATE_ASC, limit: 20, collapseSeries: true) { edges { ...HomeEvent } }
   }
   fragment HomeEvent on Event {
     id title description category date region rsvpCount imageUrls isPromoted
@@ -18,7 +21,7 @@ const EVENTS_HOME = gql`
 `;
 
 interface HomeEvent { id: string; title: string; description: string; category: string; date: string; region: string; rsvpCount: number; imageUrls: string[]; isPromoted: boolean; location: { type: string; city?: string | null; country?: string | null } }
-interface HomeData { trending: { edges: HomeEvent[] }; upcoming: { edges: HomeEvent[] } }
+interface HomeData { regionalTrending?: { edges: HomeEvent[] }; globalTrending: { edges: HomeEvent[] }; regionalUpcoming?: { edges: HomeEvent[] }; globalUpcoming: { edges: HomeEvent[] } }
 
 const CATEGORIES = [
   ['WORSHIP', 'Study / Worship', '🙏'], ['MUSIC', 'Music', '♫'], ['COMMUNITY', 'Community', '♧'], ['CULTURAL', 'Culture', '◇'],
@@ -33,8 +36,14 @@ export default function EventsPage() {
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
   const dateFrom = useMemo(() => new Date().toISOString(), []);
-  const { data, loading, error } = useQuery<HomeData>(EVENTS_HOME, { variables: { region: region || null, search: search || null, dateFrom }, fetchPolicy: 'cache-and-network' });
-  const upcoming = data?.upcoming.edges ?? [];
+  const hasRegion = Boolean(region);
+  const { data, loading, error } = useQuery<HomeData>(EVENTS_HOME, { variables: { region: region || null, search: search || null, dateFrom, hasRegion }, fetchPolicy: 'cache-and-network' });
+  const allowGlobalFallback = !search;
+  const localUpcoming = data?.regionalUpcoming?.edges ?? [];
+  const localTrending = data?.regionalTrending?.edges ?? [];
+  const upcoming = (allowGlobalFallback ? mergeUniqueById(localUpcoming, data?.globalUpcoming.edges ?? []) : (hasRegion ? localUpcoming : data?.globalUpcoming.edges ?? [])).slice(0, 20);
+  const trending = (allowGlobalFallback ? mergeUniqueById(localTrending, data?.globalTrending.edges ?? []) : (hasRegion ? localTrending : data?.globalTrending.edges ?? [])).slice(0, 6);
+  const isShowingGlobalFallback = Boolean(hasRegion && allowGlobalFallback && localUpcoming.length === 0 && upcoming.length > 0);
   const submit = (event: FormEvent) => { event.preventDefault(); setSearch(input.trim()); };
   const interestEvents = useMemo(() => {
     const categories = preferences.flatMap((preference) => preference.includes('Worship') ? ['WORSHIP', 'BIBLE_STUDY'] : preference.includes('Music') ? ['MUSIC'] : preference.includes('Charity') ? ['CHARITY', 'WELFARE'] : preference.includes('Youth') ? ['YOUTH'] : preference.includes('Conference') ? ['CONFERENCE'] : []);
@@ -50,7 +59,8 @@ export default function EventsPage() {
     </section>
 
     {error && <p className="px-6 py-10 text-center text-red-700">Events are temporarily unavailable.</p>}
-    <EventSection title="Trending Events" events={data?.trending.edges ?? []} loading={loading} featured />
+    {isShowingGlobalFallback && <p className="bg-amber-50 px-6 py-3 text-center text-sm text-amber-900">No current events near {region}. Showing events from across Christian Listings.</p>}
+    <EventSection title="Trending Events" events={trending} loading={loading} featured />
     <EventSection title="Based on your Interests" events={interestEvents} loading={loading} />
 
     <section className="bg-white px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Based on your Interests</h2><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{CATEGORIES.map(([value, label, icon]) => <Link key={value} to={`/events/all?category=${value}`} className="relative flex h-28 flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br from-[#20162a] to-[#785a75] p-4 text-left text-white transition hover:scale-[1.02]"><span className="absolute right-4 top-3 text-3xl">{icon}</span><strong className="text-sm">{label}</strong></Link>)}</div></section>

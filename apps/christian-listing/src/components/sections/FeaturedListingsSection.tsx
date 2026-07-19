@@ -30,7 +30,7 @@ export default function FeaturedListingsSection() {
               title={listing.title} description={listing.description}
               price={listing.isDonation ? 'Free donation' : formatPrice(listing.price, listing.currency)}
               location={listing.area ? `${listing.area}, ${listing.region}` : listing.region}
-              imageSrc={listing.imageUrls[0]} verified={listing.seller.isVerified}
+              imageSrc={listing.imageUrls[0]}
               href={`/marketplace/${listing.id}`}
             />
           </div>

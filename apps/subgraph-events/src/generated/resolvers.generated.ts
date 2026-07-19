@@ -382,7 +382,6 @@ export type UpdateEventInput = {
 export type User = {
   __typename?: 'User';
   firebaseUid: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -666,8 +665,7 @@ export type SeriesRsvpResolvers<ContextType = GraphQLContext, ParentType extends
 }>;
 
 export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
-  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & (GraphQLRecursivePick<ParentType, {"id":true}> | GraphQLRecursivePick<ParentType, {"firebaseUid":true}>), ContextType>;
-
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['User']>, { __typename: 'User' } & GraphQLRecursivePick<ParentType, {"firebaseUid":true}>, ContextType>;
 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

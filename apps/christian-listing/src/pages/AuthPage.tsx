@@ -10,6 +10,7 @@ import {
 import { firebaseAuth } from '../firebase';
 import { useAuthStore } from '../store/authStore';
 import SceneHeader from '../components/layout/SceneHeader';
+import { userSafeError } from '../lib/user-safe-error';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ export default function AuthPage() {
         navigate(from, { replace: true });
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Authentication failed.');
+      setError(userSafeError(err, 'Authentication failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ export default function AuthPage() {
       await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
       navigate(tab === 'signup' && !from.startsWith('/org/invite/') ? '/onboarding/region' : from, { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+      setError(userSafeError(err, 'Google sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }

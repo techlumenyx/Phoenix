@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { getAuth } from 'firebase/auth';
 import { useAuthStore } from '../store/authStore';
 import { MY_ORGANISATIONS, CREATE_ORGANISATION } from '../graphql/mutations';
+import { userSafeError } from '../lib/user-safe-error';
 
 export default function OrgSetupPage() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function OrgSetupPage() {
       useAuthStore.setState({ accountType: 'organisation' });
       navigate('/org', { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Setup failed — please try again.');
+      setError(userSafeError(err, 'Setup failed — please try again.'));
     } finally {
       setSubmitting(false);
     }

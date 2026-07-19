@@ -25,7 +25,7 @@ export const resolvers = {
   MarketplaceItem: marketplaceResolvers.MarketplaceItem,
   JobListing:      jobResolvers.JobListing,
   JobApplication:  jobApplicationResolvers.JobApplication,
-  Organisation:    jobResolvers.Organisation,
+  Organisation:    { ...jobResolvers.Organisation, ...marketplaceResolvers.Organisation },
   User:            { ...marketplaceResolvers.User, ...jobApplicationResolvers.User },
   MessageThread: messagingResolvers.MessageThread,
   Message: messagingResolvers.Message,

@@ -111,20 +111,20 @@ export default function ProfilePage() {
         preferences: result.data.updateProfile.preferences,
       } : state.dbUser }));
       showToast('Profile and privacy settings saved.', 'success');
-    } catch (saveError) {
-      showToast(saveError instanceof Error ? saveError.message : 'Profile could not be saved.', 'error');
+    } catch {
+      showToast('Profile could not be saved. Please try again.', 'error');
     }
   }
 
   async function signOut() { await logout(); navigate('/'); }
 
-  if (loading && !data) return <div className="mx-auto max-w-4xl px-6 py-12"><DirectoryState kind="loading" /></div>;
-  if (error) return <div className="mx-auto max-w-4xl px-6 py-12"><DirectoryState kind="error" title="Profile could not be loaded" onRetry={() => refetch()} /></div>;
+  if (loading && !data) return <div className="mx-auto max-w-4xl px-6 pb-12 pt-28"><DirectoryState kind="loading" /></div>;
+  if (error) return <div className="mx-auto max-w-4xl px-6 pb-12 pt-28"><DirectoryState kind="error" title="Profile could not be loaded" onRetry={() => refetch()} /></div>;
 
   const avatarCanPreview = Boolean(avatarUrl.trim()) && !avatarPreviewFailed;
 
   return (
-    <main className="mx-auto max-w-4xl px-5 py-10 md:px-8">
+    <main className="mx-auto max-w-4xl px-5 pb-10 pt-28 md:px-8">
       <div className="mb-7">
         <h1 className="font-serif text-4xl font-bold">Your profile</h1>
         <p className="mt-2 text-sm text-gray-500">Manage your member details, discovery interests, and who can see your profile information.</p>

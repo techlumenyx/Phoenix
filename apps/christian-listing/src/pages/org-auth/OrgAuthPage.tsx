@@ -9,6 +9,7 @@ import {
 import { firebaseAuth } from '../../firebase';
 import { useAuthStore } from '../../store/authStore';
 import SceneHeader from '../../components/layout/SceneHeader';
+import { userSafeError } from '../../lib/user-safe-error';
 
 const INPUT =
   'w-full bg-[#ede9e4] rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C9A96E] transition';
@@ -43,7 +44,7 @@ export default function OrgAuthPage() {
       await createUserWithEmailAndPassword(firebaseAuth, email, password);
       navigate('/org/onboarding/identity');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed.');
+      setError(userSafeError(err, 'Sign up failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ export default function OrgAuthPage() {
       await signInWithEmailAndPassword(firebaseAuth, email, password);
       navigate('/org');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign in failed.');
+      setError(userSafeError(err, 'Sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ export default function OrgAuthPage() {
       await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
       navigate('/org/onboarding/identity');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed.');
+      setError(userSafeError(err, 'Google sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }

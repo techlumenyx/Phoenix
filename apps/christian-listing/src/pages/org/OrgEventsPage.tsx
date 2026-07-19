@@ -86,8 +86,8 @@ export default function OrgEventsPage() {
       await refetch();
       showToast('Event details updated.', 'success');
       setEditTarget(null);
-    } catch (updateError) {
-      showToast(updateError instanceof Error ? updateError.message : 'Event could not be updated.', 'error');
+    } catch {
+      showToast('Event could not be updated. Please try again.', 'error');
     }
   }
 
@@ -98,8 +98,8 @@ export default function OrgEventsPage() {
       await refetch();
       showToast('Event schedule updated.', 'success');
       setCancelTarget(null);
-    } catch (cancelError) {
-      showToast(cancelError instanceof Error ? cancelError.message : 'Event could not be cancelled.', 'error');
+    } catch {
+      showToast('Event could not be cancelled. Please try again.', 'error');
     }
   }
 
@@ -190,7 +190,7 @@ export default function OrgEventsPage() {
           <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading events...</div>
         )}
         {error && (
-          <div className="flex items-center justify-center py-16 text-sm text-red-500">{error.message}</div>
+          <div className="flex items-center justify-center py-16 text-sm text-red-500">We couldn’t load your events. Please try again.</div>
         )}
         {!loading && !error && sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-2">

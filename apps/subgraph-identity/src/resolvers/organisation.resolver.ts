@@ -3,6 +3,7 @@ import mongoose, { type HydratedDocument } from 'mongoose';
 import { type IOrganisation } from '../models/organisation.model';
 import { IdentityOrganisationNotificationModel, OrganisationModel as _OrgModel } from '../models';
 import type { GraphQLContext } from '../context';
+import { resolveLocationRegion } from '@christian-listings/utils';
 import { canAccessOrganisation } from '@christian-listings/auth';
 import { sendVerificationSubmission } from '../services/admin-verification.client';
 
@@ -68,10 +69,13 @@ export const organisationResolvers = {
       { region, search, limit = 20, after }: { region?: string; search?: string; limit?: number; after?: string },
     ) => {
       const filter: Record<string, unknown> = { onboardingCompleted: true, isActive: { $ne: false } };
-      if (region) filter['region'] = { $regex: escapeRegex(region), $options: 'i' };
+      if (region) {
+        const resolved = resolveLocationRegion(region);
+        if (resolved) filter['$and'] = [{ $or: [{ region: resolved.displayName }, { regionCode: { $in: resolved.codes } }] }];
+      }
       if (search?.trim()) {
         const pattern = { $regex: escapeRegex(search.trim()), $options: 'i' };
-        filter['$or'] = [{ name: pattern }, { description: pattern }];
+        filter['$and'] = [...((filter['$and'] as unknown[]) ?? []), { $or: [{ name: pattern }, { description: pattern }] }];
       }
       if (after) filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
@@ -102,13 +106,15 @@ export const organisationResolvers = {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
+      const region = resolveLocationRegion(input.region);
       const doc = await OrganisationModel().create({
         createdBy: ctx.auth.firebaseUid,
         name: input.name,
         description: input.description ?? null,
         logoUrl: input.logoUrl ?? null,
         websiteUrl: input.websiteUrl ?? null,
-        region: input.region,
+        region: region?.displayName ?? input.region.trim(),
+        regionCode: region?.code ?? null,
         onboardingCompleted: true,
       });
       return mapOrg(doc);
@@ -127,9 +133,15 @@ export const organisationResolvers = {
           extensions: { code: 'FORBIDDEN' },
         });
       }
+      const update: Record<string, unknown> = { ...input };
+      if (input.region !== undefined) {
+        const region = resolveLocationRegion(input.region);
+        update['region'] = region?.displayName ?? input.region.trim();
+        update['regionCode'] = region?.code ?? null;
+      }
       const doc = await OrganisationModel().findOneAndUpdate(
         { _id: id },
-        { $set: input },
+        { $set: update },
         { new: true },
       );
       if (!doc) {

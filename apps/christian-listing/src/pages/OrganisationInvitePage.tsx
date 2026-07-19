@@ -41,7 +41,8 @@ export default function OrganisationInvitePage() {
     navigate('/org', { replace: true });
   }
   if (loading) return <div className="py-24 text-center">Loading invitation...</div>;
-  if (error || !invite) return <State title="Invitation not found" detail={error?.message} />;
+  if (error) return <State title="We couldn’t load this invitation" detail="Please try again in a moment." />;
+  if (!invite) return <State title="Invitation not found" detail="This invitation may have expired or is no longer available." />;
   if (invite.status !== 'PENDING' || new Date(invite.expiresAt) <= new Date())
     return (
       <State
@@ -88,7 +89,7 @@ export default function OrganisationInvitePage() {
             Sign in or create account
           </Link>
         )}
-        {acceptError && <p className="mt-4 text-sm text-red-600">{acceptError.message}</p>}
+        {acceptError && <p className="mt-4 text-sm text-red-600">We couldn’t accept this invitation. Please try again.</p>}
       </div>
     </main>
   );

@@ -26,7 +26,9 @@ const REGION_CURRENCY_MAP: Record<string, string> = {
 };
 
 type RatesMap = Record<string, number>;
-const rates = mockRates as RatesMap;
+const rates: RatesMap = Object.fromEntries(
+  Object.entries(mockRates).filter((entry): entry is [string, number] => typeof entry[1] === 'number'),
+);
 
 export class CurrencyConverter {
   convert(amount: number, fromCurrency: string, toCurrency: string): number {
