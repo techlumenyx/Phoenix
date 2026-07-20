@@ -10,6 +10,7 @@ export const MEDIA_PURPOSES = [
   'FEATURED_PLACEMENT_IMAGE',
 ] as const;
 export type MediaPurpose = (typeof MEDIA_PURPOSES)[number];
+export const MAX_VIDEO_BYTES = 20_000_000;
 
 type Policy = { maxBytes: number; mimeTypes: string[]; resourceType: 'image' | 'video' | 'raw'; private: boolean };
 export const MEDIA_POLICIES: Record<MediaPurpose, Policy> = {
@@ -18,9 +19,9 @@ export const MEDIA_POLICIES: Record<MediaPurpose, Policy> = {
   ORGANISATION_GALLERY: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
   VERIFICATION_DOCUMENT: { maxBytes: 10e6, mimeTypes: ['application/pdf', 'image/jpeg', 'image/png'], resourceType: 'raw', private: true },
   EVENT_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
-  EVENT_VIDEO: { maxBytes: 200e6, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
+  EVENT_VIDEO: { maxBytes: MAX_VIDEO_BYTES, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
   MARKETPLACE_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
-  MARKETPLACE_VIDEO: { maxBytes: 50e6, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
+  MARKETPLACE_VIDEO: { maxBytes: MAX_VIDEO_BYTES, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
   JOB_CV: { maxBytes: 10e6, mimeTypes: ['application/pdf'], resourceType: 'raw', private: true },
   FEATURED_PLACEMENT_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
 };
@@ -75,7 +76,7 @@ export function registerMediaUploadRoutes(fastify: FastifyInstance, options: Reg
       return result;
     } catch (error) {
       request.log.error({ err: error, purpose }, 'Media upload failed');
-      const message = error instanceof Error && error.message === 'FILE_TOO_LARGE' ? 'File exceeds the allowed size' : error instanceof Error && error.message === 'INVALID_FILE_SIGNATURE' ? 'The file contents do not match the selected file type' : error instanceof Error && error.message.startsWith('VIDEO_TOO_LONG:') ? `Video exceeds the ${error.message.split(':')[1]} second duration limit` : 'Media upload failed';
+      const message = error instanceof Error && error.message === 'FILE_TOO_LARGE' ? policy.resourceType === 'video' ? 'Video must be 20 MB or smaller' : 'File exceeds the allowed size' : error instanceof Error && error.message === 'INVALID_FILE_SIGNATURE' ? 'The file contents do not match the selected file type' : error instanceof Error && error.message.startsWith('VIDEO_TOO_LONG:') ? `Video exceeds the ${error.message.split(':')[1]} second duration limit` : 'Media upload failed';
       return reply.code(message.startsWith('File') ? 413 : 502).send({ error: message });
     }
   });

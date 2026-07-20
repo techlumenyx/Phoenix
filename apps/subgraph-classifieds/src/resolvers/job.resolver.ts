@@ -92,7 +92,7 @@ export const jobResolvers = {
       if (roleType)     filter['employmentType'] = roleType;
       if (workLocation) filter['workLocation'] = workLocation;
       if (skillTags?.length) filter['skillsRequired'] = { $in: skillTags };
-      if (minSalary !== undefined || maxSalary !== undefined) filter['salaryMin'] = { ...(minSalary !== undefined && { $gte: minSalary }), ...(maxSalary !== undefined && { $lte: maxSalary }) };
+      if (minSalary != null || maxSalary != null) filter['salaryMin'] = { ...(minSalary != null && { $gte: minSalary }), ...(maxSalary != null && { $lte: maxSalary }) };
       if (status)       filter['status'] = status;
       if (after)        filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 

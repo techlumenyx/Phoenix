@@ -258,7 +258,7 @@ export const eventResolvers = {
       if (status)         filter['status'] = status;
       if (dateFrom || dateTo) filter['startDate'] = { ...(dateFrom && { $gte: new Date(dateFrom) }), ...(dateTo && { $lte: new Date(dateTo) }) };
       if (locationType)   filter['eventType'] = locationType;
-      if (ticketed !== undefined) filter['isTicketed'] = ticketed;
+      if (ticketed != null) filter['isTicketed'] = ticketed;
       if (after)          filter['_id'] = { $gt: new mongoose.Types.ObjectId(after) };
 
       const sortBy: Record<string, 1 | -1> = sort === 'NEWEST' ? { createdAt: -1 } : sort === 'POPULAR' ? { rsvpCount: -1 } : { startDate: 1 };

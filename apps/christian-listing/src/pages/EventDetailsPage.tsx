@@ -140,7 +140,7 @@ export default function EventDetailsPage() {
   const relatedEvents = (data?.relatedEvents.edges ?? []).filter((related) => related.id !== event.id && related.category === event.category).slice(0, 4);
 
   return (
-    <main className="bg-[#fbfbfa] text-[#19141c] min-h-screen px-5 py-8 md:px-10 lg:px-16">
+    <main className="min-h-screen bg-[#fbfbfa] px-5 pb-8 pt-28 text-[#19141c] md:px-10 lg:px-16">
       {showRegistrationSuccess && <RegistrationSuccessModal event={event} onClose={() => setShowRegistrationSuccess(false)} />}
       <nav className="mx-auto max-w-7xl mb-5 text-sm font-serif text-gray-600" aria-label="Breadcrumb">
         <Link to="/events" className="hover:text-black">Events</Link> <span>›</span> <Link to="/events/all" className="hover:text-black">All Events</Link> <span>›</span> <span className="text-gray-900">Event Description</span>
@@ -224,5 +224,5 @@ function InfoRow({ icon, title, detail, link }: { icon: string; title: string; d
 }
 
 function PageMessage({ title, detail }: { title: string; detail?: string }) {
-  return <main className="flex min-h-[65vh] items-center justify-center bg-[#fbfbfa] px-6 text-center"><div><h1 className="font-serif text-3xl font-bold">{title}</h1>{detail && <p className="mt-3 text-sm text-gray-500">{detail}</p>}<Link to="/events" className="mt-6 inline-block rounded-full bg-[#42113f] px-5 py-2.5 text-sm text-white">Browse events</Link></div></main>;
+  return <main className="flex min-h-[65vh] items-center justify-center bg-[#fbfbfa] px-6 pt-20 text-center"><div><h1 className="font-serif text-3xl font-bold">{title}</h1>{detail && <p className="mt-3 text-sm text-gray-500">{detail}</p>}<Link to="/events" className="mt-6 inline-block rounded-full bg-[#42113f] px-5 py-2.5 text-sm text-white">Browse events</Link></div></main>;
 }

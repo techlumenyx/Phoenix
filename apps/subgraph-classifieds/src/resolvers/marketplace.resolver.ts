@@ -119,8 +119,8 @@ export const marketplaceResolvers = {
       if (category)               filter['category'] = category;
       if (condition)              filter['condition'] = condition;
       if (subCategory)            filter['subCategory'] = { $regex: escapeRegex(subCategory), $options: 'i' };
-      if (minPrice !== undefined || maxPrice !== undefined) filter['sellingPrice'] = { ...(minPrice !== undefined && { $gte: minPrice }), ...(maxPrice !== undefined && { $lte: maxPrice }) };
-      if (isDonation !== undefined) filter['isDonation'] = isDonation;
+      if (minPrice != null || maxPrice != null) filter['sellingPrice'] = { ...(minPrice != null && { $gte: minPrice }), ...(maxPrice != null && { $lte: maxPrice }) };
+      if (isDonation != null) filter['isDonation'] = isDonation;
       if (isPlatformAdmin(ctx)) {
         if (status) filter['status'] = status;
       } else {

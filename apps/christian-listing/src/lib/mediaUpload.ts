@@ -2,6 +2,7 @@ import { firebaseAuth } from '../firebase';
 
 export type UploadPurpose = 'MEMBER_AVATAR' | 'ORGANISATION_LOGO' | 'ORGANISATION_GALLERY' | 'VERIFICATION_DOCUMENT' | 'EVENT_IMAGE' | 'EVENT_VIDEO' | 'MARKETPLACE_IMAGE' | 'MARKETPLACE_VIDEO' | 'JOB_CV';
 export interface UploadedMedia { assetId: string; publicId: string; url: string; resourceType: 'image' | 'video' | 'raw'; format: string; bytes: number; width: number | null; height: number | null; duration: number | null; posterUrl: string | null }
+export const MAX_VIDEO_BYTES = 20_000_000;
 
 const endpointByPurpose: Record<UploadPurpose, string> = {
   MEMBER_AVATAR: process.env['CL_IDENTITY_MEDIA_URL'] ?? 'http://localhost:4001/media/upload',
@@ -16,6 +17,9 @@ const endpointByPurpose: Record<UploadPurpose, string> = {
 };
 
 export async function uploadMedia(file: File, purpose: UploadPurpose, ownerId?: string, onProgress?: (percent: number) => void): Promise<UploadedMedia> {
+  if ((purpose === 'EVENT_VIDEO' || purpose === 'MARKETPLACE_VIDEO') && file.size > MAX_VIDEO_BYTES) {
+    throw new Error('Video must be 20 MB or smaller.');
+  }
   const token = await firebaseAuth.currentUser?.getIdToken();
   if (!token) throw new Error('Sign in before uploading files.');
   const url = new URL(endpointByPurpose[purpose]);
