@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDownIcon, ChurchLogo, MapPinIcon } from './icons';
 import SignInModal from './SignInModal';
 import { useAuthStore } from '../../store/authStore';
+import { getDashboardRoute } from '../../lib/dashboard-route';
 
 const NAV_LINKS = [
   { label: 'Home',        href: '/' },
@@ -43,7 +44,13 @@ function UserAvatar({ name }: { name: string }) {
   );
 }
 
-function UserMenu({ displayName }: { displayName: string }) {
+function UserMenu({
+  displayName,
+  dashboardRoute,
+}: {
+  displayName: string;
+  dashboardRoute: '/org' | '/dashboard';
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -80,7 +87,7 @@ function UserMenu({ displayName }: { displayName: string }) {
       {open && (
         <div className="absolute right-0 mt-2 w-44 rounded-xl bg-[#1B1B1B] border border-white/10 shadow-xl overflow-hidden z-50">
           <button
-            onClick={() => { setOpen(false); navigate('/dashboard'); }}
+            onClick={() => { setOpen(false); navigate(dashboardRoute); }}
             className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
           >
             Dashboard
@@ -113,7 +120,7 @@ function UserMenu({ displayName }: { displayName: string }) {
 export default function Navbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, dbUser, accountType, logout } = useAuthStore();
 
   const [menuOpen, setMenuOpen]     = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
@@ -122,6 +129,11 @@ export default function Navbar() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   const displayName = user?.displayName ?? user?.email ?? 'User';
+  const dashboardRoute = getDashboardRoute({
+    accountType,
+    orgId: dbUser?.orgId,
+    roles: dbUser?.roles,
+  });
 
   async function handleMobileSignOut() {
     setMenuOpen(false);
@@ -167,7 +179,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <RegionSelector />
           {user ? (
-            <UserMenu displayName={displayName} />
+            <UserMenu displayName={displayName} dashboardRoute={dashboardRoute} />
           ) : (
             <button
               onClick={() => setSignInOpen(true)}
@@ -219,7 +231,7 @@ export default function Navbar() {
                     </span>
                   </button>
                   <button
-                    onClick={() => { setMenuOpen(false); navigate('/dashboard'); }}
+                    onClick={() => { setMenuOpen(false); navigate(dashboardRoute); }}
                     className="self-start text-sm font-medium text-white/70 hover:text-white transition-colors"
                   >
                     Dashboard
