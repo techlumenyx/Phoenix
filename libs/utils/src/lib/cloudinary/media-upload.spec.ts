@@ -1,4 +1,4 @@
-import { MAX_VIDEO_BYTES, MEDIA_POLICIES } from './media-upload';
+import { MAX_VIDEO_BYTES, MEDIA_POLICIES, resolveMediaFormat } from './media-upload';
 
 describe('media upload policies', () => {
   it('limits every video purpose to 20 MB', () => {
@@ -16,5 +16,12 @@ describe('media upload policies', () => {
       'image/jpeg',
       'image/png',
     ]));
+  });
+
+  it('derives formats when Cloudinary omits them for raw private assets', () => {
+    expect(resolveMediaFormat(undefined, 'application/pdf')).toBe('pdf');
+    expect(resolveMediaFormat('', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')).toBe('docx');
+    expect(resolveMediaFormat(undefined, 'image/jpeg')).toBe('jpg');
+    expect(resolveMediaFormat('PNG', 'application/octet-stream')).toBe('png');
   });
 });

@@ -131,6 +131,7 @@ async function uploadMediaStream(stream: Readable, input: { policy: Policy; purp
   });
   const publicId = String(result['public_id']);
   const resourceType = input.policy.resourceType;
+  const format = resolveMediaFormat(result['format'], input.mimeType);
   const duration = numberOrNull(result['duration']);
   const durationLimit = input.purpose === 'EVENT_VIDEO' ? 120 : input.purpose === 'MARKETPLACE_VIDEO' ? 30 : null;
   if (durationLimit && duration && duration > durationLimit) {
@@ -138,8 +139,8 @@ async function uploadMediaStream(stream: Readable, input: { policy: Policy; purp
     throw new Error(`VIDEO_TOO_LONG:${durationLimit}`);
   }
   return {
-    assetId: String(result['asset_id']), publicId, url: input.policy.private ? encodePrivateMediaRef(resourceType, String(result['format'] ?? ''), publicId) : String(result['secure_url']), resourceType,
-    format: String(result['format'] ?? ''), bytes: Number(result['bytes'] ?? bytes),
+    assetId: String(result['asset_id']), publicId, url: input.policy.private ? encodePrivateMediaRef(resourceType, format, publicId) : String(result['secure_url']), resourceType,
+    format, bytes: Number(result['bytes'] ?? bytes),
     width: numberOrNull(result['width']), height: numberOrNull(result['height']), duration,
     posterUrl: resourceType === 'video' ? cloudinaryClient.url(publicId, { resource_type: 'video', format: 'jpg', transformation: [{ width: 1280, height: 720, crop: 'fill', gravity: 'auto' }] }) : null,
   };
@@ -148,6 +149,21 @@ async function uploadMediaStream(stream: Readable, input: { policy: Policy; purp
 function safeSegment(value: string) { return value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || 'unknown'; }
 function sanitiseName(value: string) { return value.replace(/[|=\r\n]/g, '_').slice(0, 180); }
 function numberOrNull(value: unknown) { return typeof value === 'number' && Number.isFinite(value) ? value : null; }
+
+export function resolveMediaFormat(value: unknown, mimeType: string) {
+  const reported = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (reported) return reported;
+  return ({
+    'application/pdf': 'pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'video/mp4': 'mp4',
+    'video/quicktime': 'mov',
+    'video/webm': 'webm',
+  } as Record<string, string>)[mimeType] ?? 'bin';
+}
 
 function matchesSignature(bytes: Buffer, allowedMimeTypes: string[]) {
   const hex = bytes.subarray(0, 16).toString('hex');
