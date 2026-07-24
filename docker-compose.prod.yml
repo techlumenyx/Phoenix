@@ -47,11 +47,9 @@ services:
       - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
       - APP_SECRET=${APP_SECRET}
       - APP_URL=${APP_URL}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - SMTP_FROM=${SMTP_FROM}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/health"]
       interval: 10s
@@ -72,6 +70,9 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
       interval: 10s
@@ -92,6 +93,10 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
+      - IDENTITY_INTERNAL_URL=http://identity:4001
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
       interval: 10s
@@ -112,6 +117,14 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - CL_MEDIA_ALLOWED_ORIGINS=${CL_MEDIA_ALLOWED_ORIGINS}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - REDIS_URL=redis://redis:6379
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
+      - SENDGRID_WEBHOOK_PUBLIC_KEY=${SENDGRID_WEBHOOK_PUBLIC_KEY}
+      - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
+      - EMAIL_RETRY_DELAY_MS=${EMAIL_RETRY_DELAY_MS:-5000}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/health"]
       interval: 10s
@@ -121,21 +134,51 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
-  # worker:
-  #   image: ghcr.io/techlumenyx/phoenix/worker:latest
-  #   environment:
-  #     - NODE_ENV=production
-  #     - REDIS_URL=redis://redis:6379
-  #     - MONGO_URI=${MONGO_URI}
-  #     - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
-  #   depends_on:
-  #     - redis
-  #   restart: unless-stopped
-  # ↑ Uncomment when apps/worker is scaffolded
+  worker:
+    image: ghcr.io/techlumenyx/phoenix/worker:latest
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME:-Christian Listings}
+      - SENDGRID_REPLY_TO=${SENDGRID_REPLY_TO}
+      - EMAIL_WORKER_CONCURRENCY=${EMAIL_WORKER_CONCURRENCY:-5}
+      - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
+      - EMAIL_RETRY_DELAY_MS=${EMAIL_RETRY_DELAY_MS:-5000}
+      - EMAIL_SCHEDULE_SCAN_MS=${EMAIL_SCHEDULE_SCAN_MS:-60000}
+    depends_on:
+      redis:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+    restart: unless-stopped
+
+  seed:
+    profiles: ["tools"]
+    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - SEED_ENVIRONMENT=${SEED_ENVIRONMENT:-}
+      - SEED_REMOTE_CONFIRM=${SEED_REMOTE_CONFIRM:-}
+    volumes:
+      - ./tools/scripts/seed-local-mongo.js:/app/tools/scripts/seed-local-mongo.js:ro
+    command: ["node", "/app/tools/scripts/seed-local-mongo.js", "--remote"]
+    restart: "no"
 
 volumes:
   redis_data:

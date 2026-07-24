@@ -11,6 +11,8 @@ import { AdminNotificationSchema, type IAdminNotification } from './admin-notifi
 import { AuditExportSchema, type IAuditExport } from './audit-export.model';
 import { AdminCommandSchema, type IAdminCommand } from './admin-command.model';
 import { MediaAssetSchema, type IMediaAsset } from '@christian-listings/db';
+import { EmailDeliverySchema, type IEmailDelivery } from './email-delivery.model';
+import { ScheduledEmailSchema, type IScheduledEmail } from './scheduled-email.model';
 
 export let ModerationReportModel: mongoose.Model<IModerationReport>;
 export let ModerationCaseModel: mongoose.Model<IModerationCase>;
@@ -24,6 +26,8 @@ export let AdminNotificationModel: mongoose.Model<IAdminNotification>;
 export let AuditExportModel: mongoose.Model<IAuditExport>;
 export let AdminCommandModel: mongoose.Model<IAdminCommand>;
 export let MediaAssetModel: mongoose.Model<IMediaAsset>;
+export let EmailDeliveryModel: mongoose.Model<IEmailDelivery>;
+export let ScheduledEmailModel: mongoose.Model<IScheduledEmail>;
 
 export function setupModels(connection: Connection) {
   ModerationReportModel = connection.model<IModerationReport>('ModerationReport', ModerationReportSchema);
@@ -38,4 +42,6 @@ export function setupModels(connection: Connection) {
   AuditExportModel = connection.model<IAuditExport>('AuditExport', AuditExportSchema);
   AdminCommandModel = connection.model<IAdminCommand>('AdminCommand', AdminCommandSchema);
   MediaAssetModel = connection.model<IMediaAsset>('MediaAsset', MediaAssetSchema);
+  EmailDeliveryModel = connection.model<IEmailDelivery>('EmailDelivery', EmailDeliverySchema);
+  ScheduledEmailModel = connection.model<IScheduledEmail>('ScheduledEmail', ScheduledEmailSchema);
 }

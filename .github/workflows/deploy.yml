@@ -135,6 +135,8 @@ jobs:
             dockerfile: docker/Dockerfile.node
           - app: subgraph-admin
             dockerfile: docker/Dockerfile.node
+          - app: worker
+            dockerfile: docker/Dockerfile.node
 
     steps:
       - name: Checkout

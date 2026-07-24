@@ -15,9 +15,35 @@ Copy `.env.example` to `.env` and fill in all values before running any service.
 | `CLASSIFIEDS_INTERNAL_URL` | Yes for admin | Classifieds service HTTP base URL. Local default: `http://localhost:4003`; Docker: `http://classifieds:4003`. |
 | `IDENTITY_INTERNAL_URL` | Yes for admin | Identity service HTTP base URL. Local default: `http://localhost:4001`; Docker: `http://identity:4001`. |
 | `EVENTS_INTERNAL_URL` | Yes for admin | Events service HTTP base URL. Local default: `http://localhost:4002`; Docker: `http://events:4002`. |
-| `ADMIN_ALLOWED_ORIGINS` | Yes in production | Comma-separated exact origins allowed to call the admin subgraph. Do not use wildcards. |
+| `ADMIN_ALLOWED_ORIGINS` | Yes in production | Comma-separated exact origins allowed to call the admin subgraph. Include both Firebase Hosting aliases (`*.web.app` and `*.firebaseapp.com`) and do not use wildcards. |
 | `ADMIN_RATE_LIMIT_PER_MINUTE` | No | Per-admin GraphQL mutation limit. Defaults to 120 per minute and enforces a minimum of 10. |
 | `APP_VERSION` / `GIT_SHA` | Recommended | Release identifiers displayed by the admin System Health page. |
+
+## Transactional email (admin + worker)
+
+Email intents are stored in `cl_admin`, queued with BullMQ, and delivered by `apps/worker`. The public web apps never receive SendGrid credentials.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `EMAIL_ENABLED` | No | Set to `true` only after SendGrid sender/domain authentication is complete. Defaults to `false`; intents are recorded as suppressed and no message is sent. |
+| `EMAIL_PROVIDER` | No | Delivery provider. Currently `sendgrid`. |
+| `REDIS_URL` | Yes for admin/worker when enabled | BullMQ Redis connection. Docker value: `redis://redis:6379`. |
+| `SENDGRID_API_KEY` | Yes for worker when enabled | Restricted SendGrid API key with Mail Send permission. Never expose this as a `CL_*` variable. |
+| `SENDGRID_FROM_EMAIL` | Yes for worker when enabled | Address under the authenticated sending domain. |
+| `SENDGRID_FROM_NAME` | No | Display name; defaults to `Christian Listings`. |
+| `SENDGRID_REPLY_TO` | No | Reply-to mailbox for transactional mail. |
+| `SENDGRID_WEBHOOK_PUBLIC_KEY` | Yes in production | ECDSA public key from SendGrid Event Webhook settings. The admin service rejects unsigned or invalid webhook requests. |
+| `PUBLIC_APP_URL` | Yes | Public Christian Listings URL used in email links. Local value: `http://localhost:3000`. |
+| `EMAIL_WORKER_CONCURRENCY` | No | Concurrent delivery jobs; defaults to 5. |
+| `EMAIL_MAX_ATTEMPTS` | No | Exponential retry attempts; defaults to 5. |
+| `EMAIL_RETRY_DELAY_MS` | No | Initial exponential retry delay; defaults to 5000 ms. |
+| `EMAIL_SCHEDULE_SCAN_MS` | No | Due-schedule scan interval; defaults to 60000 ms. |
+
+Redis runs with AOF persistence and `noeviction` in the supplied Compose files, as required for queue reliability.
+
+## Remote database seeding
+
+`SEED_ENVIRONMENT` and `SEED_REMOTE_CONFIRM` are temporary command-scoped safeguards for the one-off production Compose seed service. Do not store the confirmation permanently in `.env`. See `docs/SEEDING.md` for the exact commands.
 
 **Note on `FIREBASE_SERVICE_ACCOUNT_JSON`:** The raw service account JSON contains newlines which break environment variable handling in many shells. Always base64-encode the entire file before setting this variable.
 

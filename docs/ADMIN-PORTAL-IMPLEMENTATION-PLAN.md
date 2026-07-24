@@ -155,7 +155,7 @@ Decision: follow ADR 0008. Platform administrators are separate admin principals
 | Highlights/featured content | Blueprint says admin curated; no backend exists | Add manual curation, ordering, scheduling, and regional placement | P1 Basic |
 | Promotions | Models contain promoted fields but no full operational workflow | View/expire/manual feature in P1; pricing, payment and approval workflow in Standard | P1/Future |
 | Information board | Not implemented in CL | Defer admin moderation until organisation/public feature exists | Future dependency |
-| Transactional emails | Not implemented | Add template catalogue, delivery log and retry visibility when provider is selected | Future dependency |
+| Transactional emails | Implemented | SendGrid/BullMQ delivery, scheduling, signed webhook outcomes, delivery history and controlled retries | Production activation depends on verified sender/domain credentials |
 
 ## 4. Product principles
 

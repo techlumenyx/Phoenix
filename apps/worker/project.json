@@ -1,0 +1,25 @@
+{
+  "name": "worker",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/worker/src",
+  "projectType": "application",
+  "tags": ["scope:worker", "type:app"],
+  "targets": {
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": { "buildTarget": "worker:build", "runBuildTargetDependencies": false, "port": 9234 },
+      "configurations": {
+        "development": { "buildTarget": "worker:build:development" },
+        "production": { "buildTarget": "worker:build:production" }
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": { "jestConfig": "apps/worker/jest.config.ts", "passWithNoTests": true }
+    }
+  }
+}

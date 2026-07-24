@@ -42,6 +42,7 @@ services:
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
       - ADMIN_INTERNAL_URL=http://admin:4004
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-http://localhost:3000}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4001/health']
       interval: 10s
@@ -65,6 +66,8 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-http://localhost:3000}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
       interval: 10s
@@ -89,6 +92,8 @@ services:
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
       - ADMIN_INTERNAL_URL=http://admin:4004
+      - IDENTITY_INTERNAL_URL=http://identity:4001
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-http://localhost:3000}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: 10s
@@ -119,6 +124,13 @@ services:
       - ADMIN_RATE_LIMIT_PER_MINUTE=${ADMIN_RATE_LIMIT_PER_MINUTE:-120}
       - APP_VERSION=${APP_VERSION:-development}
       - GIT_SHA=${GIT_SHA:-local}
+      - REDIS_URL=redis://redis:6379
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-http://localhost:3000}
+      - SENDGRID_WEBHOOK_PUBLIC_KEY=${SENDGRID_WEBHOOK_PUBLIC_KEY:-}
+      - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
+      - EMAIL_RETRY_DELAY_MS=${EMAIL_RETRY_DELAY_MS:-5000}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4004/health']
       interval: 10s
@@ -146,3 +158,44 @@ services:
       - '3001:80'
     depends_on:
       - gateway
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        APP_NAME: worker
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - INTERNAL_SERVICE_KEY=${INTERNAL_SERVICE_KEY}
+      - ADMIN_INTERNAL_URL=http://admin:4004
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-}
+      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME:-Christian Listings}
+      - SENDGRID_REPLY_TO=${SENDGRID_REPLY_TO:-}
+      - EMAIL_WORKER_CONCURRENCY=${EMAIL_WORKER_CONCURRENCY:-5}
+      - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
+      - EMAIL_RETRY_DELAY_MS=${EMAIL_RETRY_DELAY_MS:-5000}
+      - EMAIL_SCHEDULE_SCAN_MS=${EMAIL_SCHEDULE_SCAN_MS:-60000}
+    depends_on:
+      redis:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+
+volumes:
+  redis_data:

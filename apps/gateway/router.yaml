@@ -22,7 +22,9 @@ cors:
         - http://localhost:5173
         - http://localhost:3000
         - https://christian-listing.web.app
+        - https://christian-listing.firebaseapp.com
         - https://christian-listings-admin.web.app
+        - https://christian-listings-admin.firebaseapp.com
       allow_credentials: true
       methods:
         - GET

@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAdminAuth, type AdminRole } from '../auth/authStore';
 import AdminNotifications from './AdminNotifications';
 
-type IconName = 'overview' | 'shield' | 'check' | 'users' | 'building' | 'content' | 'chart' | 'audit' | 'star' | 'system';
+type IconName = 'overview' | 'shield' | 'check' | 'users' | 'building' | 'content' | 'chart' | 'audit' | 'star' | 'system' | 'mail';
 
 const navigation: Array<{ label: string; items: Array<{ label: string; to: string; icon: IconName; roles?: AdminRole[] }> }> = [
   { label: 'Work', items: [
@@ -20,6 +20,7 @@ const navigation: Array<{ label: string; items: Array<{ label: string; to: strin
     { label: 'Analytics', to: '/analytics', icon: 'chart' },
     { label: 'Audit log', to: '/audit', icon: 'audit', roles: ['AUDITOR', 'TRUST_SAFETY'] },
     { label: 'Templates', to: '/templates', icon: 'content', roles: ['TRUST_SAFETY', 'VERIFICATION_REVIEWER', 'CONTENT_MANAGER', 'SUPPORT_AGENT', 'AUDITOR'] },
+    { label: 'Email delivery', to: '/email-deliveries', icon: 'mail', roles: ['SUPPORT_AGENT', 'AUDITOR'] },
     { label: 'Highlights', to: '/curation', icon: 'star', roles: ['CONTENT_MANAGER'] },
     { label: 'System health', to: '/system', icon: 'system', roles: ['AUDITOR'] },
   ] },
@@ -119,6 +120,7 @@ function Icon({ name }: { name: IconName }) {
     audit: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     star: <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3z" />,
     system: <><path d="M12 3v8M8 5a8 8 0 108 0" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M4 7l8 6 8-6" /></>,
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0 fill-none stroke-current stroke-[1.8]" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }

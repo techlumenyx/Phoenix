@@ -11,7 +11,7 @@ import { createMongoConnection } from '@christian-listings/db';
 import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
 import { resolvers } from './resolvers';
-import { MediaAssetModel, setupModels } from './models';
+import { MediaAssetModel, OrganisationModel, UserModel, setupModels } from './models';
 import { applyIdentityAccountAction, applyVerificationDecision, identityDirectory } from './services/admin-identity.service';
 
 const typeDefs = parse(
@@ -76,6 +76,15 @@ async function bootstrap() {
     if (!input || !['USER', 'ORGANISATION'].includes(input.type) || !['WARN', 'SUSPEND', 'REACTIVATE'].includes(input.action) || typeof input.reason !== 'string' || input.reason.trim().length < 5) return reply.code(400).send({ error: 'Invalid account action' });
     const result = await applyIdentityAccountAction(input);
     return result ?? reply.code(404).send({ error: 'Account not found' });
+  });
+
+  fastify.get<{ Params: { id: string } }>('/internal/organisations/:id/email-contact', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const organisation = await OrganisationModel.findById(request.params.id).select('name contactEmail verificationDetails.officialEmail createdBy');
+    if (!organisation) return reply.code(404).send({ error: 'Organisation not found' });
+    const owner = await UserModel.findOne({ firebaseUid: organisation.createdBy }).select('email');
+    const email = organisation.contactEmail ?? organisation.verificationDetails.officialEmail ?? owner?.email ?? null;
+    return { name: organisation.name ?? 'Organisation', email };
   });
 
   await fastify.register(fastifyApollo(apollo), {

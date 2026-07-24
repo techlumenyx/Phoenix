@@ -154,6 +154,7 @@ export enum AuditAction {
   Assign = 'ASSIGN',
   Dismiss = 'DISMISS',
   DownloadAuditExport = 'DOWNLOAD_AUDIT_EXPORT',
+  EmailRetry = 'EMAIL_RETRY',
   EventCancel = 'EVENT_CANCEL',
   EventRestore = 'EVENT_RESTORE',
   NotificationRead = 'NOTIFICATION_READ',
@@ -251,6 +252,7 @@ export type ClassifiedOrganisationNotification = {
 
 export enum ContentType {
   AuditExport = 'AUDIT_EXPORT',
+  EmailDelivery = 'EMAIL_DELIVERY',
   Event = 'EVENT',
   FeaturedPlacement = 'FEATURED_PLACEMENT',
   Job = 'JOB',
@@ -357,6 +359,49 @@ export type EducationEntryInput = {
   yearOfCompletion?: InputMaybe<Scalars['Int']['input']>;
   yearOfEnrollment?: InputMaybe<Scalars['Int']['input']>;
 };
+
+export type EmailDelivery = {
+  __typename?: 'EmailDelivery';
+  attemptCount: Scalars['Int']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  error?: Maybe<Scalars['String']['output']>;
+  events: Array<EmailDeliveryEvent>;
+  id: Scalars['ID']['output'];
+  provider: Scalars['String']['output'];
+  providerMessageId?: Maybe<Scalars['String']['output']>;
+  queuedAt?: Maybe<Scalars['DateTime']['output']>;
+  sentAt?: Maybe<Scalars['DateTime']['output']>;
+  sourceEntityId?: Maybe<Scalars['String']['output']>;
+  sourceEntityType?: Maybe<Scalars['String']['output']>;
+  sourceService?: Maybe<Scalars['String']['output']>;
+  status: EmailDeliveryStatus;
+  subject: Scalars['String']['output'];
+  templateKey: Scalars['String']['output'];
+  to: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type EmailDeliveryConnection = {
+  __typename?: 'EmailDeliveryConnection';
+  edges: Array<EmailDelivery>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type EmailDeliveryEvent = {
+  __typename?: 'EmailDeliveryEvent';
+  event: Scalars['String']['output'];
+  occurredAt: Scalars['DateTime']['output'];
+  response?: Maybe<Scalars['String']['output']>;
+};
+
+export enum EmailDeliveryStatus {
+  Accepted = 'ACCEPTED',
+  Failed = 'FAILED',
+  Queued = 'QUEUED',
+  Sent = 'SENT',
+  Suppressed = 'SUPPRESSED'
+}
 
 export type Event = {
   __typename?: 'Event';
@@ -870,6 +915,7 @@ export type Mutation = {
   requestAuditExport: AuditExport;
   resendOrganisationInvite: OrganisationInvite;
   resolveModerationCase: ModerationCase;
+  retryEmailDelivery: EmailDelivery;
   revokeOrganisationInvite: OrganisationInvite;
   rsvpToEvent: Rsvp;
   rsvpToSeries: SeriesRsvp;
@@ -1147,6 +1193,11 @@ export type MutationResolveModerationCaseArgs = {
 };
 
 
+export type MutationRetryEmailDeliveryArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRevokeOrganisationInviteArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1398,6 +1449,7 @@ export type Query = {
   classifiedOrganisationNotifications: Array<ClassifiedOrganisationNotification>;
   classifiedOrganisationUnreadCount: Scalars['Int']['output'];
   communityGives: Array<MarketplaceItem>;
+  emailDeliveries: EmailDeliveryConnection;
   event?: Maybe<Event>;
   eventOrganisationNotifications: Array<EventOrganisationNotification>;
   eventOrganisationUnreadCount: Scalars['Int']['output'];
@@ -1493,6 +1545,15 @@ export type QueryClassifiedOrganisationUnreadCountArgs = {
 export type QueryCommunityGivesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   region?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryEmailDeliveriesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<EmailDeliveryStatus>;
+  templateKey?: InputMaybe<Scalars['String']['input']>;
 };
 
 

@@ -20,7 +20,9 @@ cors:
   policies:
     - origins:
         - https://christian-listing.web.app
+        - https://christian-listing.firebaseapp.com
         - https://christian-listings-admin.web.app
+        - https://christian-listings-admin.firebaseapp.com
       allow_credentials: true
       methods: [GET, POST, OPTIONS]
       allow_headers:

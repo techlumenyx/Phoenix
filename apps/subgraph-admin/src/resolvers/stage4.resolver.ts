@@ -99,7 +99,7 @@ export const stage4Resolvers = {
         ...services.map((service) => ({ ...service, checkedAt })),
         provider('Firebase Admin', 'IDENTITY', Boolean(process.env['FIREBASE_SERVICE_ACCOUNT_JSON']), checkedAt),
         provider('Cloudinary', 'MEDIA', Boolean(process.env['CLOUDINARY_CLOUD_NAME']), checkedAt, 'Optional until direct uploads are enabled'),
-        provider('Transactional email', 'MESSAGING', Boolean(process.env['TRANSACTIONAL_EMAIL_API_KEY']), checkedAt, 'Not configured in the current delivery phase'),
+        provider('Transactional email', 'MESSAGING', process.env['EMAIL_ENABLED'] === 'true' && Boolean(process.env['SENDGRID_WEBHOOK_PUBLIC_KEY']), checkedAt, process.env['EMAIL_ENABLED'] === 'true' ? 'SendGrid delivery enabled' : 'Delivery disabled; email intents are suppressed safely'),
         { name: 'Command reconciliation', category: 'WORKFLOW', status: unresolvedCommands ? 'DOWN' : 'OPERATIONAL', detail: unresolvedCommands ? `${unresolvedCommands} command(s) require manual reconciliation` : 'No unresolved cross-service commands', latencyMs: null, checkedAt },
       ];
       return { overallStatus: dependencies.some((item) => item.status === 'DOWN') ? 'OUTAGE' : dependencies.some((item) => item.status === 'DEGRADED') ? 'DEGRADED' : 'OPERATIONAL', version: process.env['GIT_SHA'] ?? process.env['APP_VERSION'] ?? 'development', dependencies, checkedAt };

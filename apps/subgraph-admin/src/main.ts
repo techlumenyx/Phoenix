@@ -17,6 +17,10 @@ import { ingestVerificationSubmission, type VerificationIntakeInput } from './se
 import { registerAdminLaunchHardening } from './services/launch-hardening';
 import { reconcileAuditExports } from './resolvers/stage4.resolver';
 import { reconcileAdminCommands } from './services/command-reconciliation.service';
+import { acceptEmailIntent, cancelScheduledEmail, claimDueEmails, isEmailIntent, reconcileEmailQueue, recordEmailResult } from './services/email-orchestration.service';
+import type { EmailDeliveryResult } from '@christian-listings/email';
+import rawBody from 'fastify-raw-body';
+import { ingestSendGridEvents, verifySendGridWebhook, type SendGridEvent } from './services/sendgrid-webhook.service';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/admin.graphql'), 'utf-8'),
@@ -46,11 +50,32 @@ async function bootstrap() {
 
   await apollo.start();
 
+  await fastify.register(rawBody, { global: false, encoding: false, runFirst: true });
+
   registerAdminLaunchHardening(fastify);
   await fastify.register(buildAuthPlugin({
     optional: false,
-    internalPaths: ['/internal/reports/marketplace', '/internal/verifications'],
+    publicPaths: ['/webhooks/sendgrid'],
+    internalPaths: [
+      '/internal/reports/marketplace', '/internal/verifications', '/internal/emails',
+      '/internal/emails/*',
+    ],
   }));
+
+  fastify.post('/webhooks/sendgrid', { config: { rawBody: true } }, async (request, reply) => {
+    const signature = request.headers['x-twilio-email-event-webhook-signature'];
+    const timestamp = request.headers['x-twilio-email-event-webhook-timestamp'];
+    const raw = (request as typeof request & { rawBody?: Buffer }).rawBody;
+    if (typeof signature !== 'string' || typeof timestamp !== 'string' || !raw) return reply.code(400).send({ error: 'Missing webhook signature' });
+    try {
+      if (!verifySendGridWebhook(raw, signature, timestamp)) return reply.code(401).send({ error: 'Invalid webhook signature' });
+    } catch (error) {
+      request.log.error(error, 'SendGrid webhook verification is unavailable');
+      return reply.code(503).send({ error: 'Webhook verification unavailable' });
+    }
+    if (!Array.isArray(request.body)) return reply.code(400).send({ error: 'Invalid SendGrid event payload' });
+    return { accepted: request.body.length, matched: await ingestSendGridEvents(request.body as SendGridEvent[]) };
+  });
 
   registerMediaUploadRoutes(fastify, {
     service: 'admin', purposes: ['FEATURED_PLACEMENT_IMAGE'],
@@ -81,6 +106,28 @@ async function bootstrap() {
     return { id: doc._id.toString(), version: doc.version, createdAt: doc.createdAt };
   });
 
+  fastify.post('/internal/emails', async (request, reply) => {
+    if (!isEmailIntent(request.body)) return reply.code(400).send({ error: 'Invalid email intent payload' });
+    const doc = await acceptEmailIntent(request.body);
+    return { id: doc._id.toString(), status: doc.status };
+  });
+
+  fastify.post('/internal/emails/claim-due', async () => ({ jobs: await claimDueEmails() }));
+
+  fastify.post('/internal/emails/cancel', async (request, reply) => {
+    const body = request.body as { idempotencyKey?: unknown };
+    if (typeof body?.idempotencyKey !== 'string' || body.idempotencyKey.length > 250) return reply.code(400).send({ error: 'Invalid idempotency key' });
+    const doc = await cancelScheduledEmail(body.idempotencyKey);
+    return { cancelled: Boolean(doc) };
+  });
+
+  fastify.post<{ Params: { id: string } }>('/internal/emails/:id/result', async (request, reply) => {
+    if (!isEmailResult(request.body)) return reply.code(400).send({ error: 'Invalid email result payload' });
+    const doc = await recordEmailResult(request.params.id, request.body);
+    if (!doc) return reply.code(404).send({ error: 'Email delivery not found' });
+    return { id: doc._id.toString(), status: doc.status };
+  });
+
   await fastify.register(fastifyApollo(apollo), {
     path: '/graphql',
     context: async (request) => buildContext(request),
@@ -90,7 +137,8 @@ async function bootstrap() {
 
   await reconcileAuditExports();
   await reconcileAdminCommands();
-  const reconciliationTimer = setInterval(() => void Promise.allSettled([reconcileAuditExports(), reconcileAdminCommands()]), 60_000);
+  await reconcileEmailQueue().catch((error) => fastify.log.warn(error, 'Email queue reconciliation is unavailable'));
+  const reconciliationTimer = setInterval(() => void Promise.allSettled([reconcileAuditExports(), reconcileAdminCommands(), reconcileEmailQueue()]), 60_000);
   reconciliationTimer.unref();
 
   const port = Number(process.env['PORT'] ?? 4004);
@@ -117,6 +165,14 @@ function isVerificationInput(value: unknown): value is VerificationIntakeInput {
     typeof input.ownerFirebaseUid === 'string' && ['STANDARD', 'CHARITY', 'NGO'].includes(input.requestedTier ?? '') &&
     Array.isArray(input.documentUrls) && input.documentUrls.length > 0 && input.documentUrls.length <= 10 &&
     input.documentUrls.every((url) => typeof url === 'string' && url.length <= 2048) && Boolean(input.snapshot);
+}
+
+function isEmailResult(value: unknown): value is EmailDeliveryResult {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as Partial<EmailDeliveryResult>;
+  return ['ACCEPTED', 'SENT', 'FAILED', 'SUPPRESSED'].includes(result.status ?? '') &&
+    (result.providerMessageId == null || typeof result.providerMessageId === 'string') &&
+    (result.error == null || typeof result.error === 'string');
 }
 
 bootstrap().catch((err) => {

@@ -1,4 +1,4 @@
-/* Idempotent local development seed. Run with: node tools/scripts/seed-local-mongo.js */
+/* Idempotent development seed. Remote execution requires --remote plus an explicit confirmation. */
 const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -11,9 +11,27 @@ function envValue(name) {
 }
 
 const uri = process.env.MONGO_URI || envValue('MONGO_URI');
-if (!uri || !/^mongodb:\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(uri)) {
-  throw new Error('Refusing to seed: MONGO_URI must target localhost or 127.0.0.1');
+const isLocal = Boolean(uri && /^mongodb:\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(uri));
+const remoteRequested = process.argv.includes('--remote');
+const seedEnvironment = process.env.SEED_ENVIRONMENT;
+
+if (!uri) throw new Error('Refusing to seed: MONGO_URI is required');
+if (!isLocal) {
+  if (!remoteRequested) {
+    throw new Error('Refusing to seed a remote database without the --remote flag');
+  }
+  if (!['staging', 'production'].includes(seedEnvironment)) {
+    throw new Error('Refusing to seed: SEED_ENVIRONMENT must be staging or production');
+  }
+  const expectedConfirmation = seedEnvironment === 'production'
+    ? 'SEED_CHRISTIAN_LISTINGS_PRODUCTION'
+    : 'SEED_CHRISTIAN_LISTINGS_STAGING';
+  if (process.env.SEED_REMOTE_CONFIRM !== expectedConfirmation) {
+    throw new Error(`Refusing to seed ${seedEnvironment}: set SEED_REMOTE_CONFIRM=${expectedConfirmation}`);
+  }
 }
+
+const targetLabel = isLocal ? 'local' : seedEnvironment;
 
 const id = (suffix) => new ObjectId(`7000000000000000000000${suffix}`);
 const now = new Date();
@@ -28,6 +46,7 @@ async function upsertMany(collection, documents) {
 }
 
 async function main() {
+  console.log(`Starting idempotent ${targetLabel} seed against ${databaseHost(uri)}...`);
   const client = new MongoClient(uri);
   await client.connect();
 
@@ -165,7 +184,7 @@ async function main() {
     adminNotifications: await upsertMany(admin.collection('adminnotifications'), adminNotifications),
   };
 
-  console.log('Local MongoDB seed complete:', counts);
+  console.log(`${targetLabel} MongoDB seed complete:`, counts);
   await client.close();
 }
 
@@ -173,3 +192,12 @@ main().catch((error) => {
   console.error(error.message);
   process.exit(1);
 });
+
+function databaseHost(value) {
+  try {
+    const withoutScheme = value.replace(/^mongodb(?:\+srv)?:\/\//, '');
+    return withoutScheme.slice(withoutScheme.indexOf('@') + 1).split('/')[0].split('?')[0];
+  } catch {
+    return 'configured MongoDB host';
+  }
+}

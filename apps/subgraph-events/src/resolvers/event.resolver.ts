@@ -7,6 +7,7 @@ import type { GraphQLContext } from '../context';
 import { canAccessOrganisation, getOrganisationAccess } from '@christian-listings/auth';
 import { generateOccurrenceDates } from '../lib/recurrence';
 import { resolveLocationRegion } from '@christian-listings/utils';
+import { cancelEmailSafely, requestEmailSafely } from '@christian-listings/email';
 
 type EventDocument = HydratedDocument<IEvent>;
 
@@ -434,6 +435,8 @@ export const eventResolvers = {
       const event = await EventModel.findById(eventId);
       if (!event || event.status !== 'PUBLISHED') throw new GraphQLError('Event is not accepting RSVPs', { extensions: { code: 'BAD_USER_INPUT' } });
       const rsvp = await upsertOccurrenceRsvp(event, ctx.auth.firebaseUid, stage, 'OCCURRENCE');
+      queueRsvpEmail(ctx, event, rsvp.stage, rsvp.updatedAt);
+      syncEventReminder(ctx, event, rsvp.stage);
       return {
         id:        rsvp._id.toString(),
         event:     { id: eventId },
@@ -451,7 +454,12 @@ export const eventResolvers = {
       const eventObjectId = new mongoose.Types.ObjectId(eventId);
       const existing = await RsvpModel.findOne({ eventId: eventObjectId, userFirebaseUid: ctx.auth.firebaseUid });
       if (existing?.source === 'SERIES' && existing.seriesRsvpId) await SeriesRsvpModel.updateOne({ _id: existing.seriesRsvpId }, { $addToSet: { excludedEventIds: eventObjectId } });
-      return removeOccurrenceRsvp(eventObjectId, ctx.auth.firebaseUid);
+      const removed = await removeOccurrenceRsvp(eventObjectId, ctx.auth.firebaseUid);
+      if (removed) {
+        const event = await EventModel.findById(eventObjectId);
+        if (event) { queueRsvpEmail(ctx, event, 'CANCELLED', new Date()); syncEventReminder(ctx, event, 'CANCELLED'); }
+      }
+      return removed;
     },
 
     rsvpToSeries: async (_: unknown, { seriesId, stage }: { seriesId: string; stage: string }, ctx: GraphQLContext) => {
@@ -465,9 +473,14 @@ export const eventResolvers = {
       );
       const excluded = new Set(seriesRsvp.excludedEventIds.map((id) => id.toString()));
       const occurrences = await EventModel.find({ seriesId: series._id, status: 'PUBLISHED', startDate: { $gte: new Date() } }).sort({ startDate: 1 });
+      let firstResolved: { event: EventDocument; stage: string } | null = null;
       for (const occurrence of occurrences) {
-        if (!excluded.has(occurrence._id.toString())) await upsertOccurrenceRsvp(occurrence, ctx.auth.firebaseUid, stage, 'SERIES', seriesRsvp._id);
+        if (excluded.has(occurrence._id.toString())) continue;
+        const occurrenceRsvp = await upsertOccurrenceRsvp(occurrence, ctx.auth.firebaseUid, stage, 'SERIES', seriesRsvp._id);
+        syncEventReminder(ctx, occurrence, occurrenceRsvp.stage);
+        firstResolved ??= { event: occurrence, stage: occurrenceRsvp.stage };
       }
+      if (firstResolved) queueRsvpEmail(ctx, firstResolved.event, firstResolved.stage, seriesRsvp.updatedAt);
       return mapSeriesRsvp(seriesRsvp);
     },
 
@@ -476,8 +489,12 @@ export const eventResolvers = {
       const seriesRsvp = await SeriesRsvpModel.findOne({ seriesId: new mongoose.Types.ObjectId(seriesId), userFirebaseUid: ctx.auth.firebaseUid });
       if (!seriesRsvp) return false;
       const future = await RsvpModel.find({ seriesRsvpId: seriesRsvp._id, source: 'SERIES' });
-      const futureEventIds = await EventModel.find({ _id: { $in: future.map((rsvp) => rsvp.eventId) }, startDate: { $gte: new Date() } }).select('_id');
-      for (const event of futureEventIds) await removeOccurrenceRsvp(event._id, ctx.auth.firebaseUid);
+      const futureEvents = await EventModel.find({ _id: { $in: future.map((rsvp) => rsvp.eventId) }, startDate: { $gte: new Date() } }).sort({ startDate: 1 });
+      for (const event of futureEvents) {
+        await removeOccurrenceRsvp(event._id, ctx.auth.firebaseUid);
+        syncEventReminder(ctx, event, 'CANCELLED');
+      }
+      if (futureEvents[0]) queueRsvpEmail(ctx, futureEvents[0], 'CANCELLED', new Date());
       await SeriesRsvpModel.deleteOne({ _id: seriesRsvp._id });
       return true;
     },
@@ -540,6 +557,32 @@ export const eventResolvers = {
     user: ({ user }: { user: { firebaseUid: string } }) => user,
   },
 };
+
+function queueRsvpEmail(ctx: GraphQLContext, event: EventDocument, status: string, changedAt: Date) {
+  const email = String(ctx.auth.decodedToken?.email ?? '').trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return;
+  const appUrl = (process.env['PUBLIC_APP_URL'] ?? 'http://localhost:3000').replace(/\/$/, '');
+  requestEmailSafely({
+    templateKey: 'RSVP_STATUS', to: email,
+    variables: { eventTitle: event.title, status, eventUrl: `${appUrl}/events/${event._id}` },
+    idempotencyKey: `rsvp-status:${event._id}:${ctx.auth.firebaseUid}:${status}:${changedAt.getTime()}`,
+    source: { service: 'events', entityType: 'EVENT', entityId: event._id.toString() },
+  });
+}
+
+function syncEventReminder(ctx: GraphQLContext, event: EventDocument, status: string) {
+  const key = `event-reminder:${event._id}:${ctx.auth.firebaseUid}`;
+  if (status !== 'CONFIRMED') { cancelEmailSafely(key); return; }
+  const email = String(ctx.auth.decodedToken?.email ?? '').trim().toLowerCase();
+  const reminderAt = new Date(event.startDate.getTime() - 24 * 60 * 60 * 1000);
+  if (!/^\S+@\S+\.\S+$/.test(email) || reminderAt.getTime() <= Date.now()) return;
+  const appUrl = (process.env['PUBLIC_APP_URL'] ?? 'http://localhost:3000').replace(/\/$/, '');
+  requestEmailSafely({
+    templateKey: 'EVENT_REMINDER', to: email, scheduledFor: reminderAt.toISOString(),
+    variables: { eventTitle: event.title, startsAt: event.startDate.toISOString(), eventUrl: `${appUrl}/events/${event._id}` },
+    idempotencyKey: key, source: { service: 'events', entityType: 'EVENT', entityId: event._id.toString() },
+  });
+}
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

@@ -102,7 +102,7 @@ Add Figma links in the Design column as they become available.
 | Event cover/gallery image and video uploads | Implemented | Existing uploader states assumed | Up to 10 items including up to 3 two-minute videos. |
 | CV upload | Implemented | Existing uploader states assumed | Private PDF upload with authorized employer download. |
 | Organisation logo file upload and verification documents | Implemented | Existing uploader states assumed | Public optimized logos and private audited verification documents. |
-| RSVP confirmation and reminder emails | Not implemented | Email templates | Requires transactional email provider and scheduling. |
+| RSVP confirmation and reminder emails | Implemented | Email templates assumed | Durable status messages and per-occurrence 24-hour reminders are scheduled through BullMQ; production delivery remains disabled until SendGrid is configured. |
 | Job deadline auto-archive/reminder | Deferred | No | Explicitly skipped; expired jobs still reject applications. |
 | Public organisation profiles | Implemented | No | Event and job organiser links now open the live profile. |
 | Public member profiles | Deferred | Yes | Not required for launch; explicitly deferred. |
@@ -111,7 +111,7 @@ Add Figma links in the Design column as they become available.
 | Marketplace moderation processing | Implemented | No | Reports are durable and deduplicated; three distinct reports hide a listing pending review. Admins can assign, note, dismiss, warn, or soft-remove cases with audit history and seller notifications. |
 | Admin audit, templates and curation | Implemented | No | Audit explorer/exports, versioned operational templates, scheduled regional highlights, saved views, admin notifications, and read-only system health are implemented in the dedicated admin portal. |
 | Admin launch hardening and recovery | Implemented | No | Production CSP/CORS and Router restrictions, admin mutation throttling, restart-safe exports, durable command reconciliation, operational indexes, backup/restore scripts, runbook, and operator acceptance checklist are implemented. |
-| Production transactional emails | Not implemented | Email templates | Includes auth, RSVP and deadline messages. |
+| Production transactional emails | Implemented | Email templates assumed | SendGrid delivery, signed event webhooks, BullMQ retries/scheduling, admin history and controlled retry are wired. Production activation requires verified sender/domain credentials. |
 
 ## Phase 2 implementation order and design links
 

@@ -5,6 +5,7 @@ import type { GraphQLContext } from '../context';
 import { AdminNotificationModel, AuditEventModel, ModerationCaseModel, VerificationSubmissionModel } from '../models';
 import type { VerificationSubmissionDocument } from '../models/verification-submission.model';
 import { resolvePrivateMediaRef } from '@christian-listings/utils';
+import { acceptEmailIntent } from '../services/email-orchestration.service';
 
 const REVIEW_ROLES = ['VERIFICATION_REVIEWER'] as const;
 
@@ -79,6 +80,14 @@ export const verificationResolvers = {
       doc.reviewedAt = new Date();
       await doc.save();
       await audit(ctx, admin.firebaseUid, `VERIFICATION_${args.action}`, doc.organisationId, 'ORGANISATION_VERIFICATION', reason, before, result.status);
+      if (doc.snapshot.officialEmail) {
+        await acceptEmailIntent({
+          templateKey: 'VERIFICATION_UPDATE', to: doc.snapshot.officialEmail,
+          variables: { organisationName: doc.organisationName, status: doc.status.replace(/_/g, ' '), reason, settingsUrl: `${publicAppUrl()}/org/settings` },
+          idempotencyKey: `verification:${doc._id}:${doc.status}`,
+          source: { service: 'admin', entityType: 'ORGANISATION_VERIFICATION', entityId: doc._id.toString() },
+        }).catch((error: unknown) => console.warn('[email] verification update could not be queued', error));
+      }
       return mapVerification(doc);
     },
   },
@@ -102,6 +111,7 @@ function documentLabel(url: string, index: number) { try { return decodeURICompo
 function notFoundOrClosed() { return new GraphQLError('Verification submission was not found or is already decided', { extensions: { code: 'CONFLICT' } }); }
 function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function requestId(ctx: GraphQLContext) { const value = ctx.request.headers['x-request-id']; return Array.isArray(value) ? value[0] ?? null : value ?? null; }
+function publicAppUrl() { return (process.env['PUBLIC_APP_URL'] ?? 'http://localhost:3000').replace(/\/$/, ''); }
 
 export async function internalPost<T>(envName: string, fallback: string, path: string, body: unknown): Promise<T> {
   const secret = process.env['INTERNAL_SERVICE_KEY'];
@@ -111,7 +121,7 @@ export async function internalPost<T>(envName: string, fallback: string, path: s
   return response.json() as Promise<T>;
 }
 
-export type AuditableTarget = 'ORGANISATION_VERIFICATION' | 'USER' | 'ORGANISATION' | 'EVENT' | 'JOB' | 'AUDIT_EXPORT' | 'TEMPLATE' | 'FEATURED_PLACEMENT' | 'SAVED_VIEW';
+export type AuditableTarget = 'ORGANISATION_VERIFICATION' | 'USER' | 'ORGANISATION' | 'EVENT' | 'JOB' | 'AUDIT_EXPORT' | 'TEMPLATE' | 'FEATURED_PLACEMENT' | 'SAVED_VIEW' | 'EMAIL_DELIVERY';
 export async function audit(ctx: GraphQLContext, adminFirebaseUid: string, action: string, targetId: string, targetType: AuditableTarget, reason: string, beforeStatus?: string | null, afterStatus?: string | null, result: 'SUCCESS' | 'FAILED' = 'SUCCESS') {
   const routeHeader = ctx.request.headers['x-admin-route'];
   const userAgent = ctx.request.headers['user-agent'];

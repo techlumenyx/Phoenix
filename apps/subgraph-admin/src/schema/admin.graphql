@@ -38,6 +38,7 @@ enum AuditAction {
   SAVED_VIEW_CREATE
   SAVED_VIEW_DELETE
   NOTIFICATION_READ
+  EMAIL_RETRY
 }
 
 enum ContentType {
@@ -51,6 +52,7 @@ enum ContentType {
   TEMPLATE
   FEATURED_PLACEMENT
   SAVED_VIEW
+  EMAIL_DELIVERY
 }
 
 enum AuditResult { SUCCESS FAILED }
@@ -61,6 +63,7 @@ enum PlacementSource { EDITORIAL PROMOTION }
 enum SavedViewModule { MODERATION VERIFICATION AUDIT DIRECTORY CURATION }
 enum AdminNotificationType { ASSIGNMENT SLA_WARNING ESCALATION ACTION_FAILED MENTION }
 enum AuditExportStatus { PENDING READY FAILED EXPIRED }
+enum EmailDeliveryStatus { QUEUED ACCEPTED SENT FAILED SUPPRESSED }
 
 enum VerificationReviewStatus { PENDING_REVIEW NEEDS_INFORMATION APPROVED REJECTED }
 enum VerificationDecision { APPROVE REJECT NEEDS_INFORMATION }
@@ -226,6 +229,28 @@ type AdminDashboardStats {
   verificationDecisionsLast7Days: Int!
 }
 
+type EmailDeliveryEvent { event: String! occurredAt: DateTime! response: String }
+type EmailDelivery {
+  id: ID!
+  templateKey: String!
+  to: String!
+  subject: String!
+  status: EmailDeliveryStatus!
+  provider: String!
+  providerMessageId: String
+  error: String
+  attemptCount: Int!
+  sourceService: String
+  sourceEntityType: String
+  sourceEntityId: String
+  queuedAt: DateTime
+  sentAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  events: [EmailDeliveryEvent!]!
+}
+type EmailDeliveryConnection { edges: [EmailDelivery!]! hasNextPage: Boolean! endCursor: String }
+
 type Query {
   moderationCases(
     status: ModerationCaseStatus
@@ -249,6 +274,7 @@ type Query {
   adminNotifications(unreadOnly: Boolean, limit: Int): [AdminNotification!]!
   adminNotificationUnreadCount: Int!
   adminSystemHealth: AdminSystemHealth!
+  emailDeliveries(status: EmailDeliveryStatus, templateKey: String, search: String, limit: Int, after: String): EmailDeliveryConnection!
 }
 
 type Mutation {
@@ -278,6 +304,7 @@ type Mutation {
   deleteSavedAdminView(id: ID!): Boolean!
   markAdminNotificationRead(id: ID!): AdminNotification!
   markAllAdminNotificationsRead: Boolean!
+  retryEmailDelivery(id: ID!): EmailDelivery!
 }
 
 input FeaturedPlacementInput { targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! placementSource: PlacementSource = EDITORIAL }

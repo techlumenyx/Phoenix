@@ -10,6 +10,7 @@ import {
 } from '@christian-listings/auth';
 import { OrganisationModel, OrgInviteModel, UserModel } from '../models';
 import type { GraphQLContext } from '../context';
+import { requestEmailSafely } from '@christian-listings/email';
 
 const MANAGERS: OrganisationRole[] = ['master_admin', 'site_admin'];
 function access(ctx: GraphQLContext, orgId: string) {
@@ -132,8 +133,7 @@ export const teamResolvers = {
           extensions: { code: 'BAD_USER_INPUT' },
         });
       try {
-        return inviteShape(
-          await OrgInviteModel.create({
+        const invite = await OrgInviteModel.create({
             email: normalised,
             organisationId,
             roles: assignedRoles,
@@ -141,8 +141,10 @@ export const teamResolvers = {
             token: randomUUID(),
             status: 'PENDING',
             expiresAt: new Date(Date.now() + 7 * 86400000),
-          }),
-        );
+          });
+        const organisation = await OrganisationModel.findById(organisationId).select('name');
+        queueInvitationEmail(invite, organisation?.name ?? 'an organisation');
+        return inviteShape(invite);
       } catch (error: any) {
         if (error?.code === 11000)
           throw new GraphQLError('A pending invitation already exists for this email', {
@@ -221,6 +223,8 @@ export const teamResolvers = {
       invite.token = randomUUID();
       invite.expiresAt = new Date(Date.now() + 7 * 86400000);
       await invite.save();
+      const organisation = await OrganisationModel.findById(invite.organisationId).select('name');
+      queueInvitationEmail(invite, organisation?.name ?? 'an organisation');
       return inviteShape(invite);
     },
     updateOrganisationMemberRoles: async (
@@ -284,3 +288,13 @@ export const teamResolvers = {
     },
   },
 };
+
+function queueInvitationEmail(invite: { _id: { toString(): string }; email: string; token: string; roles: string[]; organisationId: { toString(): string }; updatedAt: Date }, organisationName: string) {
+  const appUrl = (process.env['PUBLIC_APP_URL'] ?? 'http://localhost:3000').replace(/\/$/, '');
+  requestEmailSafely({
+    templateKey: 'ORGANISATION_INVITATION', to: invite.email,
+    variables: { organisationName, roles: invite.roles.join(', '), inviteUrl: `${appUrl}/org/invite/${encodeURIComponent(invite.token)}` },
+    idempotencyKey: `organisation-invite:${invite._id}:${invite.token}`,
+    source: { service: 'identity', entityType: 'ORGANISATION_INVITE', entityId: invite._id.toString() },
+  });
+}

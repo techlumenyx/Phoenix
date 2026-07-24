@@ -7,6 +7,7 @@ import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
 import { mapJob } from './job.resolver';
 import { resolvePrivateMediaRef } from '@christian-listings/utils';
+import { requestEmailSafely } from '@christian-listings/email';
 
 interface EducationInput {
   highestQualification?: string;
@@ -117,6 +118,14 @@ export const jobApplicationResolvers = {
           status: 'SUBMITTED',
         });
         await JobListingModel.updateOne({ _id: job._id }, { $inc: { applicationCount: 1 } });
+        const appUrl = (process.env['PUBLIC_APP_URL'] ?? 'http://localhost:3000').replace(/\/$/, '');
+        requestEmailSafely({
+          templateKey: 'JOB_APPLICATION_SUBMITTED', to: doc.email,
+          variables: { jobTitle: job.title, applicationUrl: `${appUrl}/dashboard/applications` },
+          idempotencyKey: `job-application-submitted:${doc._id}`,
+          source: { service: 'classifieds', entityType: 'JOB_APPLICATION', entityId: doc._id.toString() },
+        });
+        queueOrganisationApplicationEmail(job.organisationId.toString(), job.title, doc.fullName, doc._id.toString());
         return mapApplication(doc);
       } catch (error: unknown) {
         if (error instanceof mongoose.mongo.MongoServerError && error.code === 11000) {
@@ -151,3 +160,23 @@ export const jobApplicationResolvers = {
     },
   },
 };
+
+function queueOrganisationApplicationEmail(organisationId: string, jobTitle: string, applicantName: string, applicationId: string) {
+  const secret = process.env['INTERNAL_SERVICE_KEY'];
+  if (!secret) { console.warn('[email] INTERNAL_SERVICE_KEY is not configured'); return; }
+  const identityUrl = process.env['IDENTITY_INTERNAL_URL'] ?? 'http://localhost:4001';
+  void fetch(`${identityUrl}/internal/organisations/${encodeURIComponent(organisationId)}/email-contact`, { headers: { 'x-cl-service-key': secret } })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`Organisation email lookup failed with HTTP ${response.status}`);
+      const contact = await response.json() as { name: string; email: string | null };
+      if (!contact.email) return;
+      const appUrl = (process.env['PUBLIC_APP_URL'] ?? 'http://localhost:3000').replace(/\/$/, '');
+      requestEmailSafely({
+        templateKey: 'JOB_APPLICATION_RECEIVED', to: contact.email,
+        variables: { jobTitle, applicantName, applicationsUrl: `${appUrl}/org/jobs` },
+        idempotencyKey: `job-application-received:${applicationId}`,
+        source: { service: 'classifieds', entityType: 'JOB_APPLICATION', entityId: applicationId },
+      });
+    })
+    .catch((error: unknown) => console.warn('[email] organisation application notification could not be prepared', error));
+}

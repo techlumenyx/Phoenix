@@ -20,6 +20,7 @@
       "@christian-listings/db": ["./libs/db/src/index.ts"],
       "@christian-listings/auth": ["./libs/auth/src/index.ts"],
       "@christian-listings/utils": ["./libs/utils/src/index.ts"],
+      "@christian-listings/email": ["./libs/email/src/index.ts"],
       "@christian-listings/types": ["./libs/types/src/index.ts"]
     }
   },

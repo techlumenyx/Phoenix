@@ -14,6 +14,7 @@ import AuditPage from '../pages/audit/AuditPage';
 import TemplatesPage from '../pages/templates/TemplatesPage';
 import CurationPage from '../pages/curation/CurationPage';
 import SystemHealthPage from '../pages/SystemHealthPage';
+import EmailDeliveriesPage from '../pages/EmailDeliveriesPage';
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="curation" element={<CurationPage />} />
           <Route path="system" element={<SystemHealthPage />} />
+          <Route path="email-deliveries" element={<EmailDeliveriesPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

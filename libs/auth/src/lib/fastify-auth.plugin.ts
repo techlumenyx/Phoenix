@@ -6,6 +6,7 @@ import { isInternalServiceRequest } from './internal-service-auth';
 interface AuthPluginOptions {
   optional?: boolean;
   internalPaths?: string[];
+  publicPaths?: string[];
 }
 
 export function buildAuthPlugin(options: AuthPluginOptions = {}) {
@@ -15,7 +16,13 @@ export function buildAuthPlugin(options: AuthPluginOptions = {}) {
       if (request.method === 'OPTIONS') return;
 
       const path = request.url.split('?')[0];
-      if (options.internalPaths?.includes(path)) {
+      if (options.publicPaths?.includes(path)) return;
+      const isInternalPath = options.internalPaths?.some((configuredPath) =>
+        configuredPath.endsWith('/*')
+          ? path.startsWith(configuredPath.slice(0, -1))
+          : path === configuredPath,
+      );
+      if (isInternalPath) {
         if (isInternalServiceRequest(request)) return;
         reply.code(401);
         throw new UnauthorizedError('Invalid internal service credentials');

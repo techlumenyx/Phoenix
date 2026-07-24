@@ -48,6 +48,17 @@ services:
     environment:
       - NODE_ENV=development
 
+  worker:
+    build:
+      target: base
+    volumes:
+      - ../apps/worker:/app/apps/worker
+      - ../libs:/app/libs
+      - /app/node_modules
+    command: npx tsx watch apps/worker/src/main.ts
+    environment:
+      - NODE_ENV=development
+
   web:
     build:
       target: base
