@@ -1,19 +1,20 @@
 import { firebaseAuth } from '../firebase';
+import { resolveMediaEndpoint } from './media-endpoint';
 
 export type UploadPurpose = 'MEMBER_AVATAR' | 'ORGANISATION_LOGO' | 'ORGANISATION_GALLERY' | 'VERIFICATION_DOCUMENT' | 'EVENT_IMAGE' | 'EVENT_VIDEO' | 'MARKETPLACE_IMAGE' | 'MARKETPLACE_VIDEO' | 'JOB_CV';
 export interface UploadedMedia { assetId: string; publicId: string; url: string; resourceType: 'image' | 'video' | 'raw'; format: string; bytes: number; width: number | null; height: number | null; duration: number | null; posterUrl: string | null }
 export const MAX_VIDEO_BYTES = 20_000_000;
 
 const endpointByPurpose: Record<UploadPurpose, string> = {
-  MEMBER_AVATAR: process.env['CL_IDENTITY_MEDIA_URL'] ?? 'http://localhost:4001/media/upload',
-  ORGANISATION_LOGO: process.env['CL_IDENTITY_MEDIA_URL'] ?? 'http://localhost:4001/media/upload',
-  ORGANISATION_GALLERY: process.env['CL_IDENTITY_MEDIA_URL'] ?? 'http://localhost:4001/media/upload',
-  VERIFICATION_DOCUMENT: process.env['CL_IDENTITY_MEDIA_URL'] ?? 'http://localhost:4001/media/upload',
-  EVENT_IMAGE: process.env['CL_EVENTS_MEDIA_URL'] ?? 'http://localhost:4002/media/upload',
-  EVENT_VIDEO: process.env['CL_EVENTS_MEDIA_URL'] ?? 'http://localhost:4002/media/upload',
-  MARKETPLACE_IMAGE: process.env['CL_CLASSIFIEDS_MEDIA_URL'] ?? 'http://localhost:4003/media/upload',
-  MARKETPLACE_VIDEO: process.env['CL_CLASSIFIEDS_MEDIA_URL'] ?? 'http://localhost:4003/media/upload',
-  JOB_CV: process.env['CL_CLASSIFIEDS_MEDIA_URL'] ?? 'http://localhost:4003/media/upload',
+  MEMBER_AVATAR: resolveMediaEndpoint(process.env['CL_IDENTITY_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'identity'),
+  ORGANISATION_LOGO: resolveMediaEndpoint(process.env['CL_IDENTITY_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'identity'),
+  ORGANISATION_GALLERY: resolveMediaEndpoint(process.env['CL_IDENTITY_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'identity'),
+  VERIFICATION_DOCUMENT: resolveMediaEndpoint(process.env['CL_IDENTITY_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'identity'),
+  EVENT_IMAGE: resolveMediaEndpoint(process.env['CL_EVENTS_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'events'),
+  EVENT_VIDEO: resolveMediaEndpoint(process.env['CL_EVENTS_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'events'),
+  MARKETPLACE_IMAGE: resolveMediaEndpoint(process.env['CL_CLASSIFIEDS_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'classifieds'),
+  MARKETPLACE_VIDEO: resolveMediaEndpoint(process.env['CL_CLASSIFIEDS_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'classifieds'),
+  JOB_CV: resolveMediaEndpoint(process.env['CL_CLASSIFIEDS_MEDIA_URL'], process.env['CL_GRAPHQL_URL'], 'classifieds'),
 };
 
 export async function uploadMedia(file: File, purpose: UploadPurpose, ownerId?: string, onProgress?: (percent: number) => void): Promise<UploadedMedia> {

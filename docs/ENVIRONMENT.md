@@ -64,7 +64,7 @@ echo "$FIREBASE_SERVICE_ACCOUNT_JSON" | base64 -d | head -5
 | `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
 | `CL_MEDIA_ALLOWED_ORIGINS` | No | Comma-separated browser origins allowed to call service media endpoints. |
 
-The browser builds accept `CL_IDENTITY_MEDIA_URL`, `CL_EVENTS_MEDIA_URL`, `CL_CLASSIFIEDS_MEDIA_URL`, and `CL_ADMIN_MEDIA_URL`. They default to the corresponding local service ports.
+The browser builds accept `CL_IDENTITY_MEDIA_URL`, `CL_EVENTS_MEDIA_URL`, `CL_CLASSIFIEDS_MEDIA_URL`, and `CL_ADMIN_MEDIA_URL`. Public media endpoints derive from the non-local `CL_GRAPHQL_URL` origin when not explicitly configured; local development defaults to the corresponding service ports.
 
 ## apps/gateway (Apollo Router)
 

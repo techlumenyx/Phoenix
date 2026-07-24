@@ -17,7 +17,7 @@ export const MEDIA_POLICIES: Record<MediaPurpose, Policy> = {
   MEMBER_AVATAR: { maxBytes: 5e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
   ORGANISATION_LOGO: { maxBytes: 5e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
   ORGANISATION_GALLERY: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
-  VERIFICATION_DOCUMENT: { maxBytes: 10e6, mimeTypes: ['application/pdf', 'image/jpeg', 'image/png'], resourceType: 'raw', private: true },
+  VERIFICATION_DOCUMENT: { maxBytes: 10e6, mimeTypes: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'], resourceType: 'raw', private: true },
   EVENT_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
   EVENT_VIDEO: { maxBytes: MAX_VIDEO_BYTES, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
   MARKETPLACE_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
@@ -157,6 +157,7 @@ function matchesSignature(bytes: Buffer, allowedMimeTypes: string[]) {
     if (mime === 'image/png') return hex.startsWith('89504e470d0a1a0a');
     if (mime === 'image/webp') return ascii.startsWith('RIFF') && ascii.slice(8, 12) === 'WEBP';
     if (mime === 'application/pdf') return ascii.startsWith('%PDF-');
+    if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return hex.startsWith('504b0304');
     if (mime === 'video/mp4' || mime === 'video/quicktime') return ascii.slice(4, 8) === 'ftyp';
     if (mime === 'video/webm') return hex.startsWith('1a45dfa3');
     return false;

@@ -168,7 +168,7 @@ type Mutation {
   createOrganisation(input: CreateOrganisationInput!): Organisation!
   updateOrganisation(id: ID!, input: UpdateOrganisationInput!): Organisation!
   setOrganisationActive(organisationId: ID!, active: Boolean!): Organisation!
-  submitVerification(organisationId: ID!, documentUrls: [String!]!, requestedTier: VerificationTier = STANDARD): VerificationRequest!
+  submitVerification(organisationId: ID!, documentUrls: [String!]!, requestedTier: VerificationTier = STANDARD, details: VerificationDetailsInput): VerificationRequest!
   followOrganisation(organisationId: ID!): Organisation!
   unfollowOrganisation(organisationId: ID!): Organisation!
   inviteOrganisationMember(organisationId: ID!, email: String!, roles: [String!]!): OrganisationInvite!
@@ -234,6 +234,14 @@ input UpdateOrganisationInput {
   contactEmail: String
   phoneNumber: String
   socialLinks: SocialLinksInput
+}
+
+input VerificationDetailsInput {
+  officialName: String
+  registrationNumber: String
+  officialEmail: String
+  pocName: String
+  pocTitle: String
 }
 
 input ProfilePrivacySettingsInput {

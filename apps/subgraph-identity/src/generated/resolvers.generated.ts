@@ -168,6 +168,7 @@ export type MutationSignUpArgs = {
 
 
 export type MutationSubmitVerificationArgs = {
+  details?: InputMaybe<VerificationDetailsInput>;
   documentUrls: Array<Scalars['String']['input']>;
   organisationId: Scalars['ID']['input'];
   requestedTier?: InputMaybe<VerificationTier>;
@@ -412,6 +413,14 @@ export type UserConnection = {
   hasNextPage: Scalars['Boolean']['output'];
 };
 
+export type VerificationDetailsInput = {
+  officialEmail?: InputMaybe<Scalars['String']['input']>;
+  officialName?: InputMaybe<Scalars['String']['input']>;
+  pocName?: InputMaybe<Scalars['String']['input']>;
+  pocTitle?: InputMaybe<Scalars['String']['input']>;
+  registrationNumber?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type VerificationRequest = {
   __typename?: 'VerificationRequest';
   documentsUrls: Array<Scalars['String']['output']>;
@@ -550,6 +559,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateProfileInput: UpdateProfileInput;
   User: ResolverTypeWrapper<User>;
   UserConnection: ResolverTypeWrapper<UserConnection>;
+  VerificationDetailsInput: VerificationDetailsInput;
   VerificationRequest: ResolverTypeWrapper<VerificationRequest>;
   VerificationStatus: VerificationStatus;
   VerificationTier: VerificationTier;
@@ -583,6 +593,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateProfileInput: UpdateProfileInput;
   User: User;
   UserConnection: UserConnection;
+  VerificationDetailsInput: VerificationDetailsInput;
   VerificationRequest: VerificationRequest;
 }>;
 

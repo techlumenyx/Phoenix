@@ -8,4 +8,13 @@ describe('media upload policies', () => {
     expect(videoPolicies.every((policy) => policy.maxBytes === MAX_VIDEO_BYTES)).toBe(true);
     expect(MAX_VIDEO_BYTES).toBe(20_000_000);
   });
+
+  it('accepts every verification-document type advertised by the form', () => {
+    expect(MEDIA_POLICIES.VERIFICATION_DOCUMENT.mimeTypes).toEqual(expect.arrayContaining([
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png',
+    ]));
+  });
 });

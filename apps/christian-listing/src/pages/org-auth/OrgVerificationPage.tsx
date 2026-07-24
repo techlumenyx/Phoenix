@@ -17,8 +17,8 @@ const CREATE_ORGANISATION = gql`
 `;
 
 const SUBMIT_VERIFICATION = gql`
-  mutation SubmitVerification($organisationId: ID!, $documentUrls: [String!]!) {
-    submitVerification(organisationId: $organisationId, documentUrls: $documentUrls) {
+  mutation SubmitVerification($organisationId: ID!, $documentUrls: [String!]!, $details: VerificationDetailsInput) {
+    submitVerification(organisationId: $organisationId, documentUrls: $documentUrls, details: $details) {
       id
       status
     }
@@ -54,6 +54,20 @@ export default function OrgVerificationPage() {
 
   async function submit(skip = false) {
     setError('');
+    if (!skip) {
+      if (!regNumber.trim() || !officialName.trim()) {
+        setError('Enter the registration number and official organisation name.');
+        return;
+      }
+      if (!docFile) {
+        setError('Upload a verification document before submitting.');
+        return;
+      }
+      if (docFile.size > 10_000_000) {
+        setError('The verification document must be 10 MB or smaller.');
+        return;
+      }
+    }
     setLoading(true);
     try {
       const { data } = await createOrg({
@@ -68,15 +82,19 @@ export default function OrgVerificationPage() {
 
       await getAuth().currentUser?.getIdToken(true);
 
-      if (!skip && regNumber) {
-        const documentUrls = docFile
-          ? [(await uploadMedia(docFile, 'VERIFICATION_DOCUMENT', data.createOrganisation.id)).url]
-          : [];
-        if (documentUrls.length === 0) throw new Error('Upload a verification document before submitting.');
+      if (!skip && docFile) {
+        const documentUrls = [(await uploadMedia(docFile, 'VERIFICATION_DOCUMENT', data.createOrganisation.id)).url];
         await submitVerification({
           variables: {
             organisationId: data.createOrganisation.id,
             documentUrls,
+            details: {
+              registrationNumber: regNumber.trim(),
+              officialName: officialName.trim(),
+              officialEmail: officialEmail.trim() || null,
+              pocName: poc.trim() || null,
+              pocTitle: pocTitle.trim() || null,
+            },
           },
         });
       }

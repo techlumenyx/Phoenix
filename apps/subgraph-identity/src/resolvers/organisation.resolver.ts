@@ -57,6 +57,14 @@ interface UpdateOrgInput {
   };
 }
 
+interface VerificationDetailsInput {
+  officialName?: string | null;
+  registrationNumber?: string | null;
+  officialEmail?: string | null;
+  pocName?: string | null;
+  pocTitle?: string | null;
+}
+
 export const organisationResolvers = {
   Query: {
     organisation: async (_: unknown, { id }: { id: string }) => {
@@ -180,7 +188,7 @@ export const organisationResolvers = {
 
     submitVerification: async (
       _: unknown,
-      { organisationId, documentUrls, requestedTier = 'STANDARD' }: { organisationId: string; documentUrls: string[]; requestedTier?: 'STANDARD' | 'CHARITY' | 'NGO' },
+      { organisationId, documentUrls, requestedTier = 'STANDARD', details }: { organisationId: string; documentUrls: string[]; requestedTier?: 'STANDARD' | 'CHARITY' | 'NGO'; details?: VerificationDetailsInput | null },
       ctx: GraphQLContext,
     ) => {
       if (!ctx.auth.isAuthenticated || !ctx.auth.firebaseUid) {
@@ -198,8 +206,15 @@ export const organisationResolvers = {
           extensions: { code: 'NOT_FOUND' },
         });
       }
-      const submission = await sendVerificationSubmission({ organisation: doc, requestedTier, documentUrls });
+      if (details) {
+        doc.verificationDetails.officialName = cleanOptional(details.officialName);
+        doc.verificationDetails.registrationNumber = cleanOptional(details.registrationNumber);
+        doc.verificationDetails.officialEmail = cleanOptional(details.officialEmail);
+        doc.verificationDetails.pocName = cleanOptional(details.pocName);
+        doc.verificationDetails.pocTitle = cleanOptional(details.pocTitle);
+      }
       doc.verificationDetails.documentUrls = documentUrls;
+      const submission = await sendVerificationSubmission({ organisation: doc, requestedTier, documentUrls });
       doc.verificationStatus = 'PENDING_REVIEW';
       await doc.save();
       await IdentityOrganisationNotificationModel.updateOne(
@@ -241,4 +256,9 @@ function isSecureDocumentUrl(value: string) {
   } catch {
     return false;
   }
+}
+
+function cleanOptional(value: string | null | undefined) {
+  const cleaned = value?.trim();
+  return cleaned ? cleaned.slice(0, 500) : null;
 }
