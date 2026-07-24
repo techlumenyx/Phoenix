@@ -57,6 +57,7 @@ export type CreateJobListingInput = {
   faithAlignmentTag?: InputMaybe<FaithAlignmentTag>;
   organisationId: Scalars['ID']['input'];
   region: Scalars['String']['input'];
+  responsibilities?: InputMaybe<Array<Scalars['String']['input']>>;
   roleType: RoleType;
   salaryRange?: InputMaybe<SalaryRangeInput>;
   skillsRequired: Array<Scalars['String']['input']>;
@@ -615,6 +616,9 @@ export type UpdateJobListingInput = {
   applicationDeadline?: InputMaybe<Scalars['DateTime']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   externalApplyUrl?: InputMaybe<Scalars['String']['input']>;
+  faithAlignmentTag?: InputMaybe<FaithAlignmentTag>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  responsibilities?: InputMaybe<Array<Scalars['String']['input']>>;
   roleType?: InputMaybe<RoleType>;
   salaryRange?: InputMaybe<SalaryRangeInput>;
   skillsRequired?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -623,6 +627,7 @@ export type UpdateJobListingInput = {
 };
 
 export type UpdateMarketplaceItemInput = {
+  area?: InputMaybe<Scalars['String']['input']>;
   category?: InputMaybe<MarketplaceCategory>;
   condition?: InputMaybe<ItemCondition>;
   currency?: InputMaybe<Scalars['String']['input']>;

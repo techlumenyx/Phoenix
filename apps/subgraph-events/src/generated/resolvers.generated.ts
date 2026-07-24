@@ -379,6 +379,7 @@ export type UpdateEventInput = {
   externalTicketUrl?: InputMaybe<Scalars['String']['input']>;
   imageUrls?: InputMaybe<Array<Scalars['String']['input']>>;
   location?: InputMaybe<EventLocationInput>;
+  region?: InputMaybe<Scalars['String']['input']>;
   status?: InputMaybe<EventStatus>;
   title?: InputMaybe<Scalars['String']['input']>;
   videoPosterUrls?: InputMaybe<Array<Scalars['String']['input']>>;

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
-import { useNavigate } from 'react-router-dom';
-import { CANCEL_EVENT, MY_ORG_EVENTS, UPDATE_MANAGED_EVENT } from '../../graphql/mutations';
+import { CANCEL_EVENT, MY_ORG_EVENTS } from '../../graphql/mutations';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
 import { useToast } from '../../components/ui/ToastProvider';
-import { CreateEventForm } from './OrgOverviewPage';
+import { CreateEventForm, type ManagedEventFormItem, type ManagedFormMode } from './OrgOverviewPage';
 
-interface EventLocation { type: string; city?: string | null; country?: string | null; }
-interface OrgEvent {
+interface EventLocation { type: string; address?: string | null; city?: string | null; country?: string | null; virtualLink?: string | null; }
+interface OrgEvent extends ManagedEventFormItem {
   id: string;
   title: string;
   description: string;
@@ -21,7 +20,7 @@ interface OrgEvent {
   seriesId?: string | null;
   occurrenceNumber?: number | null;
   isSeriesException: boolean;
-  series?: { recurrence: { frequency: 'WEEKLY' | 'MONTHLY'; interval: number; timezone: string } } | null;
+  series?: ManagedEventFormItem['series'];
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -55,7 +54,6 @@ function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
 }
 
 export default function OrgEventsPage() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('Active Events');
   const tabs = ['Active Events', 'Draft Events', 'Recurring Events'];
@@ -66,31 +64,14 @@ export default function OrgEventsPage() {
   const { data, loading, error, refetch } = useQuery(MY_ORG_EVENTS);
   const organisationId = data?.myOrganisations?.[0]?.id as string | undefined;
   const [cancelEvent, { loading: cancelling }] = useMutation(CANCEL_EVENT);
-  const [updateEvent, { loading: updating }] = useMutation(UPDATE_MANAGED_EVENT);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<{ event: OrgEvent; scope: 'THIS_OCCURRENCE' | 'THIS_AND_FUTURE' | 'ENTIRE_SERIES' } | null>(null);
-  const [editTarget, setEditTarget] = useState<{ event: OrgEvent; scope: 'THIS_OCCURRENCE' | 'THIS_AND_FUTURE' | 'ENTIRE_SERIES' } | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
+  const [formState, setFormState] = useState<{ event: OrgEvent; mode: Exclude<ManagedFormMode, 'create'>; scope: 'THIS_OCCURRENCE' | 'THIS_AND_FUTURE' | 'ENTIRE_SERIES' } | null>(null);
 
-  function openEdit(event: OrgEvent) {
-    setEditTitle(event.title);
-    setEditDescription(event.description);
-    setEditTarget({ event, scope: 'THIS_OCCURRENCE' });
+  function openForm(event: OrgEvent, mode: 'view' | 'edit') {
+    setFormState({ event, mode, scope: 'THIS_OCCURRENCE' });
     setMenuId(null);
-  }
-
-  async function saveEdit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!editTarget || !editTitle.trim() || !editDescription.trim()) return;
-    try {
-      await updateEvent({ variables: { id: editTarget.event.id, scope: editTarget.scope, input: { title: editTitle.trim(), description: editDescription.trim() } } });
-      await refetch();
-      showToast('Event details updated.', 'success');
-      setEditTarget(null);
-    } catch {
-      showToast('Event could not be updated. Please try again.', 'error');
-    }
+    window.requestAnimationFrame(() => document.getElementById('create-event')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   async function confirmCancel() {
@@ -233,7 +214,7 @@ export default function OrgEventsPage() {
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                   </svg>
-                </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => navigate(`/events/${item.id}`)} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View occurrence</button><button onClick={() => openEdit(item)} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit event or series</button><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_OCCURRENCE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this occurrence</button>{item.isRecurring && <><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_AND_FUTURE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this and future</button><button onClick={() => { setCancelTarget({ event: item, scope: 'ENTIRE_SERIES' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-700 hover:bg-red-50">Cancel entire series</button></>}</div>}</div>
+                </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View event</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit event or series</button><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_OCCURRENCE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this occurrence</button>{item.isRecurring && <><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_AND_FUTURE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this and future</button><button onClick={() => { setCancelTarget({ event: item, scope: 'ENTIRE_SERIES' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-700 hover:bg-red-50">Cancel entire series</button></>}</div>}</div>
               </div>
             ))}
           </div>
@@ -275,10 +256,10 @@ export default function OrgEventsPage() {
           </div>
         )}
       </div>
-      {editTarget && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => event.target === event.currentTarget && !updating && setEditTarget(null)}><form onSubmit={saveEdit} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><h2 className="font-serif text-2xl font-bold">Edit event</h2><p className="mt-2 text-xs leading-5 text-gray-500">Individual edits become occurrence exceptions. Series edits preserve existing individual exceptions.</p><label className="mt-5 block text-sm font-semibold">Apply changes to<select value={editTarget.scope} onChange={(event) => setEditTarget((current) => current ? { ...current, scope: event.target.value as typeof current.scope } : current)} disabled={!editTarget.event.isRecurring} className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm disabled:bg-gray-100"><option value="THIS_OCCURRENCE">This occurrence</option>{editTarget.event.isRecurring && <><option value="THIS_AND_FUTURE">This and future occurrences</option><option value="ENTIRE_SERIES">Entire series (future dates)</option></>}</select></label><label className="mt-4 block text-sm font-semibold">Title<input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className="mt-2 w-full rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none" /></label><label className="mt-4 block text-sm font-semibold">Description<textarea rows={5} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} className="mt-2 w-full resize-none rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none" /></label><div className="mt-6 flex justify-end gap-3"><button type="button" disabled={updating} onClick={() => setEditTarget(null)} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold">Cancel</button><button type="submit" disabled={updating || !editTitle.trim() || !editDescription.trim()} className="rounded-lg bg-[#302D2E] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{updating ? 'Saving…' : 'Save changes'}</button></div></form></div>}
       <section id="create-event" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-100 px-6 py-5"><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Create an Event</h2><p className="mt-1 text-sm text-gray-500">Publish a one-time event or manage a recurring series.</p></div>
-        <div className="px-6 py-6"><CreateEventForm orgId={organisationId} onCreated={() => { void refetch(); }} /></div>
+        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5"><div><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">{formState?.mode === 'view' ? 'View Event' : formState?.mode === 'edit' ? 'Edit Event' : 'Create an Event'}</h2><p className="mt-1 text-sm text-gray-500">{formState ? 'Review the complete event record using the same publishing form.' : 'Publish a one-time event or manage a recurring series.'}</p></div>{formState && <div className="flex gap-2">{formState.mode === 'view' && <button type="button" onClick={() => setFormState((current) => current ? { ...current, mode: 'edit' } : current)} className="rounded-lg bg-[#1B1B1B] px-4 py-2 text-sm font-semibold text-white">Edit</button>}<button type="button" onClick={() => setFormState(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold">Close</button></div>}</div>
+        {formState?.mode === 'edit' && formState.event.isRecurring && <div className="border-b border-gray-100 bg-[#FAF6ED] px-6 py-4"><label className="text-sm font-semibold text-gray-700">Apply changes to <select value={formState.scope} onChange={(event) => setFormState((current) => current ? { ...current, scope: event.target.value as typeof current.scope } : current)} className="ml-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"><option value="THIS_OCCURRENCE">This occurrence</option><option value="THIS_AND_FUTURE">This and future occurrences</option><option value="ENTIRE_SERIES">Entire series</option></select></label></div>}
+        <div className="px-6 py-6"><CreateEventForm key={`${formState?.mode ?? 'create'}:${formState?.event.id ?? 'new'}`} orgId={organisationId} mode={formState?.mode ?? 'create'} item={formState?.event} updateScope={formState?.scope} onCreated={() => { void refetch(); }} onSaved={() => { void refetch(); showToast('Event details updated.', 'success'); setFormState(null); }} /></div>
       </section>
       <ConfirmationDialog open={Boolean(cancelTarget)} title={cancelTarget?.scope === 'THIS_OCCURRENCE' ? 'Cancel this occurrence?' : cancelTarget?.scope === 'THIS_AND_FUTURE' ? 'Cancel this and future occurrences?' : 'Cancel the entire series?'} description="Cancelled occurrences remain in the event history and existing RSVP records are retained." confirmLabel="Cancel event" tone="danger" busy={cancelling} onClose={() => setCancelTarget(null)} onConfirm={confirmCancel} />
     </div>

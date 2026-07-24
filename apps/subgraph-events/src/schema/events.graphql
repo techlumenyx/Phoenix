@@ -225,6 +225,7 @@ input UpdateEventInput {
   date: DateTime
   endDate: DateTime
   location: EventLocationInput
+  region: String
   capacityLimit: Int
   imageUrls: [String!]
   videoUrls: [String!]

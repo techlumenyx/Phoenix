@@ -19,7 +19,7 @@ export function mapItem(doc: ItemDocument) {
     currency:    doc.currency,
     condition:   doc.condition,
     category:    doc.category,
-    area:        null,
+    area:        doc.area ?? null,
     region:      doc.region ?? '',
     imageUrls:   doc.imageUrls ?? [],
     videoUrl:    doc.videoUrl ?? null,
@@ -58,7 +58,7 @@ interface CreateItemInput {
 
 type UpdateItemInput = Partial<Pick<CreateItemInput,
   'title' | 'description' | 'price' | 'currency' | 'condition' | 'category' |
-  'region' | 'imageUrls' | 'videoUrl' | 'videoPosterUrl' | 'isDonation'
+  'area' | 'region' | 'imageUrls' | 'videoUrl' | 'videoPosterUrl' | 'isDonation'
 >>;
 
 const LISTING_MANAGER_ROLES = ['master_admin', 'site_admin', 'classifieds_manager'] as const;
@@ -163,6 +163,7 @@ export const marketplaceResolvers = {
         description:  input.description,
         category:     input.category,
         condition:    input.condition,
+        area:         input.area?.trim() || null,
         region:       region?.displayName ?? input.region.trim(),
         regionCode:   region?.code ?? null,
         sellingPrice: input.isDonation ? 0 : input.price,
@@ -185,6 +186,7 @@ export const marketplaceResolvers = {
       if (input.currency?.trim()) update['currency'] = input.currency.trim().toUpperCase();
       if (input.condition)   update['condition'] = input.condition;
       if (input.category)    update['category'] = input.category;
+      if (input.area !== undefined) update['area'] = input.area?.trim() || null;
       if (input.region?.trim()) {
         const region = resolveLocationRegion(input.region);
         update['region'] = region?.displayName ?? input.region.trim();

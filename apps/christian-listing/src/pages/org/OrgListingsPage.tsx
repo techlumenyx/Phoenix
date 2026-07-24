@@ -7,11 +7,11 @@ import {
   UPDATE_MARKETPLACE_ITEM,
   UPDATE_MARKETPLACE_ITEM_STATUS,
 } from '../../graphql/mutations';
-import { CreateListingForm } from './OrgOverviewPage';
+import { CreateListingForm, type ManagedFormMode, type ManagedListingFormItem } from './OrgOverviewPage';
 
 type ListingStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD' | 'PENDING_REVIEW';
 
-interface MarketplaceListing {
+interface MarketplaceListing extends ManagedListingFormItem {
   id: string;
   title: string;
   description: string;
@@ -20,7 +20,10 @@ interface MarketplaceListing {
   currency: string;
   condition: string;
   region: string;
+  area?: string | null;
   imageUrls: string[];
+  videoUrl?: string | null;
+  videoPosterUrl?: string | null;
   status: ListingStatus;
   isDonation: boolean;
   createdAt: string;
@@ -193,6 +196,7 @@ export default function OrgListingsPage() {
   const [page, setPage] = useState(0);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [modal, setModal] = useState<{ listing: MarketplaceListing; mode: 'edit' | 'delete' } | null>(null);
+  const [formState, setFormState] = useState<{ listing: MarketplaceListing; mode: Exclude<ManagedFormMode, 'create'> } | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   const { data, loading, error, refetch } = useQuery(MY_MARKETPLACE_LISTINGS, { fetchPolicy: 'cache-and-network' });
@@ -214,6 +218,12 @@ export default function OrgListingsPage() {
   function showNotice(tone: 'success' | 'error', text: string) {
     setNotice({ tone, text });
     window.setTimeout(() => setNotice(null), 4000);
+  }
+
+  function openForm(listing: MarketplaceListing, mode: 'view' | 'edit') {
+    setFormState({ listing, mode });
+    setMenuId(null);
+    window.requestAnimationFrame(() => document.getElementById('create-listing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   async function changeStatus(listing: MarketplaceListing, status: Exclude<ListingStatus, 'PENDING_REVIEW'>) {
@@ -267,7 +277,7 @@ export default function OrgListingsPage() {
             <h1 className="font-serif text-3xl font-bold text-[#1B1B1B]">Listings Manager</h1>
             <p className="mt-1 text-sm text-gray-500">Edit inventory and keep availability up to date.</p>
           </div>
-          <a href="#create-listing" className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]">Create new listing +</a>
+          <a href="#create-listing" onClick={() => setFormState(null)} className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]">Create new listing +</a>
         </div>
 
         <div className="mt-6 flex gap-7 overflow-x-auto border-b border-gray-200 px-5 sm:px-6">
@@ -312,7 +322,8 @@ export default function OrgListingsPage() {
                     <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-gray-500 hover:bg-gray-100" aria-label={`Manage ${item.title}`} aria-expanded={menuId === item.id}>⋮</button>
                     {menuId === item.id && (
                       <div className="absolute right-0 top-10 z-20 w-48 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl">
-                        <button onClick={() => { setModal({ listing: item, mode: 'edit' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50">Edit listing</button>
+                        <button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50">View listing</button>
+                        <button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50">Edit listing</button>
                         {item.status !== 'AVAILABLE' && <button onClick={() => changeStatus(item, 'AVAILABLE')} className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50">Mark available</button>}
                         {item.status === 'AVAILABLE' && <button onClick={() => changeStatus(item, 'RESERVED')} className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50">Mark reserved</button>}
                         {item.status !== 'SOLD' && <button onClick={() => changeStatus(item, 'SOLD')} className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50">Mark sold</button>}
@@ -338,8 +349,8 @@ export default function OrgListingsPage() {
       </div>
 
       <section id="create-listing" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-100 px-6 py-5"><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Create a Marketplace Listing</h2><p className="mt-1 text-sm text-gray-500">List an item for sale or share it as a community donation.</p></div>
-        <div className="px-6 py-6"><CreateListingForm orgId={organisationId} onCreated={() => { void refetch(); }} /></div>
+        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5"><div><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">{formState?.mode === 'view' ? 'View Marketplace Listing' : formState?.mode === 'edit' ? 'Edit Marketplace Listing' : 'Create a Marketplace Listing'}</h2><p className="mt-1 text-sm text-gray-500">{formState ? 'Review the complete listing using the same publishing form.' : 'List an item for sale or share it as a community donation.'}</p></div>{formState && <div className="flex gap-2">{formState.mode === 'view' && <button type="button" onClick={() => setFormState((current) => current ? { ...current, mode: 'edit' } : current)} className="rounded-lg bg-[#1B1B1B] px-4 py-2 text-sm font-semibold text-white">Edit</button>}<button type="button" onClick={() => setFormState(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold">Close</button></div>}</div>
+        <div className="px-6 py-6"><CreateListingForm key={`${formState?.mode ?? 'create'}:${formState?.listing.id ?? 'new'}`} orgId={organisationId} mode={formState?.mode ?? 'create'} item={formState?.listing} onCreated={() => { void refetch(); }} onSaved={() => { void refetch(); showNotice('success', 'Listing changes saved.'); setFormState(null); }} /></div>
       </section>
       {modal && <ListingModal listing={modal.listing} mode={modal.mode} busy={busy} onClose={() => !busy && setModal(null)} onSave={saveListing} onDelete={removeListing} />}
     </div>

@@ -49,6 +49,7 @@ export interface IMarketplaceItem {
   region:     string | null;   // display — "Lagos, Nigeria"
   regionCode: string | null;   // filter  — "NG-LA"
 
+  area:            string | null;
   sellingPrice:    number;
   maxRetailPrice:  number | null;   // null = no MRP; shown > sellingPrice = discount badge
   currency:        string;          // ISO code — "NGN", "GBP", "USD"
@@ -96,6 +97,7 @@ export const MarketplaceItemSchema = new Schema<IMarketplaceItem>(
     region:     { type: String, default: null },
     regionCode: { type: String, default: null },
 
+    area:           { type: String, default: null },
     sellingPrice:   { type: Number, required: true },
     maxRetailPrice: { type: Number, default: null },
     currency:       { type: String, required: true },

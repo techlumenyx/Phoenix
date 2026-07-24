@@ -84,10 +84,15 @@ export const MY_ORG_JOB_LISTINGS = gql`
       jobListings {
         id
         title
+        description
         roleType
         workLocation
+        skillsRequired
+        responsibilities
         region
+        salaryRange { min max currency }
         applicationDeadline
+        externalApplyUrl
         status
         isPromoted
         faithAlignmentTag
@@ -110,7 +115,10 @@ export const MY_MARKETPLACE_LISTINGS = gql`
         currency
         condition
         region
+        area
         imageUrls
+        videoUrl
+        videoPosterUrl
         status
         isDonation
         createdAt
@@ -141,7 +149,10 @@ export const UPDATE_MARKETPLACE_ITEM = gql`
       currency
       condition
       region
+      area
       imageUrls
+      videoUrl
+      videoPosterUrl
       status
       isDonation
       createdAt
@@ -177,7 +188,13 @@ export const MY_ORG_EVENTS = gql`
           description
           category
           date
-          location { type city country }
+          endDate
+          location { type address city country virtualLink }
+          region
+          imageUrls
+          videoUrls
+          videoPosterUrls
+          externalTicketUrl
           rsvpCount
           capacityLimit
           status
@@ -207,6 +224,28 @@ export const UPDATE_MANAGED_EVENT = gql`
       date
       status
       isSeriesException
+    }
+  }
+`;
+
+export const UPDATE_JOB_LISTING = gql`
+  mutation UpdateManagedJobListing($id: ID!, $input: UpdateJobListingInput!) {
+    updateJobListing(id: $id, input: $input) {
+      id
+      title
+      description
+      roleType
+      workLocation
+      skillsRequired
+      responsibilities
+      region
+      salaryRange { min max currency }
+      applicationDeadline
+      externalApplyUrl
+      status
+      isPromoted
+      faithAlignmentTag
+      createdAt
     }
   }
 `;

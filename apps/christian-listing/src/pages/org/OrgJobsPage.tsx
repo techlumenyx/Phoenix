@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { MY_ORG_JOB_LISTINGS } from '../../graphql/mutations';
-import { CreateJobsForm } from './OrgOverviewPage';
+import { CreateJobsForm, type ManagedFormMode, type ManagedJobFormItem } from './OrgOverviewPage';
 
-interface JobListing {
+interface JobListing extends ManagedJobFormItem {
   id: string;
   title: string;
   roleType: string;
@@ -71,6 +71,8 @@ export default function OrgJobsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(0);
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [formState, setFormState] = useState<{ job: JobListing; mode: Exclude<ManagedFormMode, 'create'> } | null>(null);
 
   const { data, loading, error, refetch } = useQuery(MY_ORG_JOB_LISTINGS);
   const organisationId = data?.myOrganisations?.[0]?.id as string | undefined;
@@ -107,6 +109,12 @@ export default function OrgJobsPage() {
     setPage(0);
   }
   function handleTabChange(tab: string) { setActiveTab(tab); setPage(0); }
+
+  function openForm(job: JobListing, mode: 'view' | 'edit') {
+    setFormState({ job, mode });
+    setMenuId(null);
+    window.requestAnimationFrame(() => document.getElementById('create-job')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
 
   async function changeApplicationStatus(application: JobApplication, status: string) {
     await updateApplicationStatus({ variables: { id: application.id, status } });
@@ -231,11 +239,11 @@ export default function OrgJobsPage() {
                         {item.status}
                       </span>
                     </div>
-                    <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100">
+                    <div className="relative"><button onClick={() => setMenuId((current) => current === item.id ? null : item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100" aria-label={`Manage ${item.title}`}>
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                       </svg>
-                    </button>
+                    </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View job</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit job</button></div>}</div>
                   </div>
                 ))}
               </div>
@@ -280,8 +288,8 @@ export default function OrgJobsPage() {
         )}
       </div>
       <section id="create-job" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-100 px-6 py-5"><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">Create a Job Listing</h2><p className="mt-1 text-sm text-gray-500">Post a paid role, volunteer opportunity, or internship.</p></div>
-        <div className="px-6 py-6"><CreateJobsForm orgId={organisationId} onCreated={() => { void refetch(); }} /></div>
+        <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5"><div><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">{formState?.mode === 'view' ? 'View Job Listing' : formState?.mode === 'edit' ? 'Edit Job Listing' : 'Create a Job Listing'}</h2><p className="mt-1 text-sm text-gray-500">{formState ? 'Review the complete role using the same publishing form.' : 'Post a paid role, volunteer opportunity, or internship.'}</p></div>{formState && <div className="flex gap-2">{formState.mode === 'view' && <button type="button" onClick={() => setFormState((current) => current ? { ...current, mode: 'edit' } : current)} className="rounded-lg bg-[#1B1B1B] px-4 py-2 text-sm font-semibold text-white">Edit</button>}<button type="button" onClick={() => setFormState(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold">Close</button></div>}</div>
+        <div className="px-6 py-6"><CreateJobsForm key={`${formState?.mode ?? 'create'}:${formState?.job.id ?? 'new'}`} orgId={organisationId} mode={formState?.mode ?? 'create'} item={formState?.job} onCreated={() => { void refetch(); }} onSaved={() => { void refetch(); setFormState(null); }} /></div>
       </section>
       {selectedApplication && <ApplicationDrawer application={selectedApplication} updating={updatingStatus} onClose={() => setSelectedApplication(null)} onStatusChange={(status) => changeApplicationStatus(selectedApplication, status)} />}
     </div>

@@ -328,6 +328,7 @@ input CreateJobListingInput {
   roleType: RoleType!
   workLocation: WorkLocation!
   skillsRequired: [String!]!
+  responsibilities: [String!]
   region: String!
   salaryRange: SalaryRangeInput
   applicationDeadline: DateTime!
@@ -341,9 +342,12 @@ input UpdateJobListingInput {
   roleType: RoleType
   workLocation: WorkLocation
   skillsRequired: [String!]
+  responsibilities: [String!]
+  region: String
   salaryRange: SalaryRangeInput
   applicationDeadline: DateTime
   externalApplyUrl: String
+  faithAlignmentTag: FaithAlignmentTag
 }
 
 input SalaryRangeInput {
@@ -402,6 +406,7 @@ input UpdateMarketplaceItemInput {
   currency: String
   condition: ItemCondition
   category: MarketplaceCategory
+  area: String
   region: String
   imageUrls: [String!]
   videoUrl: String

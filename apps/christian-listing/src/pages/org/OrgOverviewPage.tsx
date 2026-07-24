@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react';
 import { gql, useQuery, useMutation } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
-import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING } from '../../graphql/mutations';
+import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING, UPDATE_JOB_LISTING, UPDATE_MANAGED_EVENT, UPDATE_MARKETPLACE_ITEM } from '../../graphql/mutations';
 import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
 import { deleteUploadedMedia, uploadMedia, type UploadedMedia } from '../../lib/mediaUpload';
 
@@ -729,39 +729,85 @@ function zonedLocalDateTime(date: string, time: string, timezone: string) {
   return result;
 }
 
-interface CreateFormProps {
-  orgId?: string;
-  onCreated?: () => void;
+function dateTimeFields(iso: string, timezone?: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso));
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return { date: `${value('year')}-${value('month')}-${value('day')}`, time: `${value('hour')}:${value('minute')}` };
 }
 
-export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
-  const [title, setTitle]           = useState('');
-  const [description, setDesc]      = useState('');
-  const [date, setDate]             = useState('');
-  const [time, setTime]             = useState('');
-  const [address, setAddress]       = useState('');
-  const [virtualLink, setVirtual]   = useState('');
-  const [region, setRegion]         = useState('');
-  const [capacity, setCapacity]     = useState('');
-  const [isTicketed, setIsTicketed] = useState(false);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'WEEKLY' | 'MONTHLY'>('WEEKLY');
-  const [recurrenceInterval, setRecurrenceInterval] = useState('1');
-  const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
-  const [recurrenceEnd, setRecurrenceEnd] = useState<'COUNT' | 'UNTIL'>('COUNT');
-  const [occurrenceCount, setOccurrenceCount] = useState('12');
-  const [recurrenceUntil, setRecurrenceUntil] = useState('');
-  const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
-  const [eventType, setEventType]   = useState<'PHYSICAL' | 'VIRTUAL' | 'HYBRID'>('PHYSICAL');
-  const [selectedCategory, setCategory] = useState<string | null>(null);
+export type ManagedFormMode = 'create' | 'view' | 'edit';
+
+export interface ManagedEventFormItem {
+  id: string; title: string; description: string; category: string; date: string; endDate?: string | null; region: string;
+  location: { type: string; address?: string | null; city?: string | null; country?: string | null; virtualLink?: string | null };
+  capacityLimit?: number | null; imageUrls: string[]; videoUrls: string[]; videoPosterUrls: string[]; externalTicketUrl?: string | null;
+  isRecurring: boolean; series?: { recurrence: { frequency: 'WEEKLY' | 'MONTHLY'; interval: number; daysOfWeek: number[]; timezone: string; endsAt?: string | null; occurrenceCount?: number | null } } | null;
+}
+
+export interface ManagedListingFormItem {
+  id: string; title: string; description: string; category: string; price: number; currency: string; condition: string; area?: string | null;
+  region: string; imageUrls: string[]; videoUrl?: string | null; videoPosterUrl?: string | null; isDonation: boolean;
+}
+
+export interface ManagedJobFormItem {
+  id: string; title: string; description: string; roleType: string; workLocation: string; skillsRequired: string[]; responsibilities: string[]; region: string;
+  salaryRange?: { min: number; max: number; currency: string } | null; applicationDeadline: string; externalApplyUrl?: string | null; faithAlignmentTag?: string | null;
+}
+
+interface CreateFormProps<T = never> {
+  orgId?: string;
+  onCreated?: () => void;
+  onSaved?: () => void;
+  mode?: ManagedFormMode;
+  item?: T | null;
+  updateScope?: 'THIS_OCCURRENCE' | 'THIS_AND_FUTURE' | 'ENTIRE_SERIES';
+}
+
+function enumLabel(map: Record<string, string>, value: string | null | undefined, fallback: string) {
+  return Object.entries(map).find(([, enumValue]) => enumValue === value)?.[0] ?? fallback;
+}
+
+function existingMedia(url: string, resourceType: 'image' | 'video', posterUrl?: string | null): UploadedMedia {
+  return { assetId: `existing:${url}`, publicId: '', url, resourceType, format: '', bytes: 0, width: null, height: null, duration: null, posterUrl: posterUrl ?? null };
+}
+
+function deleteNewUpload(item: UploadedMedia, purpose: 'EVENT_IMAGE' | 'EVENT_VIDEO' | 'MARKETPLACE_IMAGE' | 'MARKETPLACE_VIDEO', orgId?: string) {
+  if (!item.assetId.startsWith('existing:')) void deleteUploadedMedia(item, purpose, orgId);
+}
+
+export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', item, updateScope = 'THIS_OCCURRENCE' }: CreateFormProps<ManagedEventFormItem>) {
+  const eventDate = item ? new Date(item.date) : null;
+  const recurrence = item?.series?.recurrence;
+  const initialDateTime = item && eventDate ? dateTimeFields(item.date, recurrence?.timezone) : { date: '', time: '' };
+  const [title, setTitle]           = useState(item?.title ?? '');
+  const [description, setDesc]      = useState(item?.description ?? '');
+  const [date, setDate]             = useState(initialDateTime.date);
+  const [time, setTime]             = useState(initialDateTime.time);
+  const [address, setAddress]       = useState(item?.location.address ?? [item?.location.city, item?.location.country].filter(Boolean).join(', '));
+  const [virtualLink, setVirtual]   = useState(item?.location.virtualLink ?? '');
+  const [region, setRegion]         = useState(item?.region ?? '');
+  const [capacity, setCapacity]     = useState(item?.capacityLimit != null ? String(item.capacityLimit) : '');
+  const [isTicketed, setIsTicketed] = useState(Boolean(item?.externalTicketUrl));
+  const [ticketUrl, setTicketUrl] = useState(item?.externalTicketUrl ?? '');
+  const [isRecurring, setIsRecurring] = useState(item?.isRecurring ?? false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'WEEKLY' | 'MONTHLY'>(recurrence?.frequency ?? 'WEEKLY');
+  const [recurrenceInterval, setRecurrenceInterval] = useState(String(recurrence?.interval ?? 1));
+  const [recurrenceDays, setRecurrenceDays] = useState<number[]>(recurrence?.daysOfWeek ?? []);
+  const [recurrenceEnd, setRecurrenceEnd] = useState<'COUNT' | 'UNTIL'>(recurrence?.endsAt ? 'UNTIL' : 'COUNT');
+  const [occurrenceCount, setOccurrenceCount] = useState(String(recurrence?.occurrenceCount ?? 12));
+  const [recurrenceUntil, setRecurrenceUntil] = useState(recurrence?.endsAt ? new Date(recurrence.endsAt).toISOString().slice(0, 10) : '');
+  const [timezone, setTimezone] = useState(recurrence?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC');
+  const [eventType, setEventType]   = useState<'PHYSICAL' | 'VIRTUAL' | 'HYBRID'>((item?.location.type as 'PHYSICAL' | 'VIRTUAL' | 'HYBRID') ?? 'PHYSICAL');
+  const [selectedCategory, setCategory] = useState<string | null>(item ? enumLabel(PILL_TO_ENUM, item.category, 'Other') : null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState('');
   const [success, setSuccess]       = useState(false);
-  const [eventImages, setEventImages] = useState<UploadedMedia[]>([]);
-  const [eventVideos, setEventVideos] = useState<UploadedMedia[]>([]);
+  const [eventImages, setEventImages] = useState<UploadedMedia[]>(() => item?.imageUrls.map((url) => existingMedia(url, 'image')) ?? []);
+  const [eventVideos, setEventVideos] = useState<UploadedMedia[]>(() => item?.videoUrls.map((url, index) => existingMedia(url, 'video', item.videoPosterUrls[index])) ?? []);
   const [mediaProgress, setMediaProgress] = useState('');
 
   const [createEvent] = useMutation(CREATE_EVENT);
+  const [updateEvent] = useMutation(UPDATE_MANAGED_EVENT);
 
   const effectiveRecurrenceDays = recurrenceDays.length > 0
     ? recurrenceDays
@@ -771,7 +817,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
       ? firstWeeklyDateOnOrAfter(date, effectiveRecurrenceDays)
       : date
     : undefined;
-  const recurrenceEndInvalid = isRecurring
+  const recurrenceEndInvalid = mode === 'create' && isRecurring
     && recurrenceEnd === 'UNTIL'
     && Boolean(recurrenceUntil)
     && Boolean(minimumRecurrenceEnd)
@@ -782,16 +828,22 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (mode === 'view') return;
     if (!orgId) { setError('No organisation found — set one up first.'); return; }
     if (!title.trim() || !description.trim() || !date || !selectedCategory || !region.trim()) {
       setError('Please fill in all required fields (title, description, category, date, region).');
       return;
     }
-    if (isRecurring && recurrenceEnd === 'UNTIL' && !recurrenceUntil) {
+    const scheduleChanged = Boolean(item) && (date !== initialDateTime.date || time !== initialDateTime.time);
+    if (mode === 'edit' && item?.isRecurring && updateScope !== 'THIS_OCCURRENCE' && scheduleChanged) {
+      setError('Change the date on an individual occurrence. Series-wide edits can update the shared event details without collapsing the schedule.');
+      return;
+    }
+    if (mode === 'create' && isRecurring && recurrenceEnd === 'UNTIL' && !recurrenceUntil) {
       setError('Choose the date on which this recurring series should end.');
       return;
     }
-    if (isRecurring && recurrenceEnd === 'UNTIL' && minimumRecurrenceEnd && recurrenceUntil < minimumRecurrenceEnd) {
+    if (mode === 'create' && isRecurring && recurrenceEnd === 'UNTIL' && minimumRecurrenceEnd && recurrenceUntil < minimumRecurrenceEnd) {
       const label = new Date(`${minimumRecurrenceEnd}T12:00:00.000Z`).toLocaleDateString('en-GB', {
         day: 'numeric', month: 'short', year: 'numeric',
       });
@@ -802,10 +854,8 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
     setSubmitting(true);
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
-      const eventDate = isRecurring ? zonedLocalDateTime(date, time, timezone) : new Date(dateTime);
-      await createEvent({
-        variables: {
-          input: {
+      const eventDate = item && !scheduleChanged ? new Date(item.date) : isRecurring ? zonedLocalDateTime(date, time, timezone) : new Date(dateTime);
+      const sharedInput = {
             title:              title.trim(),
             description:        description.trim(),
             category:           PILL_TO_ENUM[selectedCategory] ?? 'OTHER',
@@ -815,12 +865,19 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
               address:      eventType !== 'VIRTUAL' ? address.trim() || undefined : undefined,
               virtualLink:  eventType !== 'PHYSICAL' ? virtualLink.trim() || undefined : undefined,
             },
-            hostOrganisationIds: [orgId],
             region:             region.trim(),
-            capacityLimit:      capacity ? parseInt(capacity, 10) : undefined,
+            capacityLimit:      capacity ? parseInt(capacity, 10) : mode === 'edit' ? null : undefined,
             imageUrls: eventImages.map((item) => item.url),
             videoUrls: eventVideos.map((item) => item.url),
             videoPosterUrls: eventVideos.map((item) => item.posterUrl).filter(Boolean),
+            externalTicketUrl: isTicketed ? ticketUrl.trim() || undefined : mode === 'edit' ? null : undefined,
+          };
+      if (mode === 'edit' && item) {
+        await updateEvent({ variables: { id: item.id, scope: updateScope, input: sharedInput } });
+      } else {
+        await createEvent({ variables: { input: {
+            ...sharedInput,
+            hostOrganisationIds: [orgId],
             isRecurring,
             recurrence: isRecurring ? {
               frequency: recurrenceFrequency,
@@ -831,14 +888,13 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
               occurrenceCount: recurrenceEnd === 'COUNT' ? Math.min(100, Math.max(1, parseInt(occurrenceCount, 10) || 1)) : undefined,
               endsAt: recurrenceEnd === 'UNTIL' && recurrenceUntil ? zonedLocalDateTime(recurrenceUntil, '23:59', timezone).toISOString() : undefined,
             } : undefined,
-          },
-        },
-      });
-      onCreated?.();
+          } } });
+      }
+      if (mode === 'edit') onSaved?.(); else onCreated?.();
       setSuccess(true);
       setTitle(''); setDesc(''); setDate(''); setTime('');
       setAddress(''); setVirtual(''); setRegion(''); setCapacity('');
-      setCategory(null); setEventType('PHYSICAL'); setIsTicketed(false);
+      setCategory(null); setEventType('PHYSICAL'); setIsTicketed(false); setTicketUrl('');
       setIsRecurring(false); setRecurrenceFrequency('WEEKLY'); setRecurrenceInterval('1');
       setRecurrenceDays([]); setRecurrenceEnd('COUNT'); setOccurrenceCount('12'); setRecurrenceUntil('');
       setEventImages([]); setEventVideos([]); setMediaProgress('');
@@ -857,7 +913,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-base font-semibold text-[#1B1B1B]">Event published!</p>
+        <p className="text-base font-semibold text-[#1B1B1B]">{mode === 'edit' ? 'Event updated!' : 'Event published!'}</p>
         <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">
           Create another
         </button>
@@ -867,6 +923,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <fieldset disabled={mode === 'view'} className="space-y-6 disabled:opacity-90">
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
       )}
@@ -982,7 +1039,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
         </div>
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-[#FAF6ED] p-4">
+      <section className={`rounded-xl border border-gray-200 bg-[#FAF6ED] p-4 ${mode !== 'create' ? 'pointer-events-none' : ''}`}>
         <label className="flex cursor-pointer items-center justify-between gap-4">
           <span><span className="block text-sm font-semibold text-[#1B1B1B]">Recurring event</span><span className="mt-1 block text-xs text-gray-500">Create a managed weekly or monthly series.</span></span>
           <input type="checkbox" checked={isRecurring} onChange={(event) => {
@@ -1027,7 +1084,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
           <p className="text-xs text-gray-500">Choose images or videos</p><p className="mt-1 text-[11px] text-gray-400">10 items total, up to 3 videos · 20 MB per video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#8b6a2f]">{mediaProgress}</p>}
           <input className="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" onChange={async (event) => { const files = Array.from(event.target.files ?? []); let images = [...eventImages]; let videos = [...eventVideos]; for (const file of files) { if (images.length + videos.length >= 10) break; const isVideo = file.type.startsWith('video/'); if (isVideo && videos.length >= 3) continue; try { setMediaProgress(`Uploading ${file.name}…`); const uploaded = await uploadMedia(file, isVideo ? 'EVENT_VIDEO' : 'EVENT_IMAGE', orgId, (value) => setMediaProgress(`Uploading ${file.name}: ${value}%`)); if (isVideo) videos = [...videos, uploaded]; else images = [...images, uploaded]; setEventImages(images); setEventVideos(videos); } catch (value) { setError(value instanceof Error ? value.message : 'Media upload failed.'); break; } } setMediaProgress(''); event.target.value = ''; }} />
         </label>
-        {(eventImages.length > 0 || eventVideos.length > 0) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{eventImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { void deleteUploadedMedia(item, 'EVENT_IMAGE', orgId); setEventImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{eventVideos.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { void deleteUploadedMedia(item, 'EVENT_VIDEO', orgId); setEventVideos((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}</div>}
+        {(eventImages.length > 0 || eventVideos.length > 0) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{eventImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { deleteNewUpload(item, 'EVENT_IMAGE', orgId); setEventImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{eventVideos.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { deleteNewUpload(item, 'EVENT_VIDEO', orgId); setEventVideos((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}</div>}
       </div>
 
       {/* RSVP Configuration */}
@@ -1075,6 +1132,7 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
             />
             This is a Ticket Event
           </label>
+          {isTicketed && <input type="url" value={ticketUrl} onChange={(event) => setTicketUrl(event.target.value)} placeholder="https://tickets.example.com/event" className="ml-6 w-full max-w-xl rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#C9A96E]" />}
           <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
             <input type="checkbox" className="rounded border-gray-300 accent-[#C9A96E]" />
             Send Email Notifications to users
@@ -1084,15 +1142,16 @@ export function CreateEventForm({ orgId, onCreated }: CreateFormProps) {
       </div>
 
       {/* Submit */}
-      <div className="flex items-center gap-3 pt-2">
+      {mode !== 'view' && <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={submitting || !orgId || recurrenceEndInvalid}
           className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-50"
         >
-          {submitting ? 'Publishing…' : 'Publish Event'}
+          {submitting ? (mode === 'edit' ? 'Saving…' : 'Publishing…') : (mode === 'edit' ? 'Save Event' : 'Publish Event')}
         </button>
-      </div>
+      </div>}
+      </fieldset>
     </form>
   );
 }
@@ -1117,28 +1176,30 @@ const CURRENCY_CODE: Record<string, string> = {
   'GBP (£)': 'GBP', 'NGN (₦)': 'NGN', 'USD ($)': 'USD', 'EUR (€)': 'EUR',
 };
 
-export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
-  const [condition, setCondition]       = useState<typeof LISTING_CONDITIONS[number]>('New');
-  const [currency, setCurrency]         = useState<typeof LISTING_CURRENCIES[number]>('GBP (£)');
-  const [selectedCategory, setCategory] = useState<string | null>(null);
-  const [isDonation, setIsDonation]     = useState(false);
+export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', item }: CreateFormProps<ManagedListingFormItem>) {
+  const [condition, setCondition]       = useState<typeof LISTING_CONDITIONS[number]>(enumLabel(LISTING_CONDITION_TO_ENUM, item?.condition, 'New') as typeof LISTING_CONDITIONS[number]);
+  const [currency, setCurrency]         = useState<typeof LISTING_CURRENCIES[number]>(enumLabel(CURRENCY_CODE, item?.currency, 'GBP (£)') as typeof LISTING_CURRENCIES[number]);
+  const [selectedCategory, setCategory] = useState<string | null>(item ? enumLabel(LISTING_CATEGORY_TO_ENUM, item.category, 'Other') : null);
+  const [isDonation, setIsDonation]     = useState(item?.isDonation ?? false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
-  const [title, setTitle]       = useState('');
-  const [description, setDesc]  = useState('');
-  const [price, setPrice]       = useState('');
-  const [area, setArea]         = useState('');
-  const [region, setRegion]     = useState('');
+  const [title, setTitle]       = useState(item?.title ?? '');
+  const [description, setDesc]  = useState(item?.description ?? '');
+  const [price, setPrice]       = useState(item ? String(item.price) : '');
+  const [area, setArea]         = useState(item?.area ?? '');
+  const [region, setRegion]     = useState(item?.region ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]       = useState('');
   const [success, setSuccess]   = useState(false);
-  const [listingImages, setListingImages] = useState<UploadedMedia[]>([]);
-  const [listingVideo, setListingVideo] = useState<UploadedMedia | null>(null);
+  const [listingImages, setListingImages] = useState<UploadedMedia[]>(() => item?.imageUrls.map((url) => existingMedia(url, 'image')) ?? []);
+  const [listingVideo, setListingVideo] = useState<UploadedMedia | null>(() => item?.videoUrl ? existingMedia(item.videoUrl, 'video', item.videoPosterUrl) : null);
   const [mediaProgress, setMediaProgress] = useState('');
 
   const [createItem] = useMutation(CREATE_MARKETPLACE_ITEM);
+  const [updateItem] = useMutation(UPDATE_MARKETPLACE_ITEM);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (mode === 'view') return;
     if (!title.trim() || !description.trim() || !selectedCategory || !region.trim()) {
       setError('Please fill in title, description, category, and region.');
       return;
@@ -1149,26 +1210,23 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
     }
     setError(''); setSubmitting(true);
     try {
-      await createItem({
-        variables: {
-          input: {
+      const input = {
             title:       title.trim(),
-            organisationId: orgId,
             description: description.trim(),
             price:       isDonation ? 0 : parseFloat(price) || 0,
             currency:    CURRENCY_CODE[currency] ?? 'GBP',
             condition:   LISTING_CONDITION_TO_ENUM[condition] ?? 'GOOD',
             category:    LISTING_CATEGORY_TO_ENUM[selectedCategory] ?? 'OTHER',
-            area:        area.trim() || undefined,
+            area:        area.trim() || (mode === 'edit' ? null : undefined),
             region:      region.trim(),
             imageUrls:   listingImages.map((item) => item.url),
-            videoUrl: listingVideo?.url,
-            videoPosterUrl: listingVideo?.posterUrl,
+            videoUrl: listingVideo?.url ?? (mode === 'edit' ? null : undefined),
+            videoPosterUrl: listingVideo?.posterUrl ?? (mode === 'edit' ? null : undefined),
             isDonation,
-          },
-        },
-      });
-      onCreated?.();
+          };
+      if (mode === 'edit' && item) await updateItem({ variables: { id: item.id, input } });
+      else await createItem({ variables: { input: { ...input, organisationId: orgId } } });
+      if (mode === 'edit') onSaved?.(); else onCreated?.();
       setSuccess(true);
       setTitle(''); setDesc(''); setPrice(''); setArea(''); setRegion('');
       setCategory(null); setCondition('New'); setIsDonation(false);
@@ -1188,7 +1246,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-base font-semibold text-[#1B1B1B]">Listing published!</p>
+        <p className="text-base font-semibold text-[#1B1B1B]">{mode === 'edit' ? 'Listing updated!' : 'Listing published!'}</p>
         <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">Create another</button>
       </div>
     );
@@ -1196,6 +1254,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <fieldset disabled={mode === 'view'} className="space-y-6 disabled:opacity-90">
       {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2.5">{error}</p>}
       {/* Title */}
       <div>
@@ -1216,6 +1275,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
           {LISTING_CATEGORIES.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setCategory(selectedCategory === cat ? null : cat)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 selectedCategory === cat
@@ -1236,6 +1296,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
           {LISTING_CONDITIONS.map((c) => (
             <button
               key={c}
+              type="button"
               onClick={() => setCondition(c)}
               className={`flex-1 py-2.5 transition-colors ${
                 condition === c ? 'bg-[#1B1B1B] text-white' : 'text-gray-500 hover:bg-gray-50'
@@ -1266,6 +1327,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
           <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
             <span>This is a free donation</span>
             <button
+              type="button"
               role="switch"
               aria-checked={isDonation}
               onClick={() => setIsDonation((v) => !v)}
@@ -1287,6 +1349,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
             {/* Currency selector */}
             <div className="relative">
               <button
+                type="button"
                 onClick={() => setShowCurrencyMenu((v) => !v)}
                 className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-700 font-medium hover:border-gray-300 transition-colors whitespace-nowrap"
               >
@@ -1300,6 +1363,7 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
                   {LISTING_CURRENCIES.map((c) => (
                     <button
                       key={c}
+                      type="button"
                       onClick={() => { setCurrency(c); setShowCurrencyMenu(false); }}
                       className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
                         currency === c ? 'bg-[#FAF6ED] font-semibold text-[#1B1B1B]' : 'text-gray-600 hover:bg-gray-50'
@@ -1362,19 +1426,20 @@ export function CreateListingForm({ orgId, onCreated }: CreateFormProps) {
           <p className="text-[11px] text-gray-300 mt-0.5">Up to 8 images and one video · 20 MB per video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#8b6a2f]">{mediaProgress}</p>}
           <input className="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" onChange={async (event) => { const files = Array.from(event.target.files ?? []); let images = [...listingImages]; let video = listingVideo; for (const file of files) { const isVideo = file.type.startsWith('video/'); if ((!isVideo && images.length >= 8) || (isVideo && video)) continue; try { setMediaProgress(`Uploading ${file.name}…`); const uploaded = await uploadMedia(file, isVideo ? 'MARKETPLACE_VIDEO' : 'MARKETPLACE_IMAGE', orgId, (value) => setMediaProgress(`Uploading ${file.name}: ${value}%`)); if (isVideo) video = uploaded; else images = [...images, uploaded]; setListingImages(images); setListingVideo(video); } catch (value) { setError(value instanceof Error ? value.message : 'Media upload failed.'); break; } } setMediaProgress(''); event.target.value = ''; }} />
         </label>
-        {(listingImages.length > 0 || listingVideo) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{listingImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { void deleteUploadedMedia(item, 'MARKETPLACE_IMAGE', orgId); setListingImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{listingVideo && <MediaPreview item={listingVideo} onRemove={() => { void deleteUploadedMedia(listingVideo, 'MARKETPLACE_VIDEO', orgId); setListingVideo(null); }} />}</div>}
+        {(listingImages.length > 0 || listingVideo) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{listingImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { deleteNewUpload(item, 'MARKETPLACE_IMAGE', orgId); setListingImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{listingVideo && <MediaPreview item={listingVideo} onRemove={() => { deleteNewUpload(listingVideo, 'MARKETPLACE_VIDEO', orgId); setListingVideo(null); }} />}</div>}
       </div>
 
       {/* Submit */}
-      <div className="flex items-center gap-3 pt-2">
+      {mode !== 'view' && <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={submitting}
           className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-60"
         >
-          {submitting ? 'Publishing...' : 'Publish Listing'}
+          {submitting ? (mode === 'edit' ? 'Saving...' : 'Publishing...') : (mode === 'edit' ? 'Save Listing' : 'Publish Listing')}
         </button>
-      </div>
+      </div>}
+      </fieldset>
     </form>
   );
 }
@@ -1399,25 +1464,27 @@ const FAITH_TAG_TO_ENUM: Record<string, string> = {
   'Open to All': 'OPEN_TO_ALL', 'Faith Background Preferred': 'FAITH_BACKGROUND_PREFERRED',
 };
 
-export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
-  const [roleType, setRoleType]         = useState<typeof JOB_ROLE_TYPES[number]>('Paid');
-  const [locationType, setLocationType] = useState<typeof JOB_LOCATION_TYPES[number]>('Physical');
-  const [faithTag, setFaithTag]         = useState<typeof JOB_FAITH_TAGS[number]>('Open to All');
-  const [skills, setSkills]             = useState<string[]>([]);
+export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', item }: CreateFormProps<ManagedJobFormItem>) {
+  const [roleType, setRoleType]         = useState<typeof JOB_ROLE_TYPES[number]>(enumLabel(ROLE_TYPE_TO_ENUM, item?.roleType, 'Paid') as typeof JOB_ROLE_TYPES[number]);
+  const [locationType, setLocationType] = useState<typeof JOB_LOCATION_TYPES[number]>(enumLabel(LOCATION_TO_ENUM, item?.workLocation, 'Physical') as typeof JOB_LOCATION_TYPES[number]);
+  const [faithTag, setFaithTag]         = useState<typeof JOB_FAITH_TAGS[number]>(enumLabel(FAITH_TAG_TO_ENUM, item?.faithAlignmentTag, 'Open to All') as typeof JOB_FAITH_TAGS[number]);
+  const [skills, setSkills]             = useState<string[]>(item?.skillsRequired ?? []);
   const [customSkill, setCustomSkill]   = useState('');
-  const [showSalary, setShowSalary]     = useState(false);
-  const [title, setTitle]               = useState('');
-  const [description, setDesc]          = useState('');
-  const [deadline, setDeadline]         = useState('');
-  const [region, setRegion]             = useState('');
-  const [externalUrl, setExternalUrl]   = useState('');
-  const [salaryMin, setSalaryMin]       = useState('');
-  const [salaryMax, setSalaryMax]       = useState('');
+  const [showSalary, setShowSalary]     = useState(Boolean(item?.salaryRange));
+  const [title, setTitle]               = useState(item?.title ?? '');
+  const [description, setDesc]          = useState(item?.description ?? '');
+  const [responsibilities, setResponsibilities] = useState(item?.responsibilities.join('\n') ?? '');
+  const [deadline, setDeadline]         = useState(item ? new Date(item.applicationDeadline).toISOString().slice(0, 10) : '');
+  const [region, setRegion]             = useState(item?.region ?? '');
+  const [externalUrl, setExternalUrl]   = useState(item?.externalApplyUrl ?? '');
+  const [salaryMin, setSalaryMin]       = useState(item?.salaryRange ? String(item.salaryRange.min) : '');
+  const [salaryMax, setSalaryMax]       = useState(item?.salaryRange ? String(item.salaryRange.max) : '');
   const [submitting, setSubmitting]     = useState(false);
   const [error, setError]               = useState('');
   const [success, setSuccess]           = useState(false);
 
   const [createJob] = useMutation(CREATE_JOB_LISTING);
+  const [updateJob] = useMutation(UPDATE_JOB_LISTING);
 
   const toggleSkill = (skill: string) =>
     setSkills((prev) => prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]);
@@ -1430,6 +1497,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (mode === 'view') return;
     if (!title.trim() || !description.trim() || !deadline || !region.trim()) {
       setError('Please fill in job title, description, deadline, and region.');
       return;
@@ -1441,29 +1509,28 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
     const salaryRange =
       showSalary && salaryMin && salaryMax
         ? { min: parseFloat(salaryMin) || 0, max: parseFloat(salaryMax) || 0, currency: 'GBP' }
-        : undefined;
+        : mode === 'edit' ? null : undefined;
     setError(''); setSubmitting(true);
     try {
-      await createJob({
-        variables: {
-          input: {
+      const input = {
             title:               title.trim(),
             description:         description.trim(),
-            organisationId:      orgId,
             roleType:            ROLE_TYPE_TO_ENUM[roleType] ?? 'PAID',
             workLocation:        LOCATION_TO_ENUM[locationType] ?? 'PHYSICAL',
             skillsRequired:      skills,
+            responsibilities:    responsibilities.split('\n').map((value) => value.trim()).filter(Boolean),
             region:              region.trim(),
             applicationDeadline: new Date(deadline).toISOString(),
-            externalApplyUrl:    externalUrl.trim() || undefined,
+            externalApplyUrl:    externalUrl.trim() || (mode === 'edit' ? null : undefined),
             faithAlignmentTag:   FAITH_TAG_TO_ENUM[faithTag] ?? 'OPEN_TO_ALL',
             ...(salaryRange ? { salaryRange } : {}),
-          },
-        },
-      });
-      onCreated?.();
+          };
+      if (mode === 'edit' && item) await updateJob({ variables: { id: item.id, input } });
+      else await createJob({ variables: { input: { ...input, organisationId: orgId } } });
+      if (mode === 'edit') onSaved?.(); else onCreated?.();
       setSuccess(true);
       setTitle(''); setDesc(''); setDeadline(''); setRegion(''); setExternalUrl('');
+      setResponsibilities('');
       setSalaryMin(''); setSalaryMax(''); setSkills([]);
       setRoleType('Paid'); setLocationType('Physical'); setFaithTag('Open to All');
     } catch {
@@ -1481,7 +1548,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-base font-semibold text-[#1B1B1B]">Job posted!</p>
+        <p className="text-base font-semibold text-[#1B1B1B]">{mode === 'edit' ? 'Job updated!' : 'Job posted!'}</p>
         <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">Post another</button>
       </div>
     );
@@ -1489,6 +1556,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <fieldset disabled={mode === 'view'} className="space-y-6 disabled:opacity-90">
       {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2.5">{error}</p>}
       {/* Title */}
       <div>
@@ -1510,6 +1578,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
             {JOB_ROLE_TYPES.map((t) => (
               <button
                 key={t}
+                type="button"
                 onClick={() => setRoleType(t)}
                 className={`flex-1 py-2.5 transition-colors ${roleType === t ? 'bg-[#1B1B1B] text-white' : 'text-gray-500 hover:bg-gray-50'}`}
               >
@@ -1524,6 +1593,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
             {JOB_LOCATION_TYPES.map((t) => (
               <button
                 key={t}
+                type="button"
                 onClick={() => setLocationType(t)}
                 className={`flex-1 py-2.5 transition-colors ${locationType === t ? 'bg-[#1B1B1B] text-white' : 'text-gray-500 hover:bg-gray-50'}`}
               >
@@ -1558,6 +1628,8 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">Key Responsibilities</label>
         <textarea
           rows={3}
+          value={responsibilities}
+          onChange={(event) => setResponsibilities(event.target.value)}
           placeholder="List the main duties and day-to-day responsibilities..."
           className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
         />
@@ -1570,6 +1642,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
           {SKILL_SUGGESTIONS.map((skill) => (
             <button
               key={skill}
+              type="button"
               onClick={() => toggleSkill(skill)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 skills.includes(skill) ? 'bg-[#1B1B1B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -1585,7 +1658,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
             {skills.filter((s) => !SKILL_SUGGESTIONS.includes(s)).map((skill) => (
               <span key={skill} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-[#1B1B1B] text-white">
                 {skill}
-                <button onClick={() => toggleSkill(skill)} className="ml-0.5 opacity-60 hover:opacity-100">
+                <button type="button" onClick={() => toggleSkill(skill)} className="ml-0.5 opacity-60 hover:opacity-100">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -1605,6 +1678,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
             className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
           />
           <button
+            type="button"
             onClick={addCustomSkill}
             className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors"
           >
@@ -1643,6 +1717,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
           <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
             <span>Include salary</span>
             <button
+              type="button"
               role="switch"
               aria-checked={showSalary}
               onClick={() => setShowSalary((v) => !v)}
@@ -1696,6 +1771,7 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
           {JOB_FAITH_TAGS.map((tag) => (
             <button
               key={tag}
+              type="button"
               onClick={() => setFaithTag(tag)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
                 faithTag === tag
@@ -1712,15 +1788,16 @@ export function CreateJobsForm({ orgId, onCreated }: CreateFormProps) {
       </div>
 
       {/* Submit */}
-      <div className="flex items-center gap-3 pt-2">
+      {mode !== 'view' && <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={submitting}
           className="px-6 py-2.5 rounded-lg bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors disabled:opacity-60"
         >
-          {submitting ? 'Posting...' : 'Post Job'}
+          {submitting ? (mode === 'edit' ? 'Saving...' : 'Posting...') : (mode === 'edit' ? 'Save Job' : 'Post Job')}
         </button>
-      </div>
+      </div>}
+      </fieldset>
     </form>
   );
 }

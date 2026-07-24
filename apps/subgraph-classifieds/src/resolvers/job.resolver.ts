@@ -51,10 +51,11 @@ interface CreateJobInput {
   roleType:            string;
   workLocation:        string;
   skillsRequired:      string[];
+  responsibilities?:   string[];
   region:              string;
-  salaryRange?:        SalaryRangeInput;
+  salaryRange?:        SalaryRangeInput | null;
   applicationDeadline: string;
-  externalApplyUrl?:   string;
+  externalApplyUrl?:   string | null;
   faithAlignmentTag?:  string;
 }
 
@@ -119,6 +120,7 @@ export const jobResolvers = {
         employmentType:   input.roleType,
         workLocation:     input.workLocation,
         skillsRequired:   input.skillsRequired,
+        responsibilities: input.responsibilities ?? [],
         region:           region?.displayName ?? input.region.trim(),
         regionCode:       region?.code ?? null,
         closingDate:      new Date(input.applicationDeadline),
@@ -144,18 +146,20 @@ export const jobResolvers = {
       if (input.roleType)        update['employmentType'] = input.roleType;
       if (input.workLocation)    update['workLocation'] = input.workLocation;
       if (input.skillsRequired)  update['skillsRequired'] = input.skillsRequired;
+      if (input.responsibilities) update['responsibilities'] = input.responsibilities;
       if (input.region) {
         const region = resolveLocationRegion(input.region);
         update['region'] = region?.displayName ?? input.region.trim();
         update['regionCode'] = region?.code ?? null;
       }
-      if (input.salaryRange) {
-        update['salaryMin'] = input.salaryRange.min;
-        update['salaryMax'] = input.salaryRange.max;
-        update['salaryCurrency'] = input.salaryRange.currency;
+      if (input.salaryRange !== undefined) {
+        update['salaryMin'] = input.salaryRange?.min ?? null;
+        update['salaryMax'] = input.salaryRange?.max ?? null;
+        update['salaryCurrency'] = input.salaryRange?.currency ?? null;
       }
       if (input.applicationDeadline) update['closingDate'] = new Date(input.applicationDeadline);
       if (input.externalApplyUrl !== undefined) update['externalApplyUrl'] = input.externalApplyUrl;
+      if (input.faithAlignmentTag !== undefined) update['faithAlignmentTag'] = input.faithAlignmentTag;
 
       const doc = await JobListingModel.findOneAndUpdate(
         { _id: id, organisationId: new mongoose.Types.ObjectId(access.orgId) },
