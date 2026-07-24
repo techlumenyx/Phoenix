@@ -32,9 +32,14 @@ export default function OrgSetupPage() {
     setError('');
     setSubmitting(true);
     try {
-      await createOrganisation({ variables: { input: { name: orgName.trim() } } });
+      const { data: created } = await createOrganisation({ variables: { input: { name: orgName.trim() } } });
       await getAuth().currentUser?.getIdToken(true);
-      useAuthStore.setState({ accountType: 'organisation' });
+      useAuthStore.setState((state) => ({
+        accountType: 'organisation',
+        dbUser: state.dbUser && created?.createOrganisation?.id
+          ? { ...state.dbUser, orgId: created.createOrganisation.id, roles: ['master_admin'] }
+          : state.dbUser,
+      }));
       navigate('/org', { replace: true });
     } catch (err: unknown) {
       setError(userSafeError(err, 'Setup failed — please try again.'));

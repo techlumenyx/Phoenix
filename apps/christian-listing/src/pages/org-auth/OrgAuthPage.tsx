@@ -10,6 +10,7 @@ import { firebaseAuth } from '../../firebase';
 import { useAuthStore } from '../../store/authStore';
 import SceneHeader from '../../components/layout/SceneHeader';
 import { userSafeError } from '../../lib/user-safe-error';
+import { organisationAuthRedirect } from '../../lib/organisation-auth';
 
 const INPUT =
   'w-full bg-[#ede9e4] rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C9A96E] transition';
@@ -18,7 +19,7 @@ const DARK_BTN =
 
 export default function OrgAuthPage() {
   const navigate = useNavigate();
-  const { user, initialized } = useAuthStore();
+  const { user, dbUser, accountType, initialized } = useAuthStore();
 
   const [tab, setTab]           = useState<'signup' | 'signin'>('signup');
   const [email, setEmail]       = useState('');
@@ -27,9 +28,10 @@ export default function OrgAuthPage() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
-  if (initialized && user) {
-    return <Navigate to="/org" replace />;
-  }
+  const authenticatedRedirect = initialized
+    ? organisationAuthRedirect({ signedIn: Boolean(user), accountType, orgId: dbUser?.orgId, roles: dbUser?.roles })
+    : null;
+  if (authenticatedRedirect) return <Navigate to={authenticatedRedirect} replace />;
 
   function switchTab(next: 'signup' | 'signin') {
     setTab(next);

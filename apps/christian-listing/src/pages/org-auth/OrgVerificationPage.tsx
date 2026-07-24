@@ -82,7 +82,12 @@ export default function OrgVerificationPage() {
       }
 
       await getAuth().currentUser?.getIdToken(true);
-      useAuthStore.setState({ accountType: 'organisation' });
+      useAuthStore.setState((state) => ({
+        accountType: 'organisation',
+        dbUser: state.dbUser
+          ? { ...state.dbUser, orgId: data.createOrganisation.id, roles: ['master_admin'] }
+          : null,
+      }));
 
       navigate('/org/onboarding/success');
     } catch (err: unknown) {

@@ -3,8 +3,9 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { gql } from '@apollo/client';
 import { firebaseAuth } from '../firebase';
 import { apolloClient } from '../apolloClient';
+import { isOrganisationPath } from '../lib/organisation-auth';
 
-const ONBOARDING_PATHS = ['/onboarding', '/org/onboarding', '/org/signup', '/signup', '/signin'];
+const ONBOARDING_PATHS = ['/onboarding', '/signup', '/signin'];
 
 const ME_QUERY = gql`
   query Me {
@@ -79,7 +80,7 @@ onAuthStateChanged(firebaseAuth, async (user) => {
     // Org users have their own onboarding path (/org/onboarding/*) — skip this redirect for them.
     if (accountType !== 'organisation' && !data.me?.onboardingCompleted) {
       const current = window.location.pathname;
-      if (!ONBOARDING_PATHS.some((p) => current.startsWith(p))) {
+      if (!isOrganisationPath(current) && !ONBOARDING_PATHS.some((p) => current.startsWith(p))) {
         window.location.replace('/onboarding/region');
       }
     }
