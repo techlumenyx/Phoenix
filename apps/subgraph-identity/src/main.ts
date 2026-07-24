@@ -3,6 +3,7 @@ import { ApolloServerPluginInlineTrace } from '@apollo/server/plugin/inlineTrace
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import fastifyApollo, { fastifyApolloDrainPlugin } from '@as-integrations/fastify';
 import Fastify from 'fastify';
+import mongoose from 'mongoose';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'graphql';
@@ -45,11 +46,18 @@ async function bootstrap() {
 
   registerMediaUploadRoutes(fastify, {
     service: 'identity', purposes: ['MEMBER_AVATAR', 'ORGANISATION_LOGO', 'ORGANISATION_GALLERY', 'VERIFICATION_DOCUMENT'],
-    authorize: (request, purpose, ownerId) => {
+    authorize: async (request, purpose, ownerId) => {
       const auth = buildAuthContext(request);
       if (!auth.isAuthenticated) return false;
       if (purpose === 'MEMBER_AVATAR') return !ownerId || ownerId === auth.firebaseUid;
-      return Boolean(ownerId && canAccessOrganisation(auth, ownerId, ['master_admin', 'site_admin']));
+      if (!ownerId) return false;
+      if (canAccessOrganisation(auth, ownerId, ['master_admin', 'site_admin'])) return true;
+      if (!mongoose.isValidObjectId(ownerId)) return false;
+
+      // Firebase custom claims may take a moment to propagate immediately after
+      // organisation creation. The persisted creator relationship is an equally
+      // authoritative ownership check for this onboarding upload.
+      return Boolean(await OrganisationModel.exists({ _id: ownerId, createdBy: auth.firebaseUid }));
     },
     onUploaded: async (request, purpose, ownerId, result) => { await MediaAssetModel.create({ ...result, cloudinaryAssetId: result.assetId, purpose, ownerId, uploadedBy: request.firebaseUser?.uid ?? 'unknown', status: 'ACTIVE' }); },
     onDeleted: async (publicId) => { await MediaAssetModel.updateOne({ publicId }, { $set: { status: 'DELETED' } }); },
