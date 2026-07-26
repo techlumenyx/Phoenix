@@ -9,6 +9,7 @@ const required: Record<EmailTemplateKey, string[]> = {
   RSVP_STATUS: ['eventTitle', 'eventUrl', 'status'],
   VERIFICATION_UPDATE: ['organisationName', 'status', 'settingsUrl'],
   EVENT_REMINDER: ['eventTitle', 'eventUrl', 'startsAt'],
+  SENDGRID_TEST: ['requestedBy', 'sentAt'],
 };
 
 export function renderEmail(key: EmailTemplateKey, variables: Record<string, string | number | boolean | null>): RenderedEmail {
@@ -48,6 +49,11 @@ export function renderEmail(key: EmailTemplateKey, variables: Record<string, str
       subject = `Reminder: ${variables['eventTitle']}`;
       body = `<p><strong>${value('eventTitle')}</strong> starts at ${value('startsAt')}.</p>${link('View event', 'eventUrl')}`;
       text = `${variables['eventTitle']} starts at ${variables['startsAt']}. View: ${variables['eventUrl']}`;
+      break;
+    case 'SENDGRID_TEST':
+      subject = 'Christian Listings SendGrid test';
+      body = `<p>This controlled test was requested by <strong>${value('requestedBy')}</strong> at ${value('sentAt')}.</p><p>If you received it, the SendGrid worker and sender authentication are functioning. Confirm the final webhook status in Admin → Email delivery.</p>`;
+      text = `Christian Listings SendGrid test requested by ${variables['requestedBy']} at ${variables['sentAt']}. Confirm the final webhook status in Admin > Email delivery.`;
       break;
   }
   return { subject, text, html: layout(body) };

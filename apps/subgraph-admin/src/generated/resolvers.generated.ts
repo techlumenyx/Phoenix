@@ -123,6 +123,7 @@ export const AuditAction = {
   Dismiss: 'DISMISS',
   DownloadAuditExport: 'DOWNLOAD_AUDIT_EXPORT',
   EmailRetry: 'EMAIL_RETRY',
+  EmailTest: 'EMAIL_TEST',
   EventCancel: 'EVENT_CANCEL',
   EventRestore: 'EVENT_RESTORE',
   NotificationRead: 'NOTIFICATION_READ',
@@ -252,6 +253,13 @@ export type EmailDelivery = {
   templateKey: Scalars['String']['output'];
   to: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type EmailDeliveryConfiguration = {
+  __typename?: 'EmailDeliveryConfiguration';
+  enabled: Scalars['Boolean']['output'];
+  provider: Scalars['String']['output'];
+  webhookConfigured: Scalars['Boolean']['output'];
 };
 
 export type EmailDeliveryConnection = {
@@ -413,6 +421,7 @@ export type Mutation = {
   resolveModerationCase: ModerationCase;
   retryEmailDelivery: EmailDelivery;
   saveAdminView: SavedAdminView;
+  sendTestEmail: EmailDelivery;
   updateFeaturedPlacement: FeaturedPlacement;
 };
 
@@ -549,6 +558,11 @@ export type MutationSaveAdminViewArgs = {
 };
 
 
+export type MutationSendTestEmailArgs = {
+  to: Scalars['String']['input'];
+};
+
+
 export type MutationUpdateFeaturedPlacementArgs = {
   id: Scalars['ID']['input'];
   input: FeaturedPlacementInput;
@@ -589,6 +603,7 @@ export type Query = {
   auditExportContent: Scalars['String']['output'];
   auditExports: Array<AuditExport>;
   emailDeliveries: EmailDeliveryConnection;
+  emailDeliveryConfiguration: EmailDeliveryConfiguration;
   featuredPlacements: Array<FeaturedPlacement>;
   moderationCase?: Maybe<ModerationCase>;
   moderationCases: ModerationCaseConnection;
@@ -889,6 +904,7 @@ export type ResolversTypes = ResolversObject<{
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   DirectoryEntityType: DirectoryEntityType;
   EmailDelivery: ResolverTypeWrapper<EmailDelivery>;
+  EmailDeliveryConfiguration: ResolverTypeWrapper<EmailDeliveryConfiguration>;
   EmailDeliveryConnection: ResolverTypeWrapper<EmailDeliveryConnection>;
   EmailDeliveryEvent: ResolverTypeWrapper<EmailDeliveryEvent>;
   EmailDeliveryStatus: EmailDeliveryStatus;
@@ -936,6 +952,7 @@ export type ResolversParentTypes = ResolversObject<{
   CaseNote: CaseNote;
   DateTime: Scalars['DateTime']['output'];
   EmailDelivery: EmailDelivery;
+  EmailDeliveryConfiguration: EmailDeliveryConfiguration;
   EmailDeliveryConnection: EmailDeliveryConnection;
   EmailDeliveryEvent: EmailDeliveryEvent;
   FeaturedPlacement: FeaturedPlacement;
@@ -1100,6 +1117,13 @@ export type EmailDeliveryResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type EmailDeliveryConfigurationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EmailDeliveryConfiguration'] = ResolversParentTypes['EmailDeliveryConfiguration']> = ResolversObject<{
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  webhookConfigured?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EmailDeliveryConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EmailDeliveryConnection'] = ResolversParentTypes['EmailDeliveryConnection']> = ResolversObject<{
   edges?: Resolver<Array<ResolversTypes['EmailDelivery']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1204,6 +1228,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   resolveModerationCase?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationResolveModerationCaseArgs, 'action' | 'expectedVersion' | 'id' | 'reason'>>;
   retryEmailDelivery?: Resolver<ResolversTypes['EmailDelivery'], ParentType, ContextType, RequireFields<MutationRetryEmailDeliveryArgs, 'id'>>;
   saveAdminView?: Resolver<ResolversTypes['SavedAdminView'], ParentType, ContextType, RequireFields<MutationSaveAdminViewArgs, 'filtersJson' | 'module' | 'name'>>;
+  sendTestEmail?: Resolver<ResolversTypes['EmailDelivery'], ParentType, ContextType, RequireFields<MutationSendTestEmailArgs, 'to'>>;
   updateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationUpdateFeaturedPlacementArgs, 'id' | 'input'>>;
 }>;
 
@@ -1218,6 +1243,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   auditExportContent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryAuditExportContentArgs, 'id'>>;
   auditExports?: Resolver<Array<ResolversTypes['AuditExport']>, ParentType, ContextType>;
   emailDeliveries?: Resolver<ResolversTypes['EmailDeliveryConnection'], ParentType, ContextType, Partial<QueryEmailDeliveriesArgs>>;
+  emailDeliveryConfiguration?: Resolver<ResolversTypes['EmailDeliveryConfiguration'], ParentType, ContextType>;
   featuredPlacements?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType, Partial<QueryFeaturedPlacementsArgs>>;
   moderationCase?: Resolver<Maybe<ResolversTypes['ModerationCase']>, ParentType, ContextType, RequireFields<QueryModerationCaseArgs, 'id'>>;
   moderationCases?: Resolver<ResolversTypes['ModerationCaseConnection'], ParentType, ContextType, Partial<QueryModerationCasesArgs>>;
@@ -1297,6 +1323,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   CaseNote?: CaseNoteResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   EmailDelivery?: EmailDeliveryResolvers<ContextType>;
+  EmailDeliveryConfiguration?: EmailDeliveryConfigurationResolvers<ContextType>;
   EmailDeliveryConnection?: EmailDeliveryConnectionResolvers<ContextType>;
   EmailDeliveryEvent?: EmailDeliveryEventResolvers<ContextType>;
   FeaturedPlacement?: FeaturedPlacementResolvers<ContextType>;

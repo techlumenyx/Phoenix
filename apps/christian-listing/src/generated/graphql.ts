@@ -155,6 +155,7 @@ export enum AuditAction {
   Dismiss = 'DISMISS',
   DownloadAuditExport = 'DOWNLOAD_AUDIT_EXPORT',
   EmailRetry = 'EMAIL_RETRY',
+  EmailTest = 'EMAIL_TEST',
   EventCancel = 'EVENT_CANCEL',
   EventRestore = 'EVENT_RESTORE',
   NotificationRead = 'NOTIFICATION_READ',
@@ -380,6 +381,13 @@ export type EmailDelivery = {
   templateKey: Scalars['String']['output'];
   to: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type EmailDeliveryConfiguration = {
+  __typename?: 'EmailDeliveryConfiguration';
+  enabled: Scalars['Boolean']['output'];
+  provider: Scalars['String']['output'];
+  webhookConfigured: Scalars['Boolean']['output'];
 };
 
 export type EmailDeliveryConnection = {
@@ -924,6 +932,7 @@ export type Mutation = {
   saveJob: Scalars['Boolean']['output'];
   saveMarketplaceItem: Scalars['Boolean']['output'];
   sendMessage: Message;
+  sendTestEmail: EmailDelivery;
   setOrganisationActive: Organisation;
   signUp: SignUpPayload;
   startListingConversation: MessageThread;
@@ -1239,6 +1248,11 @@ export type MutationSendMessageArgs = {
 };
 
 
+export type MutationSendTestEmailArgs = {
+  to: Scalars['String']['input'];
+};
+
+
 export type MutationSetOrganisationActiveArgs = {
   active: Scalars['Boolean']['input'];
   organisationId: Scalars['ID']['input'];
@@ -1452,6 +1466,7 @@ export type Query = {
   classifiedOrganisationUnreadCount: Scalars['Int']['output'];
   communityGives: Array<MarketplaceItem>;
   emailDeliveries: EmailDeliveryConnection;
+  emailDeliveryConfiguration: EmailDeliveryConfiguration;
   event?: Maybe<Event>;
   eventOrganisationNotifications: Array<EventOrganisationNotification>;
   eventOrganisationUnreadCount: Scalars['Int']['output'];

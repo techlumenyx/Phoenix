@@ -39,6 +39,7 @@ enum AuditAction {
   SAVED_VIEW_DELETE
   NOTIFICATION_READ
   EMAIL_RETRY
+  EMAIL_TEST
 }
 
 enum ContentType {
@@ -250,6 +251,7 @@ type EmailDelivery {
   events: [EmailDeliveryEvent!]!
 }
 type EmailDeliveryConnection { edges: [EmailDelivery!]! hasNextPage: Boolean! endCursor: String }
+type EmailDeliveryConfiguration { enabled: Boolean! provider: String! webhookConfigured: Boolean! }
 
 type Query {
   moderationCases(
@@ -275,6 +277,7 @@ type Query {
   adminNotificationUnreadCount: Int!
   adminSystemHealth: AdminSystemHealth!
   emailDeliveries(status: EmailDeliveryStatus, templateKey: String, search: String, limit: Int, after: String): EmailDeliveryConnection!
+  emailDeliveryConfiguration: EmailDeliveryConfiguration!
 }
 
 type Mutation {
@@ -305,6 +308,7 @@ type Mutation {
   markAdminNotificationRead(id: ID!): AdminNotification!
   markAllAdminNotificationsRead: Boolean!
   retryEmailDelivery(id: ID!): EmailDelivery!
+  sendTestEmail(to: String!): EmailDelivery!
 }
 
 input FeaturedPlacementInput { targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! placementSource: PlacementSource = EDITORIAL }

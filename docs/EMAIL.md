@@ -39,6 +39,8 @@ To exercise real delivery locally, provide all SendGrid variables from `docs/ENV
 5. Set `EMAIL_ENABLED=true`, redeploy the admin and worker containers, and send one controlled organisation invitation.
 6. Confirm the delivery moves through `QUEUED` → `ACCEPTED` → `SENT` in the admin Email delivery page.
 
+After enabling delivery, administrators with support access can use **Send test email** on the Email delivery page. Send only to an inbox you control, then verify the delivery reaches `SENT` and contains a signed provider event. Every controlled test is recorded in the audit log as `EMAIL_TEST`.
+
 Redis Compose configuration enables AOF persistence and uses `noeviction`. Preserve the `redis_data` volume during deployments.
 
 The webhook must bypass the Apollo Router and reach the admin service directly:

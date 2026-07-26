@@ -8,6 +8,7 @@ export const EMAIL_TEMPLATE_KEYS = [
   'RSVP_STATUS',
   'VERIFICATION_UPDATE',
   'EVENT_REMINDER',
+  'SENDGRID_TEST',
 ] as const;
 
 export type EmailTemplateKey = (typeof EMAIL_TEMPLATE_KEYS)[number];

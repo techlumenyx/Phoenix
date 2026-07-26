@@ -10,4 +10,11 @@ describe('renderEmail', () => {
   it('rejects an incomplete template payload', () => {
     expect(() => renderEmail('EVENT_REMINDER', { eventTitle: 'Gathering' })).toThrow('Missing email variable');
   });
+
+  it('renders the controlled SendGrid test without exposing HTML from admin identity data', () => {
+    const result = renderEmail('SENDGRID_TEST', { requestedBy: '<admin@example.test>', sentAt: '2026-07-26T10:00:00.000Z' });
+    expect(result.subject).toBe('Christian Listings SendGrid test');
+    expect(result.html).toContain('&lt;admin@example.test&gt;');
+    expect(result.text).toContain('2026-07-26T10:00:00.000Z');
+  });
 });
