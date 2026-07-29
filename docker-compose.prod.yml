@@ -180,5 +180,23 @@ services:
     command: ["node", "/app/tools/scripts/seed-local-mongo.js", "--remote"]
     restart: "no"
 
+  seed-demo:
+    profiles: ["tools"]
+    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://christian-listing.firebaseapp.com}
+      - SEED_ENVIRONMENT=${SEED_ENVIRONMENT:-}
+      - SEED_REMOTE_CONFIRM=${SEED_REMOTE_CONFIRM:-}
+      - DEMO_ORG_EMAIL=${DEMO_ORG_EMAIL:-}
+      - DEMO_ORG_PASSWORD=${DEMO_ORG_PASSWORD:-}
+      - DEMO_MEMBER_EMAIL=${DEMO_MEMBER_EMAIL:-}
+      - DEMO_MEMBER_PASSWORD=${DEMO_MEMBER_PASSWORD:-}
+    volumes:
+      - ./tools/scripts/seed-production-demo.js:/app/tools/scripts/seed-production-demo.js:ro
+    command: ["node", "/app/tools/scripts/seed-production-demo.js", "--production-demo"]
+    restart: "no"
+
 volumes:
   redis_data:

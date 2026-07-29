@@ -25,7 +25,8 @@
     "admin:backup": "powershell -ExecutionPolicy Bypass -File tools/scripts/backup-admin.ps1",
     "frontend": "concurrently -n cl,cl-admin -c blue,red npm:cl npm:cl-admin",
     "seed:local": "node tools/scripts/seed-local-mongo.js",
-    "seed:remote": "node tools/scripts/seed-local-mongo.js --remote"
+    "seed:remote": "node tools/scripts/seed-local-mongo.js --remote",
+    "seed:demo:production": "node tools/scripts/seed-production-demo.js --production-demo"
   },
   "dependencies": {
     "@apollo/client": "^3.14.1",
