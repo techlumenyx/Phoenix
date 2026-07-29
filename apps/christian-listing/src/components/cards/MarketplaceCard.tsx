@@ -30,9 +30,9 @@ export default function MarketplaceCard({
         <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E] z-10" />
       )}
 
-      <div className="relative flex-1 bg-gray-100 min-h-[160px]">
+      <div className="relative h-44 shrink-0 overflow-hidden bg-gray-100">
         {imageSrc ? (
-          <img src={imageSrc} alt={title} className="w-full h-full object-cover" />
+          <img src={imageSrc} alt={title} className="block h-full w-full object-cover object-center" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
             <span className="text-gray-400 text-sm">No image</span>
