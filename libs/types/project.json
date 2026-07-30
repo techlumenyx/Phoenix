@@ -6,6 +6,7 @@
   "tags": ["scope:shared", "type:lib"],
   "targets": {
     "build": {
+      "dependsOn": ["codegen"],
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
