@@ -14,6 +14,7 @@ import {
 import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../../firebase';
 import { SIGN_UP, CREATE_USER } from '../../graphql/mutations';
+import ForgotPasswordAction from '../auth/ForgotPasswordAction';
 
 interface Props {
   onClose: () => void;
@@ -242,6 +243,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
                   className={INPUT}
                 />
               </div>
+              <ForgotPasswordAction email={signinEmail} className="text-right" />
               <button type="submit" disabled={loading} className={`${DARK_BTN} mt-1`}>
                 {loading ? 'Signing in…' : 'Sign In'}
               </button>

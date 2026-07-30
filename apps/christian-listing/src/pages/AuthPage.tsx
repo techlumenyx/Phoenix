@@ -10,6 +10,7 @@ import {
 import { firebaseAuth } from '../firebase';
 import { useAuthStore } from '../store/authStore';
 import SceneHeader from '../components/layout/SceneHeader';
+import ForgotPasswordAction from '../components/auth/ForgotPasswordAction';
 import { userSafeError } from '../lib/user-safe-error';
 
 export default function AuthPage() {
@@ -138,6 +139,8 @@ export default function AuthPage() {
               placeholder="••••••••••••••"
               className="w-full bg-[#F5F0EB] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#C9A96E]"
             />
+
+            {tab === 'signin' && <ForgotPasswordAction email={email} className="text-right" />}
 
             <button
               type="submit"

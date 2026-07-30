@@ -114,6 +114,7 @@ export default function OrgTeamPage() {
   const [email, setEmail] = useState('');
   const [selected, setSelected] = useState<string[]>(['events_manager']);
   const [message, setMessage] = useState('');
+  const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<TeamMember | null>(null);
   const [invite, { loading: inviting }] = useMutation(INVITE);
   const [revoke] = useMutation(REVOKE);
@@ -128,9 +129,15 @@ export default function OrgTeamPage() {
     try {
       const result = await invite({ variables: { id: orgId, email, roles: selected } });
       const url = link(result.data.inviteOrganisationMember.token);
-      await navigator.clipboard.writeText(url);
-      setMessage('Invitation created and link copied.');
-      showToast('Invitation created and link copied.', 'success');
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch {
+        // The email is queued even when browser clipboard permission is unavailable.
+      }
+      setMessage(copied ? 'Invitation sent and link copied.' : 'Invitation sent.');
+      showToast(copied ? 'Invitation sent and link copied.' : 'Invitation sent.', 'success');
       setShowInvite(false);
       setEmail('');
       await refetch();
@@ -147,18 +154,29 @@ export default function OrgTeamPage() {
   }
 
   async function resendInvite(item: TeamInvite) {
+    if (resendingInviteId) return;
+    setResendingInviteId(item.id);
     try {
       const result = await resend({ variables: { id: item.id } });
-      await navigator.clipboard.writeText(
-        link(result.data.resendOrganisationInvite.token),
-      );
-      setMessage('Invitation email requested and new link copied.');
-      showToast('Invitation email requested and new link copied.', 'success');
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(link(result.data.resendOrganisationInvite.token));
+        copied = true;
+      } catch {
+        // Clipboard permission does not affect delivery of the invitation email.
+      }
+      const text = copied
+        ? `A new invitation was sent to ${item.email}. The refreshed link was copied.`
+        : `A new invitation was sent to ${item.email}.`;
+      setMessage(text);
+      showToast(copied ? 'Invitation resent and refreshed link copied.' : 'Invitation resent.', 'success');
       await refetch();
     } catch {
-      const text = 'We couldnâ€™t resend the invitation. Please try again.';
+      const text = 'We couldn’t resend the invitation. Please try again.';
       setMessage(text);
       showToast(text, 'error');
+    } finally {
+      setResendingInviteId(null);
     }
   }
 
@@ -295,18 +313,20 @@ export default function OrgTeamPage() {
                 </button>
                 <button
                   onClick={() => void resendInvite(item)}
-                  className="text-xs font-semibold"
+                  disabled={Boolean(resendingInviteId)}
+                  className="text-xs font-semibold disabled:cursor-wait disabled:opacity-50"
                 >
-                  Resend
+                  {resendingInviteId === item.id ? 'Sending…' : 'Resend email'}
                 </button>
               </>
             )}
             {['EXPIRED', 'REVOKED'].includes(item.status) && (
               <button
                 onClick={() => void resendInvite(item)}
-                className="text-xs font-semibold"
+                disabled={Boolean(resendingInviteId)}
+                className="text-xs font-semibold disabled:cursor-wait disabled:opacity-50"
               >
-                Resend
+                {resendingInviteId === item.id ? 'Sending…' : 'Resend email'}
               </button>
             )}
           </div>
