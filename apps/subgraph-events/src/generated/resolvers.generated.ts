@@ -71,6 +71,37 @@ export type Event = {
   waitlistCount: Scalars['Int']['output'];
 };
 
+export const EventAnalyticsAction = {
+  DetailView: 'DETAIL_VIEW',
+  Impression: 'IMPRESSION'
+} as const;
+
+export type EventAnalyticsAction = typeof EventAnalyticsAction[keyof typeof EventAnalyticsAction];
+export type EventAnalyticsContent = {
+  __typename?: 'EventAnalyticsContent';
+  detailViews: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  impressions: Scalars['Int']['output'];
+  title: Scalars['String']['output'];
+  uniqueReach: Scalars['Int']['output'];
+};
+
+export type EventAnalyticsDay = {
+  __typename?: 'EventAnalyticsDay';
+  date: Scalars['String']['output'];
+  detailViews: Scalars['Int']['output'];
+  impressions: Scalars['Int']['output'];
+  uniqueReach: Scalars['Int']['output'];
+};
+
+export type EventAnalyticsInput = {
+  entityId: Scalars['ID']['input'];
+  eventType: EventAnalyticsAction;
+  position?: InputMaybe<Scalars['Int']['input']>;
+  sessionId: Scalars['String']['input'];
+  surface: Scalars['String']['input'];
+};
+
 export const EventCategory = {
   BibleStudy: 'BIBLE_STUDY',
   Charity: 'CHARITY',
@@ -107,6 +138,17 @@ export type EventLocationInput = {
   country?: InputMaybe<Scalars['String']['input']>;
   type: LocationType;
   virtualLink?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type EventOrganisationAnalytics = {
+  __typename?: 'EventOrganisationAnalytics';
+  activeContent: Scalars['Int']['output'];
+  daily: Array<EventAnalyticsDay>;
+  detailViews: Scalars['Int']['output'];
+  impressions: Scalars['Int']['output'];
+  outcomes: Scalars['Int']['output'];
+  topContent: Array<EventAnalyticsContent>;
+  uniqueReach: Scalars['Int']['output'];
 };
 
 export type EventOrganisationNotification = {
@@ -176,6 +218,7 @@ export type Mutation = {
   deleteEvent: Scalars['Boolean']['output'];
   markAllEventOrganisationNotificationsRead: Scalars['Boolean']['output'];
   markEventOrganisationNotificationRead: EventOrganisationNotification;
+  recordEventAnalytics: Scalars['Boolean']['output'];
   rsvpToEvent: Rsvp;
   rsvpToSeries: SeriesRsvp;
   updateEvent: Event;
@@ -218,6 +261,11 @@ export type MutationMarkEventOrganisationNotificationReadArgs = {
 };
 
 
+export type MutationRecordEventAnalyticsArgs = {
+  events: Array<EventAnalyticsInput>;
+};
+
+
 export type MutationRsvpToEventArgs = {
   eventId: Scalars['ID']['input'];
   stage: RsvpStage;
@@ -251,6 +299,7 @@ export type OrganisationEventsArgs = {
 export type Query = {
   __typename?: 'Query';
   event?: Maybe<Event>;
+  eventOrganisationAnalytics: EventOrganisationAnalytics;
   eventOrganisationNotifications: Array<EventOrganisationNotification>;
   eventOrganisationUnreadCount: Scalars['Int']['output'];
   eventSeries?: Maybe<EventSeries>;
@@ -263,6 +312,13 @@ export type Query = {
 
 export type QueryEventArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryEventOrganisationAnalyticsArgs = {
+  from?: InputMaybe<Scalars['DateTime']['input']>;
+  organisationId: Scalars['ID']['input'];
+  to?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 
@@ -481,10 +537,15 @@ export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   Event: ResolverTypeWrapper<Event>;
+  EventAnalyticsAction: EventAnalyticsAction;
+  EventAnalyticsContent: ResolverTypeWrapper<EventAnalyticsContent>;
+  EventAnalyticsDay: ResolverTypeWrapper<EventAnalyticsDay>;
+  EventAnalyticsInput: EventAnalyticsInput;
   EventCategory: EventCategory;
   EventConnection: ResolverTypeWrapper<EventConnection>;
   EventLocation: ResolverTypeWrapper<EventLocation>;
   EventLocationInput: EventLocationInput;
+  EventOrganisationAnalytics: ResolverTypeWrapper<EventOrganisationAnalytics>;
   EventOrganisationNotification: ResolverTypeWrapper<EventOrganisationNotification>;
   EventSeries: ResolverTypeWrapper<EventSeries>;
   EventSort: EventSort;
@@ -513,9 +574,13 @@ export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars['Boolean']['output'];
   DateTime: Scalars['DateTime']['output'];
   Event: Event;
+  EventAnalyticsContent: EventAnalyticsContent;
+  EventAnalyticsDay: EventAnalyticsDay;
+  EventAnalyticsInput: EventAnalyticsInput;
   EventConnection: EventConnection;
   EventLocation: EventLocation;
   EventLocationInput: EventLocationInput;
+  EventOrganisationAnalytics: EventOrganisationAnalytics;
   EventOrganisationNotification: EventOrganisationNotification;
   EventSeries: EventSeries;
   Mutation: {};
@@ -568,6 +633,23 @@ export type EventResolvers<ContextType = GraphQLContext, ParentType extends Reso
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type EventAnalyticsContentResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EventAnalyticsContent'] = ResolversParentTypes['EventAnalyticsContent']> = ResolversObject<{
+  detailViews?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  impressions?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  uniqueReach?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EventAnalyticsDayResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EventAnalyticsDay'] = ResolversParentTypes['EventAnalyticsDay']> = ResolversObject<{
+  date?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  detailViews?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  impressions?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  uniqueReach?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type EventConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EventConnection'] = ResolversParentTypes['EventConnection']> = ResolversObject<{
   edges?: Resolver<Array<ResolversTypes['Event']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -581,6 +663,17 @@ export type EventLocationResolvers<ContextType = GraphQLContext, ParentType exte
   country?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   type?: Resolver<ResolversTypes['LocationType'], ParentType, ContextType>;
   virtualLink?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EventOrganisationAnalyticsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EventOrganisationAnalytics'] = ResolversParentTypes['EventOrganisationAnalytics']> = ResolversObject<{
+  activeContent?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  daily?: Resolver<Array<ResolversTypes['EventAnalyticsDay']>, ParentType, ContextType>;
+  detailViews?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  impressions?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  outcomes?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  topContent?: Resolver<Array<ResolversTypes['EventAnalyticsContent']>, ParentType, ContextType>;
+  uniqueReach?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -616,6 +709,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   deleteEvent?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteEventArgs, 'id'>>;
   markAllEventOrganisationNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkAllEventOrganisationNotificationsReadArgs, 'organisationId'>>;
   markEventOrganisationNotificationRead?: Resolver<ResolversTypes['EventOrganisationNotification'], ParentType, ContextType, RequireFields<MutationMarkEventOrganisationNotificationReadArgs, 'id'>>;
+  recordEventAnalytics?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRecordEventAnalyticsArgs, 'events'>>;
   rsvpToEvent?: Resolver<ResolversTypes['RSVP'], ParentType, ContextType, RequireFields<MutationRsvpToEventArgs, 'eventId' | 'stage'>>;
   rsvpToSeries?: Resolver<ResolversTypes['SeriesRSVP'], ParentType, ContextType, RequireFields<MutationRsvpToSeriesArgs, 'seriesId' | 'stage'>>;
   updateEvent?: Resolver<ResolversTypes['Event'], ParentType, ContextType, RequireFields<MutationUpdateEventArgs, 'id' | 'input' | 'scope'>>;
@@ -630,6 +724,7 @@ export type OrganisationResolvers<ContextType = GraphQLContext, ParentType exten
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   event?: Resolver<Maybe<ResolversTypes['Event']>, ParentType, ContextType, RequireFields<QueryEventArgs, 'id'>>;
+  eventOrganisationAnalytics?: Resolver<ResolversTypes['EventOrganisationAnalytics'], ParentType, ContextType, RequireFields<QueryEventOrganisationAnalyticsArgs, 'organisationId'>>;
   eventOrganisationNotifications?: Resolver<Array<ResolversTypes['EventOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryEventOrganisationNotificationsArgs, 'organisationId'>>;
   eventOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryEventOrganisationUnreadCountArgs, 'organisationId'>>;
   eventSeries?: Resolver<Maybe<ResolversTypes['EventSeries']>, ParentType, ContextType, RequireFields<QueryEventSeriesArgs, 'id'>>;
@@ -682,8 +777,11 @@ export type UserResolvers<ContextType = GraphQLContext, ParentType extends Resol
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   Event?: EventResolvers<ContextType>;
+  EventAnalyticsContent?: EventAnalyticsContentResolvers<ContextType>;
+  EventAnalyticsDay?: EventAnalyticsDayResolvers<ContextType>;
   EventConnection?: EventConnectionResolvers<ContextType>;
   EventLocation?: EventLocationResolvers<ContextType>;
+  EventOrganisationAnalytics?: EventOrganisationAnalyticsResolvers<ContextType>;
   EventOrganisationNotification?: EventOrganisationNotificationResolvers<ContextType>;
   EventSeries?: EventSeriesResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;

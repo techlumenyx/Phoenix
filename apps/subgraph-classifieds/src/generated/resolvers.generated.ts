@@ -29,6 +29,61 @@ export const ApplicationStatus = {
 } as const;
 
 export type ApplicationStatus = typeof ApplicationStatus[keyof typeof ApplicationStatus];
+export const ClassifiedAnalyticsAction = {
+  DetailView: 'DETAIL_VIEW',
+  Impression: 'IMPRESSION'
+} as const;
+
+export type ClassifiedAnalyticsAction = typeof ClassifiedAnalyticsAction[keyof typeof ClassifiedAnalyticsAction];
+export type ClassifiedAnalyticsContent = {
+  __typename?: 'ClassifiedAnalyticsContent';
+  detailViews: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  impressions: Scalars['Int']['output'];
+  title: Scalars['String']['output'];
+  uniqueReach: Scalars['Int']['output'];
+};
+
+export type ClassifiedAnalyticsDay = {
+  __typename?: 'ClassifiedAnalyticsDay';
+  date: Scalars['String']['output'];
+  detailViews: Scalars['Int']['output'];
+  impressions: Scalars['Int']['output'];
+  uniqueReach: Scalars['Int']['output'];
+};
+
+export const ClassifiedAnalyticsEntityType = {
+  Job: 'JOB',
+  Marketplace: 'MARKETPLACE'
+} as const;
+
+export type ClassifiedAnalyticsEntityType = typeof ClassifiedAnalyticsEntityType[keyof typeof ClassifiedAnalyticsEntityType];
+export type ClassifiedAnalyticsInput = {
+  entityId: Scalars['ID']['input'];
+  entityType: ClassifiedAnalyticsEntityType;
+  eventType: ClassifiedAnalyticsAction;
+  position?: InputMaybe<Scalars['Int']['input']>;
+  sessionId: Scalars['String']['input'];
+  surface: Scalars['String']['input'];
+};
+
+export type ClassifiedAnalyticsSummary = {
+  __typename?: 'ClassifiedAnalyticsSummary';
+  activeContent: Scalars['Int']['output'];
+  daily: Array<ClassifiedAnalyticsDay>;
+  detailViews: Scalars['Int']['output'];
+  impressions: Scalars['Int']['output'];
+  outcomes: Scalars['Int']['output'];
+  topContent: Array<ClassifiedAnalyticsContent>;
+  uniqueReach: Scalars['Int']['output'];
+};
+
+export type ClassifiedOrganisationAnalytics = {
+  __typename?: 'ClassifiedOrganisationAnalytics';
+  jobs: ClassifiedAnalyticsSummary;
+  marketplace: ClassifiedAnalyticsSummary;
+};
+
 export type ClassifiedOrganisationNotification = {
   __typename?: 'ClassifiedOrganisationNotification';
   createdAt: Scalars['DateTime']['output'];
@@ -333,6 +388,7 @@ export type Mutation = {
   markAllClassifiedOrganisationNotificationsRead: Scalars['Boolean']['output'];
   markClassifiedOrganisationNotificationRead: ClassifiedOrganisationNotification;
   markThreadRead: Scalars['Boolean']['output'];
+  recordClassifiedAnalytics: Scalars['Boolean']['output'];
   reportListing: Scalars['Boolean']['output'];
   saveJob: Scalars['Boolean']['output'];
   saveMarketplaceItem: Scalars['Boolean']['output'];
@@ -385,6 +441,11 @@ export type MutationMarkClassifiedOrganisationNotificationReadArgs = {
 
 export type MutationMarkThreadReadArgs = {
   threadId: Scalars['ID']['input'];
+};
+
+
+export type MutationRecordClassifiedAnalyticsArgs = {
+  events: Array<ClassifiedAnalyticsInput>;
 };
 
 
@@ -463,6 +524,7 @@ export type Organisation = {
 
 export type Query = {
   __typename?: 'Query';
+  classifiedOrganisationAnalytics: ClassifiedOrganisationAnalytics;
   classifiedOrganisationNotifications: Array<ClassifiedOrganisationNotification>;
   classifiedOrganisationUnreadCount: Scalars['Int']['output'];
   communityGives: Array<MarketplaceItem>;
@@ -479,6 +541,13 @@ export type Query = {
   mySavedMarketplaceItems: Array<MarketplaceItem>;
   organisationJobApplications: Array<JobApplication>;
   unreadMessageCount: Scalars['Int']['output'];
+};
+
+
+export type QueryClassifiedOrganisationAnalyticsArgs = {
+  from?: InputMaybe<Scalars['DateTime']['input']>;
+  organisationId: Scalars['ID']['input'];
+  to?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 
@@ -740,9 +809,17 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
   ApplicationStatus: ApplicationStatus;
-  ClassifiedOrganisationNotification: ResolverTypeWrapper<ClassifiedOrganisationNotification>;
-  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  ClassifiedAnalyticsAction: ClassifiedAnalyticsAction;
+  ClassifiedAnalyticsContent: ResolverTypeWrapper<ClassifiedAnalyticsContent>;
+  Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
+  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  ClassifiedAnalyticsDay: ResolverTypeWrapper<ClassifiedAnalyticsDay>;
+  ClassifiedAnalyticsEntityType: ClassifiedAnalyticsEntityType;
+  ClassifiedAnalyticsInput: ClassifiedAnalyticsInput;
+  ClassifiedAnalyticsSummary: ResolverTypeWrapper<ClassifiedAnalyticsSummary>;
+  ClassifiedOrganisationAnalytics: ResolverTypeWrapper<ClassifiedOrganisationAnalytics>;
+  ClassifiedOrganisationNotification: ResolverTypeWrapper<ClassifiedOrganisationNotification>;
   ConvertedPrice: ResolverTypeWrapper<ConvertedPrice>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
@@ -750,7 +827,6 @@ export type ResolversTypes = ResolversObject<{
   CreateMarketplaceItemInput: CreateMarketplaceItemInput;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   EducationEntry: ResolverTypeWrapper<EducationEntry>;
-  Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   EducationEntryInput: EducationEntryInput;
   FaithAlignmentTag: FaithAlignmentTag;
   ItemCondition: ItemCondition;
@@ -786,9 +862,15 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
-  ClassifiedOrganisationNotification: ClassifiedOrganisationNotification;
-  String: Scalars['String']['output'];
+  ClassifiedAnalyticsContent: ClassifiedAnalyticsContent;
+  Int: Scalars['Int']['output'];
   ID: Scalars['ID']['output'];
+  String: Scalars['String']['output'];
+  ClassifiedAnalyticsDay: ClassifiedAnalyticsDay;
+  ClassifiedAnalyticsInput: ClassifiedAnalyticsInput;
+  ClassifiedAnalyticsSummary: ClassifiedAnalyticsSummary;
+  ClassifiedOrganisationAnalytics: ClassifiedOrganisationAnalytics;
+  ClassifiedOrganisationNotification: ClassifiedOrganisationNotification;
   ConvertedPrice: ConvertedPrice;
   Float: Scalars['Float']['output'];
   Boolean: Scalars['Boolean']['output'];
@@ -796,7 +878,6 @@ export type ResolversParentTypes = ResolversObject<{
   CreateMarketplaceItemInput: CreateMarketplaceItemInput;
   DateTime: Scalars['DateTime']['output'];
   EducationEntry: EducationEntry;
-  Int: Scalars['Int']['output'];
   EducationEntryInput: EducationEntryInput;
   JobApplication: JobApplication;
   JobListing: JobListing;
@@ -816,6 +897,40 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateJobListingInput: UpdateJobListingInput;
   UpdateMarketplaceItemInput: UpdateMarketplaceItemInput;
   User: User;
+}>;
+
+export type ClassifiedAnalyticsContentResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ClassifiedAnalyticsContent'] = ResolversParentTypes['ClassifiedAnalyticsContent']> = ResolversObject<{
+  detailViews?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  impressions?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  uniqueReach?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ClassifiedAnalyticsDayResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ClassifiedAnalyticsDay'] = ResolversParentTypes['ClassifiedAnalyticsDay']> = ResolversObject<{
+  date?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  detailViews?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  impressions?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  uniqueReach?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ClassifiedAnalyticsSummaryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ClassifiedAnalyticsSummary'] = ResolversParentTypes['ClassifiedAnalyticsSummary']> = ResolversObject<{
+  activeContent?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  daily?: Resolver<Array<ResolversTypes['ClassifiedAnalyticsDay']>, ParentType, ContextType>;
+  detailViews?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  impressions?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  outcomes?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  topContent?: Resolver<Array<ResolversTypes['ClassifiedAnalyticsContent']>, ParentType, ContextType>;
+  uniqueReach?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ClassifiedOrganisationAnalyticsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ClassifiedOrganisationAnalytics'] = ResolversParentTypes['ClassifiedOrganisationAnalytics']> = ResolversObject<{
+  jobs?: Resolver<ResolversTypes['ClassifiedAnalyticsSummary'], ParentType, ContextType>;
+  marketplace?: Resolver<ResolversTypes['ClassifiedAnalyticsSummary'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ClassifiedOrganisationNotificationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ClassifiedOrganisationNotification'] = ResolversParentTypes['ClassifiedOrganisationNotification']> = ResolversObject<{
@@ -1005,6 +1120,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   markAllClassifiedOrganisationNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkAllClassifiedOrganisationNotificationsReadArgs, 'organisationId'>>;
   markClassifiedOrganisationNotificationRead?: Resolver<ResolversTypes['ClassifiedOrganisationNotification'], ParentType, ContextType, RequireFields<MutationMarkClassifiedOrganisationNotificationReadArgs, 'id'>>;
   markThreadRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkThreadReadArgs, 'threadId'>>;
+  recordClassifiedAnalytics?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRecordClassifiedAnalyticsArgs, 'events'>>;
   reportListing?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationReportListingArgs, 'itemId' | 'reason'>>;
   saveJob?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSaveJobArgs, 'id'>>;
   saveMarketplaceItem?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSaveMarketplaceItemArgs, 'id'>>;
@@ -1028,6 +1144,7 @@ export type OrganisationResolvers<ContextType = GraphQLContext, ParentType exten
 }>;
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  classifiedOrganisationAnalytics?: Resolver<ResolversTypes['ClassifiedOrganisationAnalytics'], ParentType, ContextType, RequireFields<QueryClassifiedOrganisationAnalyticsArgs, 'organisationId'>>;
   classifiedOrganisationNotifications?: Resolver<Array<ResolversTypes['ClassifiedOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryClassifiedOrganisationNotificationsArgs, 'organisationId'>>;
   classifiedOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryClassifiedOrganisationUnreadCountArgs, 'organisationId'>>;
   communityGives?: Resolver<Array<ResolversTypes['MarketplaceItem']>, ParentType, ContextType, Partial<QueryCommunityGivesArgs>>;
@@ -1063,6 +1180,10 @@ export type UserResolvers<ContextType = GraphQLContext, ParentType extends Resol
 }>;
 
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
+  ClassifiedAnalyticsContent?: ClassifiedAnalyticsContentResolvers<ContextType>;
+  ClassifiedAnalyticsDay?: ClassifiedAnalyticsDayResolvers<ContextType>;
+  ClassifiedAnalyticsSummary?: ClassifiedAnalyticsSummaryResolvers<ContextType>;
+  ClassifiedOrganisationAnalytics?: ClassifiedOrganisationAnalyticsResolvers<ContextType>;
   ClassifiedOrganisationNotification?: ClassifiedOrganisationNotificationResolvers<ContextType>;
   ConvertedPrice?: ConvertedPriceResolvers<ContextType>;
   DateTime?: GraphQLScalarType;

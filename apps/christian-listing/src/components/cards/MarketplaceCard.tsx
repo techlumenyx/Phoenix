@@ -1,5 +1,6 @@
 import { LocationMarkerIcon, ArrowRightIcon } from '../layout/icons';
 import { Link } from 'react-router-dom';
+import { useContentImpression } from '../../hooks/useContentImpression';
 
 export interface MarketplaceCardProps {
   badge?: string;
@@ -24,8 +25,9 @@ export default function MarketplaceCard({
   className = '',
   href,
 }: MarketplaceCardProps) {
+  const analyticsRef = useContentImpression('MARKETPLACE', href);
   return (
-    <div className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[320px] ${className}`}>
+    <div ref={analyticsRef} className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[320px] ${className}`}>
       {verified && (
         <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E] z-10" />
       )}

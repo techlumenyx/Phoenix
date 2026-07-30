@@ -55,6 +55,15 @@ export function ChatBubbleIcon({ className }: IconProps) {
   );
 }
 
+export function ChartBarIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 3.75a.75.75 0 011.5 0v11.75h12a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75V3.75z" />
+      <path d="M6 12.25a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v2H6v-2zm4-4a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v6h-3v-6zm4-3a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v9h-3v-9z" />
+    </svg>
+  );
+}
+
 export function BellIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

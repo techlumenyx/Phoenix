@@ -8,6 +8,7 @@ import { MessageThreadSchema, type IMessageThread } from './message-thread.model
 import { MessageSchema, type IMessage } from './message.model';
 import { ClassifiedOrganisationNotificationSchema, type IClassifiedOrganisationNotification } from './organisation-notification.model';
 import { MediaAssetSchema, type IMediaAsset } from '@christian-listings/db';
+import { ClassifiedAnalyticsEventSchema, type IClassifiedAnalyticsEvent } from './analytics-event.model';
 
 export let MarketplaceItemModel: mongoose.Model<IMarketplaceItem>;
 export let JobListingModel: mongoose.Model<IJobListing>;
@@ -17,6 +18,7 @@ export let MessageThreadModel: mongoose.Model<IMessageThread>;
 export let MessageModel: mongoose.Model<IMessage>;
 export let ClassifiedOrganisationNotificationModel: mongoose.Model<IClassifiedOrganisationNotification>;
 export let MediaAssetModel: mongoose.Model<IMediaAsset>;
+export let ClassifiedAnalyticsEventModel: mongoose.Model<IClassifiedAnalyticsEvent>;
 
 export function setupModels(conn: Connection) {
   MarketplaceItemModel = conn.model<IMarketplaceItem>('MarketplaceItem', MarketplaceItemSchema);
@@ -27,4 +29,5 @@ export function setupModels(conn: Connection) {
   MessageModel = conn.model<IMessage>('Message', MessageSchema);
   ClassifiedOrganisationNotificationModel = conn.model<IClassifiedOrganisationNotification>('OrganisationNotification', ClassifiedOrganisationNotificationSchema);
   MediaAssetModel = conn.model<IMediaAsset>('MediaAsset', MediaAssetSchema);
+  ClassifiedAnalyticsEventModel = conn.model<IClassifiedAnalyticsEvent>('AnalyticsEvent', ClassifiedAnalyticsEventSchema);
 }

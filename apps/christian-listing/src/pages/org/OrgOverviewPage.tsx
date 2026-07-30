@@ -5,6 +5,7 @@ import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/la
 import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING, UPDATE_JOB_LISTING, UPDATE_MANAGED_EVENT, UPDATE_MARKETPLACE_ITEM } from '../../graphql/mutations';
 import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
 import { deleteUploadedMedia, uploadMedia, type UploadedMedia } from '../../lib/mediaUpload';
+import { AnalyticsSummaryCards } from '../../components/analytics/OrganisationAnalytics';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -199,7 +200,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
   );
 }
 
-function AnalyticsAtAGlance() {
+export function AnalyticsAtAGlance() {
   const analyticsData = [
     {
       title: 'Total Views',
@@ -1866,7 +1867,7 @@ export default function OrgOverviewPage() {
         </div>
       )}
 
-      <AnalyticsAtAGlance />
+      {org && <div className="font-sans max-w-7xl mx-auto p-6"><h2 className="text-2xl font-serif font-bold text-[#1B1B1B] mb-6">Analytics at a Glance</h2><AnalyticsSummaryCards organisationId={org.id} compactView /></div>}
 
       <ListingsManager />
 

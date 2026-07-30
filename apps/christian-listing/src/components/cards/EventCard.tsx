@@ -1,5 +1,6 @@
 import { LocationMarkerIcon, ClockIcon, UsersIcon, HeartIcon, ArrowRightIcon } from '../layout/icons';
 import { Link } from 'react-router-dom';
+import { useContentImpression } from '../../hooks/useContentImpression';
 
 export interface EventCardProps {
   badge?: string;
@@ -32,8 +33,9 @@ export default function EventCard({
   className = '',
   href,
 }: EventCardProps) {
+  const analyticsRef = useContentImpression('EVENT', href);
   return (
-    <div className={`relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${className}`}>
+    <div ref={analyticsRef} className={`relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${className}`}>
       {imageSrc && (
         <img
           src={imageSrc}

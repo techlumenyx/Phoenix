@@ -276,6 +276,7 @@ type Query {
   communityGives(region: String, limit: Int): [MarketplaceItem!]!
   classifiedOrganisationNotifications(organisationId: ID!, unreadOnly: Boolean, limit: Int): [ClassifiedOrganisationNotification!]!
   classifiedOrganisationUnreadCount(organisationId: ID!): Int!
+  classifiedOrganisationAnalytics(organisationId: ID!, from: DateTime, to: DateTime): ClassifiedOrganisationAnalytics!
 }
 
 type JobListingConnection {
@@ -289,6 +290,14 @@ type MarketplaceItemConnection {
   hasNextPage: Boolean!
   endCursor: String
 }
+
+type ClassifiedAnalyticsDay { date: String! impressions: Int! uniqueReach: Int! detailViews: Int! }
+type ClassifiedAnalyticsContent { id: ID! title: String! impressions: Int! uniqueReach: Int! detailViews: Int! }
+type ClassifiedAnalyticsSummary { impressions: Int! uniqueReach: Int! detailViews: Int! outcomes: Int! activeContent: Int! daily: [ClassifiedAnalyticsDay!]! topContent: [ClassifiedAnalyticsContent!]! }
+type ClassifiedOrganisationAnalytics { jobs: ClassifiedAnalyticsSummary! marketplace: ClassifiedAnalyticsSummary! }
+enum ClassifiedAnalyticsEntityType { JOB MARKETPLACE }
+enum ClassifiedAnalyticsAction { IMPRESSION DETAIL_VIEW }
+input ClassifiedAnalyticsInput { entityId: ID! entityType: ClassifiedAnalyticsEntityType! eventType: ClassifiedAnalyticsAction! surface: String! position: Int sessionId: String! }
 
 type ClassifiedOrganisationNotification { id: ID! type: String! title: String! message: String! href: String sourceId: String readAt: DateTime createdAt: DateTime! }
 
@@ -317,6 +326,7 @@ type Mutation {
   archiveThread(threadId: ID!): MessageThread!
   markClassifiedOrganisationNotificationRead(id: ID!): ClassifiedOrganisationNotification!
   markAllClassifiedOrganisationNotificationsRead(organisationId: ID!): Boolean!
+  recordClassifiedAnalytics(events: [ClassifiedAnalyticsInput!]!): Boolean!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────

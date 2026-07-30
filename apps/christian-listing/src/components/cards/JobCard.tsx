@@ -1,5 +1,6 @@
 import { LocationMarkerIcon, BriefcaseIcon, ArrowRightIcon } from '../layout/icons';
 import { Link } from 'react-router-dom';
+import { useContentImpression } from '../../hooks/useContentImpression';
 
 export interface JobCardProps {
   badge?: string;
@@ -28,6 +29,7 @@ export default function JobCard({
   className = '',
   href,
 }: JobCardProps) {
+  const analyticsRef = useContentImpression('JOB', href);
   const badgeStyles: Record<string, string> = {
     green:  'bg-green-100 text-green-700',
     blue:   'bg-blue-100 text-blue-700',
@@ -35,7 +37,7 @@ export default function JobCard({
   };
 
   return (
-    <div className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm p-5 flex flex-col gap-3 min-h-[320px] ${className}`}>
+    <div ref={analyticsRef} className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm p-5 flex flex-col gap-3 min-h-[320px] ${className}`}>
       {verified && (
         <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
       )}

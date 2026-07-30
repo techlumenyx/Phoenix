@@ -181,7 +181,23 @@ type Query {
   mySeriesRsvp(seriesId: ID!): SeriesRSVP
   eventOrganisationNotifications(organisationId: ID!, unreadOnly: Boolean, limit: Int): [EventOrganisationNotification!]!
   eventOrganisationUnreadCount(organisationId: ID!): Int!
+  eventOrganisationAnalytics(organisationId: ID!, from: DateTime, to: DateTime): EventOrganisationAnalytics!
 }
+
+type EventAnalyticsDay { date: String! impressions: Int! uniqueReach: Int! detailViews: Int! }
+type EventAnalyticsContent { id: ID! title: String! impressions: Int! uniqueReach: Int! detailViews: Int! }
+type EventOrganisationAnalytics {
+  impressions: Int!
+  uniqueReach: Int!
+  detailViews: Int!
+  outcomes: Int!
+  activeContent: Int!
+  daily: [EventAnalyticsDay!]!
+  topContent: [EventAnalyticsContent!]!
+}
+
+enum EventAnalyticsAction { IMPRESSION DETAIL_VIEW }
+input EventAnalyticsInput { entityId: ID! eventType: EventAnalyticsAction! surface: String! position: Int sessionId: String! }
 
 # ─── Mutations ────────────────────────────────────────────────────────────────
 
@@ -196,6 +212,7 @@ type Mutation {
   cancelSeriesRsvp(seriesId: ID!): Boolean!
   markEventOrganisationNotificationRead(id: ID!): EventOrganisationNotification!
   markAllEventOrganisationNotificationsRead(organisationId: ID!): Boolean!
+  recordEventAnalytics(events: [EventAnalyticsInput!]!): Boolean!
 }
 
 # ─── Inputs ───────────────────────────────────────────────────────────────────

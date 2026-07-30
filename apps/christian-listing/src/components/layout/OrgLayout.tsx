@@ -7,6 +7,7 @@ import {
   BellIcon,
   BriefcaseIcon,
   CalendarIcon,
+  ChartBarIcon,
   ChatBubbleIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -27,6 +28,7 @@ const TOP_NAV_LINKS = [
 
 const NAV_ITEMS = [
   { label: 'Overview',         icon: GridIcon,       path: '/org' },
+  { label: 'Analytics',        icon: ChartBarIcon,   path: '/org/analytics' },
   { label: 'Events Manager',   icon: CalendarIcon,   path: '/org/events' },
   { label: 'Listings Manager', icon: ListBulletIcon, path: '/org/listings' },
   { label: 'Hiring & Jobs',    icon: BriefcaseIcon,  path: '/org/jobs' },

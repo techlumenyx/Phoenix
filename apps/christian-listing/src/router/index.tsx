@@ -38,6 +38,7 @@ import OrgListingsPage from '../pages/org/OrgListingsPage';
 import OrgJobsPage from '../pages/org/OrgJobsPage';
 import OrgSettingsPage from '../pages/org/OrgSettingsPage';
 import OrgNotificationsPage from '../pages/org/OrgNotificationsPage';
+import OrgAnalyticsPage from '../pages/org/OrgAnalyticsPage';
 
 const router = createBrowserRouter([
   {
@@ -99,6 +100,7 @@ const router = createBrowserRouter([
       { path: 'notifications', element: <OrgNotificationsPage /> },
       { path: 'settings',   element: <OrgSettingsPage /> },
       { path: 'team',       element: <OrgTeamPage /> },
+      { path: 'analytics',  element: <OrgAnalyticsPage /> },
     ],
   },
 ]);
