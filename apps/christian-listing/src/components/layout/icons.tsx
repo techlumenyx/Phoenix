@@ -55,6 +55,14 @@ export function ChatBubbleIcon({ className }: IconProps) {
   );
 }
 
+export function BellIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path fillRule="evenodd" d="M10 2a5 5 0 00-5 5v2.528c0 .793-.233 1.568-.67 2.23l-1.13 1.71A1 1 0 004.035 15h11.93a1 1 0 00.835-1.552l-1.13-1.71A4.04 4.04 0 0115 9.528V7a5 5 0 00-5-5zm2.25 14.5a2.25 2.25 0 01-4.5 0h4.5z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 export function CogIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

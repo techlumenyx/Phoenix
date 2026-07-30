@@ -86,7 +86,14 @@ export default function ProfilePage() {
     setBio(data.me.bio ?? '');
     setAvatarUrl(data.me.avatarUrl ?? '');
     setPreferences(data.me.preferences ?? []);
-    setPrivacy(data.me.privacySettings ?? DEFAULT_PRIVACY);
+    const settings = data.me.privacySettings ?? DEFAULT_PRIVACY;
+    setPrivacy({
+      profileVisibility: settings.profileVisibility,
+      showAvatar: settings.showAvatar,
+      showRegion: settings.showRegion,
+      showBio: settings.showBio,
+      showSocialLinks: settings.showSocialLinks,
+    });
     setSocial({
       whatsapp: data.me.socialLinks?.whatsapp ?? '',
       instagram: data.me.socialLinks?.instagram ?? '',
@@ -103,7 +110,14 @@ export default function ProfilePage() {
     try {
       const result = await updateProfile({ variables: { input: {
         name: name.trim(), region: region.trim(), bio: bio.trim(), avatarUrl: avatarUrl.trim(),
-        preferences, privacySettings: privacy,
+        preferences,
+        privacySettings: {
+          profileVisibility: privacy.profileVisibility,
+          showAvatar: privacy.showAvatar,
+          showRegion: privacy.showRegion,
+          showBio: privacy.showBio,
+          showSocialLinks: privacy.showSocialLinks,
+        },
         socialLinks: Object.fromEntries(Object.entries(social).map(([key, value]) => [key, value.trim()])),
       } } });
       useAuthStore.setState((state) => ({ dbUser: state.dbUser ? {

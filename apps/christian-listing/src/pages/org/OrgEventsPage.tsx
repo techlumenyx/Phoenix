@@ -140,7 +140,7 @@ export default function OrgEventsPage() {
     <div className="font-sans w-full max-w-7xl mx-auto p-6">
       <h1 className="text-3xl font-serif font-bold text-[#1B1B1B] mb-6">Events Manager</h1>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-visible flex flex-col">
         {/* Tabs */}
         <div className="px-6 pt-4 flex items-center gap-8 border-b border-gray-200">
           {tabs.map((tab) => (
@@ -214,7 +214,7 @@ export default function OrgEventsPage() {
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                   </svg>
-                </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View event</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit event or series</button><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_OCCURRENCE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this occurrence</button>{item.isRecurring && <><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_AND_FUTURE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this and future</button><button onClick={() => { setCancelTarget({ event: item, scope: 'ENTIRE_SERIES' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-700 hover:bg-red-50">Cancel entire series</button></>}</div>}</div>
+                </button>{menuId === item.id && <div className={`absolute right-0 z-20 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg ${index === paginated.length - 1 ? 'bottom-9' : 'top-9'}`}><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View event</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit event or series</button><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_OCCURRENCE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this occurrence</button>{item.isRecurring && <><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_AND_FUTURE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this and future</button><button onClick={() => { setCancelTarget({ event: item, scope: 'ENTIRE_SERIES' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-700 hover:bg-red-50">Cancel entire series</button></>}</div>}</div>
               </div>
             ))}
           </div>

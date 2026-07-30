@@ -145,6 +145,23 @@ export default function OrgTeamPage() {
     await updateRoles({ variables: { orgId, userId, roles } });
     await refetch();
   }
+
+  async function resendInvite(item: TeamInvite) {
+    try {
+      const result = await resend({ variables: { id: item.id } });
+      await navigator.clipboard.writeText(
+        link(result.data.resendOrganisationInvite.token),
+      );
+      setMessage('Invitation email requested and new link copied.');
+      showToast('Invitation email requested and new link copied.', 'success');
+      await refetch();
+    } catch {
+      const text = 'We couldnâ€™t resend the invitation. Please try again.';
+      setMessage(text);
+      showToast(text, 'error');
+    }
+  }
+
   async function removeMember(userId: string, confirmed = false) {
     if (
       !orgId ||
@@ -276,20 +293,17 @@ export default function OrgTeamPage() {
                 >
                   Revoke
                 </button>
+                <button
+                  onClick={() => void resendInvite(item)}
+                  className="text-xs font-semibold"
+                >
+                  Resend
+                </button>
               </>
             )}
             {['EXPIRED', 'REVOKED'].includes(item.status) && (
               <button
-                onClick={() =>
-                  resend({ variables: { id: item.id } }).then(async (result) => {
-                    await navigator.clipboard.writeText(
-                      link(result.data.resendOrganisationInvite.token),
-                    );
-                    setMessage('New invitation link copied.');
-                    showToast('New invitation link copied.', 'success');
-                    await refetch();
-                  })
-                }
+                onClick={() => void resendInvite(item)}
                 className="text-xs font-semibold"
               >
                 Resend

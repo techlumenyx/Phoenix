@@ -7,7 +7,7 @@ export default function HeroSection() {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [search, setSearch] = useState('');
-  const { region, setRegion, isProfileRegion } = usePreferredRegion();
+  const { region } = usePreferredRegion();
   const { data, loading } = useDiscovery(search, 5, search.length < 2);
   const resultCount = data ? data.events.edges.length + data.jobListings.edges.length + data.marketplaceItems.edges.length + data.organisations.edges.length : 0;
 
@@ -68,19 +68,6 @@ export default function HeroSection() {
           Discover a curated ecosystem of faith-led ministries, community
           events, and grace-centered marketplaces.
         </p>
-
-        {/* Search bar */}
-        <div className="flex items-center gap-2 text-xs text-[#2A1E0A]/70">
-          <span>Showing results near</span>
-          <input
-            aria-label="Preferred region"
-            value={region}
-            disabled={isProfileRegion}
-            onChange={(event) => setRegion(event.target.value)}
-            placeholder="All regions"
-            className="w-36 rounded-full border border-black/10 bg-white/80 px-3 py-1.5 outline-none disabled:opacity-70"
-          />
-        </div>
 
         <form onSubmit={submit} className="relative w-full max-w-lg">
           <div className="flex items-center bg-white rounded-full shadow-md overflow-hidden">

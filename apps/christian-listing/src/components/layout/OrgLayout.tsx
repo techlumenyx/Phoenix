@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MY_ORGANISATIONS } from '../../graphql/mutations';
 import { useAuthStore } from '../../store/authStore';
 import {
+  BellIcon,
   BriefcaseIcon,
   CalendarIcon,
   ChatBubbleIcon,
@@ -14,6 +15,7 @@ import {
   GridIcon,
   ListBulletIcon,
   MapPinIcon,
+  UsersIcon,
 } from './icons';
 
 const TOP_NAV_LINKS = [
@@ -29,8 +31,8 @@ const NAV_ITEMS = [
   { label: 'Listings Manager', icon: ListBulletIcon, path: '/org/listings' },
   { label: 'Hiring & Jobs',    icon: BriefcaseIcon,  path: '/org/jobs' },
   { label: 'Messages',         icon: ChatBubbleIcon, path: '/org/messages' },
-  { label: 'Notifications',    icon: ChatBubbleIcon, path: '/org/notifications' },
-  { label: 'Team & Roles',     icon: ChatBubbleIcon, path: '/org/team' },
+  { label: 'Notifications',    icon: BellIcon,       path: '/org/notifications' },
+  { label: 'Team & Roles',     icon: UsersIcon,      path: '/org/team' },
   { label: 'Settings',         icon: CogIcon,        path: '/org/settings' },
 ] as const;
 
