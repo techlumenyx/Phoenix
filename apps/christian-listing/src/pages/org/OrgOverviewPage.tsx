@@ -736,6 +736,13 @@ function dateTimeFields(iso: string, timezone?: string) {
   return { date: `${value('year')}-${value('month')}-${value('day')}`, time: `${value('hour')}:${value('minute')}` };
 }
 
+function localDateField(value = new Date()) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export type ManagedFormMode = 'create' | 'view' | 'edit';
 
 export interface ManagedEventFormItem {
@@ -823,6 +830,17 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
     && Boolean(recurrenceUntil)
     && Boolean(minimumRecurrenceEnd)
     && recurrenceUntil < (minimumRecurrenceEnd as string);
+  const currentTime = new Date();
+  let minimumSchedule = {
+    date: localDateField(currentTime),
+    time: `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`,
+  };
+  if (isRecurring) {
+    try { minimumSchedule = dateTimeFields(currentTime.toISOString(), timezone); } catch { /* The submit handler reports an invalid timezone. */ }
+  }
+  const minimumTime = mode === 'create' && date === minimumSchedule.date
+    ? minimumSchedule.time
+    : undefined;
 
   const toggleCategory = (cat: string) =>
     setCategory((prev) => (prev === cat ? null : cat));
@@ -840,6 +858,22 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
       setError('Change the date on an individual occurrence. Series-wide edits can update the shared event details without collapsing the schedule.');
       return;
     }
+    const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
+    let eventDate: Date;
+    try {
+      eventDate = item && !scheduleChanged ? new Date(item.date) : isRecurring ? zonedLocalDateTime(date, time, timezone) : new Date(dateTime);
+    } catch {
+      setError('Enter a valid timezone, date, and time.');
+      return;
+    }
+    if (!Number.isFinite(eventDate.getTime())) {
+      setError('Enter a valid event date and time.');
+      return;
+    }
+    if ((mode === 'create' || scheduleChanged) && eventDate <= new Date()) {
+      setError(time ? 'Event start date and time must be in the future.' : 'Choose a future date, or add a future time for an event happening today.');
+      return;
+    }
     if (mode === 'create' && isRecurring && recurrenceEnd === 'UNTIL' && !recurrenceUntil) {
       setError('Choose the date on which this recurring series should end.');
       return;
@@ -854,8 +888,6 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
     setError('');
     setSubmitting(true);
     try {
-      const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
-      const eventDate = item && !scheduleChanged ? new Date(item.date) : isRecurring ? zonedLocalDateTime(date, time, timezone) : new Date(dateTime);
       const sharedInput = {
             title:              title.trim(),
             description:        description.trim(),
@@ -899,7 +931,11 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
       setIsRecurring(false); setRecurrenceFrequency('WEEKLY'); setRecurrenceInterval('1');
       setRecurrenceDays([]); setRecurrenceEnd('COUNT'); setOccurrenceCount('12'); setRecurrenceUntil('');
       setEventImages([]); setEventVideos([]); setMediaProgress('');
-    } catch {
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : '';
+      if (message.includes('must be in the future')) { setError('Event start date and time must be in the future.'); return; }
+      if (message.includes('after its start')) { setError('Event end date and time must be after its start.'); return; }
+      if (message.includes('recurring series cannot end')) { setError('The recurring series cannot end before its first occurrence.'); return; }
       setError('Failed to publish event — please try again.');
     } finally {
       setSubmitting(false);
@@ -983,6 +1019,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           <input
             type="date"
             required
+            min={mode === 'create' ? minimumSchedule.date : undefined}
             value={date}
             onChange={(e) => {
               const nextDate = e.target.value;
@@ -998,6 +1035,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">Time</label>
           <input
             type="time"
+            min={minimumTime}
             value={time}
             onChange={(e) => setTime(e.target.value)}
             className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"

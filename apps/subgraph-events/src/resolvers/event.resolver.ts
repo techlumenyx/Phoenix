@@ -146,6 +146,21 @@ function eventLocation(input: CreateEventInput['location']) {
   } : null;
 }
 
+export function validateEventSchedule(startDate: Date, endDate: Date | null, requireFutureStart: boolean, now = new Date()) {
+  if (!Number.isFinite(startDate.getTime())) {
+    throw new GraphQLError('Enter a valid event date and time', { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+  if (requireFutureStart && startDate <= now) {
+    throw new GraphQLError('Event start date and time must be in the future', { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+  if (endDate && !Number.isFinite(endDate.getTime())) {
+    throw new GraphQLError('Enter a valid event end date and time', { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+  if (endDate && endDate <= startDate) {
+    throw new GraphQLError('Event end date and time must be after its start', { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+}
+
 function eventUpdate(input: Partial<CreateEventInput>) {
   const update: Record<string, unknown> = {};
   if (input.title !== undefined) update['title'] = input.title;
@@ -325,6 +340,7 @@ export const eventResolvers = {
       const organisationId = new mongoose.Types.ObjectId(input.hostOrganisationIds[0]);
       const startDate = new Date(input.date);
       const endDate = input.endDate ? new Date(input.endDate) : null;
+      validateEventSchedule(startDate, endDate, true);
       const region = resolveLocationRegion(input.region);
       const shared = {
         organisationId,
@@ -352,6 +368,8 @@ export const eventResolvers = {
         let dates: Date[];
         try {
           recurrence = recurrenceRule(input.recurrence);
+          if (recurrence.endsAt && !Number.isFinite(recurrence.endsAt.getTime())) throw new Error('Enter a valid recurrence end date');
+          if (recurrence.endsAt && recurrence.endsAt < startDate) throw new Error('The recurring series cannot end before its first occurrence');
           dates = generateOccurrenceDates(startDate, recurrence);
         } catch (error) {
           throw new GraphQLError(error instanceof Error ? error.message : 'Invalid recurrence settings', { extensions: { code: 'BAD_USER_INPUT' } });
@@ -386,16 +404,27 @@ export const eventResolvers = {
       const organisationId = new mongoose.Types.ObjectId(access.orgId);
       const current = await EventModel.findOne({ _id: id, organisationId });
       if (!current) throw new GraphQLError('Event not found or access denied', { extensions: { code: 'NOT_FOUND' } });
+      if (input.date !== undefined || input.endDate !== undefined) {
+        const nextStart = input.date !== undefined ? new Date(input.date) : current.startDate;
+        const nextEnd = input.endDate !== undefined ? (input.endDate ? new Date(input.endDate) : null) : current.endDate;
+        const startChanged = input.date !== undefined && nextStart.getTime() !== current.startDate.getTime();
+        validateEventSchedule(nextStart, nextEnd, startChanged);
+      }
       const update = eventUpdate(input);
       if (!current.seriesId || scope === 'THIS_OCCURRENCE') {
         const doc = await EventModel.findByIdAndUpdate(current._id, { $set: { ...update, ...(current.seriesId && { isSeriesException: true }) }, ...(current.seriesId && { $addToSet: { overriddenFields: { $each: Object.keys(update) } } }) }, { new: true });
         return mapEvent(doc!);
       }
 
-      const threshold = scope === 'THIS_AND_FUTURE' ? current.startDate : new Date();
       await EventModel.updateOne({ _id: current._id }, { $set: update });
       await EventModel.updateMany(
-        { seriesId: current.seriesId, organisationId, startDate: { $gte: threshold }, _id: { $ne: current._id }, isSeriesException: { $ne: true } },
+        {
+          seriesId: current.seriesId,
+          organisationId,
+          ...(scope === 'THIS_AND_FUTURE' && { startDate: { $gte: current.startDate } }),
+          _id: { $ne: current._id },
+          isSeriesException: { $ne: true },
+        },
         { $set: update },
       );
       await EventSeriesModel.updateOne({ _id: current.seriesId, organisationId }, { $set: update });
@@ -412,8 +441,14 @@ export const eventResolvers = {
         await EventModel.updateOne({ _id: current._id }, { $set: { status: 'CANCELLED', ...(current.seriesId && { isSeriesException: true }) } });
         return true;
       }
-      const threshold = scope === 'THIS_AND_FUTURE' ? current.startDate : new Date();
-      await EventModel.updateMany({ seriesId: current.seriesId, organisationId, startDate: { $gte: threshold } }, { $set: { status: 'CANCELLED' } });
+      await EventModel.updateMany(
+        {
+          seriesId: current.seriesId,
+          organisationId,
+          ...(scope === 'THIS_AND_FUTURE' && { startDate: { $gte: current.startDate } }),
+        },
+        { $set: { status: 'CANCELLED' } },
+      );
       if (scope === 'ENTIRE_SERIES') await EventSeriesModel.updateOne({ _id: current.seriesId, organisationId }, { $set: { status: 'CANCELLED' } });
       return true;
     },
