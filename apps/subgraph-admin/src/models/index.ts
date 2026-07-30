@@ -13,6 +13,7 @@ import { AdminCommandSchema, type IAdminCommand } from './admin-command.model';
 import { MediaAssetSchema, type IMediaAsset } from '@christian-listings/db';
 import { EmailDeliverySchema, type IEmailDelivery } from './email-delivery.model';
 import { ScheduledEmailSchema, type IScheduledEmail } from './scheduled-email.model';
+import { ContentRiskAnalysisSchema, type IContentRiskAnalysis } from './content-risk-analysis.model';
 
 export let ModerationReportModel: mongoose.Model<IModerationReport>;
 export let ModerationCaseModel: mongoose.Model<IModerationCase>;
@@ -28,6 +29,7 @@ export let AdminCommandModel: mongoose.Model<IAdminCommand>;
 export let MediaAssetModel: mongoose.Model<IMediaAsset>;
 export let EmailDeliveryModel: mongoose.Model<IEmailDelivery>;
 export let ScheduledEmailModel: mongoose.Model<IScheduledEmail>;
+export let ContentRiskAnalysisModel: mongoose.Model<IContentRiskAnalysis>;
 
 export function setupModels(connection: Connection) {
   ModerationReportModel = connection.model<IModerationReport>('ModerationReport', ModerationReportSchema);
@@ -44,4 +46,5 @@ export function setupModels(connection: Connection) {
   MediaAssetModel = connection.model<IMediaAsset>('MediaAsset', MediaAssetSchema);
   EmailDeliveryModel = connection.model<IEmailDelivery>('EmailDelivery', EmailDeliverySchema);
   ScheduledEmailModel = connection.model<IScheduledEmail>('ScheduledEmail', ScheduledEmailSchema);
+  ContentRiskAnalysisModel = connection.model<IContentRiskAnalysis>('ContentRiskAnalysis', ContentRiskAnalysisSchema);
 }

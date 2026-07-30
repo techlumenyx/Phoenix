@@ -40,6 +40,8 @@ enum AuditAction {
   NOTIFICATION_READ
   EMAIL_RETRY
   EMAIL_TEST
+  AI_RISK_RETRY
+  AI_RISK_REVIEW
 }
 
 enum ContentType {
@@ -65,6 +67,10 @@ enum SavedViewModule { MODERATION VERIFICATION AUDIT DIRECTORY CURATION }
 enum AdminNotificationType { ASSIGNMENT SLA_WARNING ESCALATION ACTION_FAILED MENTION }
 enum AuditExportStatus { PENDING READY FAILED EXPIRED }
 enum EmailDeliveryStatus { QUEUED ACCEPTED SENT FAILED SUPPRESSED }
+enum RiskAnalysisStatus { PENDING PROCESSING COMPLETED FAILED SKIPPED }
+enum RiskLevel { LOW MEDIUM HIGH }
+enum RiskRecommendedAction { NONE REVIEW PENDING_REVIEW }
+enum RiskReviewVerdict { ACCURATE FALSE_POSITIVE NEEDS_MORE_INFO }
 
 enum VerificationReviewStatus { PENDING_REVIEW NEEDS_INFORMATION APPROVED REJECTED }
 enum VerificationDecision { APPROVE REJECT NEEDS_INFORMATION }
@@ -159,6 +165,7 @@ type ModerationCase @key(fields: "id") {
   reports: [ModerationReport!]!
   notes: [CaseNote!]!
   auditTimeline: [AuditEvent!]!
+  riskAnalyses: [ContentRiskAnalysis!]!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -252,6 +259,33 @@ type EmailDelivery {
 }
 type EmailDeliveryConnection { edges: [EmailDelivery!]! hasNextPage: Boolean! endCursor: String }
 type EmailDeliveryConfiguration { enabled: Boolean! provider: String! webhookConfigured: Boolean! }
+type ContentRiskSignal { code: String! confidence: Float! explanation: String! evidenceExcerpt: String }
+type ContentRiskAnalysis {
+  id: ID!
+  targetId: String!
+  targetType: ContentType!
+  title: String!
+  mode: String!
+  status: RiskAnalysisStatus!
+  provider: String!
+  model: String!
+  score: Int
+  level: RiskLevel
+  summary: String
+  recommendedAction: RiskRecommendedAction
+  signals: [ContentRiskSignal!]!
+  error: String
+  attemptCount: Int!
+  reviewerVerdict: RiskReviewVerdict
+  reviewerNote: String
+  reviewedByFirebaseUid: String
+  reviewedAt: DateTime
+  completedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+type ContentRiskAnalysisConnection { edges: [ContentRiskAnalysis!]! hasNextPage: Boolean! endCursor: String }
+type ContentRiskAnalysisConfiguration { enabled: Boolean! provider: String! model: String! mode: String! }
 
 type Query {
   moderationCases(
@@ -278,6 +312,8 @@ type Query {
   adminSystemHealth: AdminSystemHealth!
   emailDeliveries(status: EmailDeliveryStatus, templateKey: String, search: String, limit: Int, after: String): EmailDeliveryConnection!
   emailDeliveryConfiguration: EmailDeliveryConfiguration!
+  contentRiskAnalyses(status: RiskAnalysisStatus, level: RiskLevel, reviewerVerdict: RiskReviewVerdict, limit: Int, after: String): ContentRiskAnalysisConnection!
+  contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration!
 }
 
 type Mutation {
@@ -307,8 +343,10 @@ type Mutation {
   deleteSavedAdminView(id: ID!): Boolean!
   markAdminNotificationRead(id: ID!): AdminNotification!
   markAllAdminNotificationsRead: Boolean!
-  retryEmailDelivery(id: ID!): EmailDelivery!
-  sendTestEmail(to: String!): EmailDelivery!
+    retryEmailDelivery(id: ID!): EmailDelivery!
+    sendTestEmail(to: String!): EmailDelivery!
+    retryContentRiskAnalysis(id: ID!): ContentRiskAnalysis!
+    reviewContentRiskAnalysis(id: ID!, verdict: RiskReviewVerdict!, note: String): ContentRiskAnalysis!
 }
 
 input FeaturedPlacementInput { targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! placementSource: PlacementSource = EDITORIAL }

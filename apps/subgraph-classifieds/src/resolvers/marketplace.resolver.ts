@@ -6,6 +6,7 @@ import type { GraphQLContext } from '../context';
 import { canAccessOrganisation } from '@christian-listings/auth';
 import { sendMarketplaceReport } from '../services/admin-report.service';
 import { resolveLocationRegion } from '@christian-listings/utils';
+import { requestMarketplaceRiskAnalysis } from '../services/risk-analysis.service';
 
 type ItemDocument = HydratedDocument<IMarketplaceItem>;
 
@@ -174,6 +175,7 @@ export const marketplaceResolvers = {
         videoPosterUrl: input.videoPosterUrl ?? null,
         status:       'AVAILABLE',
       });
+      queueRiskAnalysis(doc);
       return mapItem(doc);
     },
 
@@ -202,6 +204,7 @@ export const marketplaceResolvers = {
 
       doc.set(update);
       await doc.save();
+      queueRiskAnalysis(doc);
       return mapItem(doc);
     },
 
@@ -296,6 +299,14 @@ export const marketplaceResolvers = {
     },
   },
 };
+
+function queueRiskAnalysis(doc: ItemDocument) {
+  requestMarketplaceRiskAnalysis({
+    id: doc._id.toString(), title: doc.title, description: doc.description,
+    category: doc.category, condition: doc.condition, price: doc.sellingPrice,
+    currency: doc.currency, isDonation: doc.isDonation, region: doc.region ?? '',
+  });
+}
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

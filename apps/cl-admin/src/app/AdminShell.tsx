@@ -9,6 +9,7 @@ const navigation: Array<{ label: string; items: Array<{ label: string; to: strin
   { label: 'Work', items: [
     { label: 'Overview', to: '/', icon: 'overview' },
     { label: 'Moderation', to: '/moderation', icon: 'shield', roles: ['TRUST_SAFETY', 'AUDITOR'] },
+    { label: 'AI risk signals', to: '/risk-signals', icon: 'chart', roles: ['TRUST_SAFETY', 'AUDITOR'] },
     { label: 'Verifications', to: '/verifications', icon: 'check', roles: ['VERIFICATION_REVIEWER', 'AUDITOR'] },
   ] },
   { label: 'Directory', items: [

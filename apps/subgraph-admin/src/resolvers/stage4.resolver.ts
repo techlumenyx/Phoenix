@@ -100,6 +100,7 @@ export const stage4Resolvers = {
         provider('Firebase Admin', 'IDENTITY', Boolean(process.env['FIREBASE_SERVICE_ACCOUNT_JSON']), checkedAt),
         provider('Cloudinary', 'MEDIA', Boolean(process.env['CLOUDINARY_CLOUD_NAME']), checkedAt, 'Optional until direct uploads are enabled'),
         provider('Transactional email', 'MESSAGING', process.env['EMAIL_ENABLED'] === 'true' && Boolean(process.env['SENDGRID_WEBHOOK_PUBLIC_KEY']), checkedAt, process.env['EMAIL_ENABLED'] === 'true' ? 'SendGrid delivery enabled' : 'Delivery disabled; email intents are suppressed safely'),
+        provider('AI content risk', 'SAFETY', process.env['AI_RISK_ENABLED'] === 'true' && Boolean(process.env['GEMINI_MODEL']), checkedAt, process.env['AI_RISK_ENABLED'] === 'true' ? `Gemini shadow analysis enabled (${process.env['GEMINI_MODEL'] ?? 'gemini-2.5-flash'})` : 'Shadow analysis disabled; listings are unaffected'),
         { name: 'Command reconciliation', category: 'WORKFLOW', status: unresolvedCommands ? 'DOWN' : 'OPERATIONAL', detail: unresolvedCommands ? `${unresolvedCommands} command(s) require manual reconciliation` : 'No unresolved cross-service commands', latencyMs: null, checkedAt },
       ];
       return { overallStatus: dependencies.some((item) => item.status === 'DOWN') ? 'OUTAGE' : dependencies.some((item) => item.status === 'DEGRADED') ? 'DEGRADED' : 'OPERATIONAL', version: process.env['GIT_SHA'] ?? process.env['APP_VERSION'] ?? 'development', dependencies, checkedAt };

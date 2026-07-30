@@ -21,6 +21,14 @@ import { acceptEmailIntent, cancelScheduledEmail, claimDueEmails, isEmailIntent,
 import type { EmailDeliveryResult } from '@christian-listings/email';
 import rawBody from 'fastify-raw-body';
 import { ingestSendGridEvents, verifySendGridWebhook, type SendGridEvent } from './services/sendgrid-webhook.service';
+import {
+  acceptRiskAnalysisIntent,
+  isRiskAnalysisIntent,
+  isRiskAnalysisResult,
+  markRiskAnalysisProcessing,
+  reconcileRiskAnalysisQueue,
+  recordRiskAnalysisResult,
+} from './services/risk-analysis.service';
 
 const typeDefs = parse(
   readFileSync(join(__dirname, 'schema/admin.graphql'), 'utf-8'),
@@ -59,6 +67,7 @@ async function bootstrap() {
     internalPaths: [
       '/internal/reports/marketplace', '/internal/verifications', '/internal/emails',
       '/internal/emails/*',
+      '/internal/risk-analyses', '/internal/risk-analyses/*',
     ],
   }));
 
@@ -128,6 +137,25 @@ async function bootstrap() {
     return { id: doc._id.toString(), status: doc.status };
   });
 
+  fastify.post('/internal/risk-analyses', async (request, reply) => {
+    if (!isRiskAnalysisIntent(request.body)) return reply.code(400).send({ error: 'Invalid risk analysis payload' });
+    const doc = await acceptRiskAnalysisIntent(request.body);
+    return { id: doc._id.toString(), status: doc.status };
+  });
+
+  fastify.post<{ Params: { id: string } }>('/internal/risk-analyses/:id/start', async (request, reply) => {
+    const doc = await markRiskAnalysisProcessing(request.params.id);
+    if (!doc) return reply.code(404).send({ error: 'Risk analysis not found' });
+    return { id: doc._id.toString(), status: doc.status };
+  });
+
+  fastify.post<{ Params: { id: string } }>('/internal/risk-analyses/:id/result', async (request, reply) => {
+    if (!isRiskAnalysisResult(request.body)) return reply.code(400).send({ error: 'Invalid risk analysis result' });
+    const doc = await recordRiskAnalysisResult(request.params.id, request.body);
+    if (!doc) return reply.code(404).send({ error: 'Risk analysis not found' });
+    return { id: doc._id.toString(), status: doc.status };
+  });
+
   await fastify.register(fastifyApollo(apollo), {
     path: '/graphql',
     context: async (request) => buildContext(request),
@@ -138,7 +166,8 @@ async function bootstrap() {
   await reconcileAuditExports();
   await reconcileAdminCommands();
   await reconcileEmailQueue().catch((error) => fastify.log.warn(error, 'Email queue reconciliation is unavailable'));
-  const reconciliationTimer = setInterval(() => void Promise.allSettled([reconcileAuditExports(), reconcileAdminCommands(), reconcileEmailQueue()]), 60_000);
+  await reconcileRiskAnalysisQueue().catch((error) => fastify.log.warn(error, 'Risk analysis queue reconciliation is unavailable'));
+  const reconciliationTimer = setInterval(() => void Promise.allSettled([reconcileAuditExports(), reconcileAdminCommands(), reconcileEmailQueue(), reconcileRiskAnalysisQueue()]), 60_000);
   reconciliationTimer.unref();
 
   const port = Number(process.env['PORT'] ?? 4004);

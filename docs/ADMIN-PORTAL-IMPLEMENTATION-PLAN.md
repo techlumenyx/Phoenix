@@ -738,6 +738,8 @@ Exit criteria: production configuration is hardened, partial cross-service failu
 
 ### Stage 10 — AI-assisted listing risk signals (Standard)
 
+Initial marketplace-text shadow mode implemented on 29 July 2026: durable deduplicated analysis jobs, Gemini structured output, evidence-bearing advisory signals, a dedicated admin queue, moderation-case context, audited human feedback, and no automatic enforcement.
+
 1. Introduce advisory, explainable signals behind feature flags and shadow evaluation.
 2. Require human decisions for enforcement and prohibit autonomous permanent action.
 3. Measure precision, false positives, regional/language bias, reviewer overrides, model version, and rollback readiness.

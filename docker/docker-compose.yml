@@ -94,6 +94,7 @@ services:
       - ADMIN_INTERNAL_URL=http://admin:4004
       - IDENTITY_INTERNAL_URL=http://identity:4001
       - PUBLIC_APP_URL=${PUBLIC_APP_URL:-http://localhost:3000}
+      - AI_RISK_ENABLED=${AI_RISK_ENABLED:-false}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: 10s
@@ -131,6 +132,11 @@ services:
       - SENDGRID_WEBHOOK_PUBLIC_KEY=${SENDGRID_WEBHOOK_PUBLIC_KEY:-}
       - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
       - EMAIL_RETRY_DELAY_MS=${EMAIL_RETRY_DELAY_MS:-5000}
+      - AI_RISK_ENABLED=${AI_RISK_ENABLED:-false}
+      - AI_RISK_PROVIDER=${AI_RISK_PROVIDER:-gemini}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - AI_RISK_MAX_ATTEMPTS=${AI_RISK_MAX_ATTEMPTS:-3}
+      - AI_RISK_RETRY_DELAY_MS=${AI_RISK_RETRY_DELAY_MS:-10000}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4004/health']
       interval: 10s
@@ -191,6 +197,14 @@ services:
       - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
       - EMAIL_RETRY_DELAY_MS=${EMAIL_RETRY_DELAY_MS:-5000}
       - EMAIL_SCHEDULE_SCAN_MS=${EMAIL_SCHEDULE_SCAN_MS:-60000}
+      - AI_RISK_ENABLED=${AI_RISK_ENABLED:-false}
+      - AI_RISK_PROVIDER=${AI_RISK_PROVIDER:-gemini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_TIMEOUT_MS=${GEMINI_TIMEOUT_MS:-30000}
+      - AI_RISK_WORKER_CONCURRENCY=${AI_RISK_WORKER_CONCURRENCY:-2}
+      - AI_RISK_MAX_ATTEMPTS=${AI_RISK_MAX_ATTEMPTS:-3}
+      - AI_RISK_RETRY_DELAY_MS=${AI_RISK_RETRY_DELAY_MS:-10000}
     depends_on:
       redis:
         condition: service_healthy

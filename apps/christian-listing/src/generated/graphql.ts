@@ -151,6 +151,8 @@ export enum AuditAction {
   AccountSuspend = 'ACCOUNT_SUSPEND',
   AccountWarn = 'ACCOUNT_WARN',
   AddNote = 'ADD_NOTE',
+  AiRiskRetry = 'AI_RISK_RETRY',
+  AiRiskReview = 'AI_RISK_REVIEW',
   Assign = 'ASSIGN',
   Dismiss = 'DISMISS',
   DownloadAuditExport = 'DOWNLOAD_AUDIT_EXPORT',
@@ -249,6 +251,55 @@ export type ClassifiedOrganisationNotification = {
   sourceId?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   type: Scalars['String']['output'];
+};
+
+export type ContentRiskAnalysis = {
+  __typename?: 'ContentRiskAnalysis';
+  attemptCount: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  error?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  level?: Maybe<RiskLevel>;
+  mode: Scalars['String']['output'];
+  model: Scalars['String']['output'];
+  provider: Scalars['String']['output'];
+  recommendedAction?: Maybe<RiskRecommendedAction>;
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  reviewerNote?: Maybe<Scalars['String']['output']>;
+  reviewerVerdict?: Maybe<RiskReviewVerdict>;
+  score?: Maybe<Scalars['Int']['output']>;
+  signals: Array<ContentRiskSignal>;
+  status: RiskAnalysisStatus;
+  summary?: Maybe<Scalars['String']['output']>;
+  targetId: Scalars['String']['output'];
+  targetType: ContentType;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ContentRiskAnalysisConfiguration = {
+  __typename?: 'ContentRiskAnalysisConfiguration';
+  enabled: Scalars['Boolean']['output'];
+  mode: Scalars['String']['output'];
+  model: Scalars['String']['output'];
+  provider: Scalars['String']['output'];
+};
+
+export type ContentRiskAnalysisConnection = {
+  __typename?: 'ContentRiskAnalysisConnection';
+  edges: Array<ContentRiskAnalysis>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type ContentRiskSignal = {
+  __typename?: 'ContentRiskSignal';
+  code: Scalars['String']['output'];
+  confidence: Scalars['Float']['output'];
+  evidenceExcerpt?: Maybe<Scalars['String']['output']>;
+  explanation: Scalars['String']['output'];
 };
 
 export enum ContentType {
@@ -841,6 +892,7 @@ export type ModerationCase = {
   resolutionReason?: Maybe<Scalars['String']['output']>;
   resolvedAt?: Maybe<Scalars['DateTime']['output']>;
   resolvedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  riskAnalyses: Array<ContentRiskAnalysis>;
   status: ModerationCaseStatus;
   targetId: Scalars['String']['output'];
   targetStatus: Scalars['String']['output'];
@@ -924,7 +976,9 @@ export type Mutation = {
   requestAuditExport: AuditExport;
   resendOrganisationInvite: OrganisationInvite;
   resolveModerationCase: ModerationCase;
+  retryContentRiskAnalysis: ContentRiskAnalysis;
   retryEmailDelivery: EmailDelivery;
+  reviewContentRiskAnalysis: ContentRiskAnalysis;
   revokeOrganisationInvite: OrganisationInvite;
   rsvpToEvent: Rsvp;
   rsvpToSeries: SeriesRsvp;
@@ -1203,8 +1257,20 @@ export type MutationResolveModerationCaseArgs = {
 };
 
 
+export type MutationRetryContentRiskAnalysisArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRetryEmailDeliveryArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationReviewContentRiskAnalysisArgs = {
+  id: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+  verdict: RiskReviewVerdict;
 };
 
 
@@ -1465,6 +1531,8 @@ export type Query = {
   classifiedOrganisationNotifications: Array<ClassifiedOrganisationNotification>;
   classifiedOrganisationUnreadCount: Scalars['Int']['output'];
   communityGives: Array<MarketplaceItem>;
+  contentRiskAnalyses: ContentRiskAnalysisConnection;
+  contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration;
   emailDeliveries: EmailDeliveryConnection;
   emailDeliveryConfiguration: EmailDeliveryConfiguration;
   event?: Maybe<Event>;
@@ -1562,6 +1630,15 @@ export type QueryClassifiedOrganisationUnreadCountArgs = {
 export type QueryCommunityGivesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   region?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryContentRiskAnalysesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  level?: InputMaybe<RiskLevel>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  reviewerVerdict?: InputMaybe<RiskReviewVerdict>;
+  status?: InputMaybe<RiskAnalysisStatus>;
 };
 
 
@@ -1835,6 +1912,32 @@ export enum ReportReasonCode {
   Other = 'OTHER',
   ProhibitedUnsafe = 'PROHIBITED_UNSAFE',
   SpamMisleading = 'SPAM_MISLEADING'
+}
+
+export enum RiskAnalysisStatus {
+  Completed = 'COMPLETED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Processing = 'PROCESSING',
+  Skipped = 'SKIPPED'
+}
+
+export enum RiskLevel {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM'
+}
+
+export enum RiskRecommendedAction {
+  None = 'NONE',
+  PendingReview = 'PENDING_REVIEW',
+  Review = 'REVIEW'
+}
+
+export enum RiskReviewVerdict {
+  Accurate = 'ACCURATE',
+  FalsePositive = 'FALSE_POSITIVE',
+  NeedsMoreInfo = 'NEEDS_MORE_INFO'
 }
 
 export enum RoleType {

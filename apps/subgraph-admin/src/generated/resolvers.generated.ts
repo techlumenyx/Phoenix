@@ -119,6 +119,8 @@ export const AuditAction = {
   AccountSuspend: 'ACCOUNT_SUSPEND',
   AccountWarn: 'ACCOUNT_WARN',
   AddNote: 'ADD_NOTE',
+  AiRiskRetry: 'AI_RISK_RETRY',
+  AiRiskReview: 'AI_RISK_REVIEW',
   Assign: 'ASSIGN',
   Dismiss: 'DISMISS',
   DownloadAuditExport: 'DOWNLOAD_AUDIT_EXPORT',
@@ -208,6 +210,55 @@ export type CaseNote = {
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ContentRiskAnalysis = {
+  __typename?: 'ContentRiskAnalysis';
+  attemptCount: Scalars['Int']['output'];
+  completedAt?: Maybe<Scalars['DateTime']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  error?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  level?: Maybe<RiskLevel>;
+  mode: Scalars['String']['output'];
+  model: Scalars['String']['output'];
+  provider: Scalars['String']['output'];
+  recommendedAction?: Maybe<RiskRecommendedAction>;
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  reviewerNote?: Maybe<Scalars['String']['output']>;
+  reviewerVerdict?: Maybe<RiskReviewVerdict>;
+  score?: Maybe<Scalars['Int']['output']>;
+  signals: Array<ContentRiskSignal>;
+  status: RiskAnalysisStatus;
+  summary?: Maybe<Scalars['String']['output']>;
+  targetId: Scalars['String']['output'];
+  targetType: ContentType;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type ContentRiskAnalysisConfiguration = {
+  __typename?: 'ContentRiskAnalysisConfiguration';
+  enabled: Scalars['Boolean']['output'];
+  mode: Scalars['String']['output'];
+  model: Scalars['String']['output'];
+  provider: Scalars['String']['output'];
+};
+
+export type ContentRiskAnalysisConnection = {
+  __typename?: 'ContentRiskAnalysisConnection';
+  edges: Array<ContentRiskAnalysis>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type ContentRiskSignal = {
+  __typename?: 'ContentRiskSignal';
+  code: Scalars['String']['output'];
+  confidence: Scalars['Float']['output'];
+  evidenceExcerpt?: Maybe<Scalars['String']['output']>;
+  explanation: Scalars['String']['output'];
 };
 
 export const ContentType = {
@@ -359,6 +410,7 @@ export type ModerationCase = {
   resolutionReason?: Maybe<Scalars['String']['output']>;
   resolvedAt?: Maybe<Scalars['DateTime']['output']>;
   resolvedByFirebaseUid?: Maybe<Scalars['String']['output']>;
+  riskAnalyses: Array<ContentRiskAnalysis>;
   status: ModerationCaseStatus;
   targetId: Scalars['String']['output'];
   targetStatus: Scalars['String']['output'];
@@ -419,7 +471,9 @@ export type Mutation = {
   reorderFeaturedPlacement: FeaturedPlacement;
   requestAuditExport: AuditExport;
   resolveModerationCase: ModerationCase;
+  retryContentRiskAnalysis: ContentRiskAnalysis;
   retryEmailDelivery: EmailDelivery;
+  reviewContentRiskAnalysis: ContentRiskAnalysis;
   saveAdminView: SavedAdminView;
   sendTestEmail: EmailDelivery;
   updateFeaturedPlacement: FeaturedPlacement;
@@ -546,8 +600,20 @@ export type MutationResolveModerationCaseArgs = {
 };
 
 
+export type MutationRetryContentRiskAnalysisArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRetryEmailDeliveryArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationReviewContentRiskAnalysisArgs = {
+  id: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+  verdict: RiskReviewVerdict;
 };
 
 
@@ -602,6 +668,8 @@ export type Query = {
   auditEvents: AuditEventConnection;
   auditExportContent: Scalars['String']['output'];
   auditExports: Array<AuditExport>;
+  contentRiskAnalyses: ContentRiskAnalysisConnection;
+  contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration;
   emailDeliveries: EmailDeliveryConnection;
   emailDeliveryConfiguration: EmailDeliveryConfiguration;
   featuredPlacements: Array<FeaturedPlacement>;
@@ -648,6 +716,15 @@ export type QueryAuditEventsArgs = {
 
 export type QueryAuditExportContentArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryContentRiskAnalysesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  level?: InputMaybe<RiskLevel>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  reviewerVerdict?: InputMaybe<RiskReviewVerdict>;
+  status?: InputMaybe<RiskAnalysisStatus>;
 };
 
 
@@ -709,6 +786,36 @@ export const ReportReasonCode = {
 } as const;
 
 export type ReportReasonCode = typeof ReportReasonCode[keyof typeof ReportReasonCode];
+export const RiskAnalysisStatus = {
+  Completed: 'COMPLETED',
+  Failed: 'FAILED',
+  Pending: 'PENDING',
+  Processing: 'PROCESSING',
+  Skipped: 'SKIPPED'
+} as const;
+
+export type RiskAnalysisStatus = typeof RiskAnalysisStatus[keyof typeof RiskAnalysisStatus];
+export const RiskLevel = {
+  High: 'HIGH',
+  Low: 'LOW',
+  Medium: 'MEDIUM'
+} as const;
+
+export type RiskLevel = typeof RiskLevel[keyof typeof RiskLevel];
+export const RiskRecommendedAction = {
+  None: 'NONE',
+  PendingReview: 'PENDING_REVIEW',
+  Review: 'REVIEW'
+} as const;
+
+export type RiskRecommendedAction = typeof RiskRecommendedAction[keyof typeof RiskRecommendedAction];
+export const RiskReviewVerdict = {
+  Accurate: 'ACCURATE',
+  FalsePositive: 'FALSE_POSITIVE',
+  NeedsMoreInfo: 'NEEDS_MORE_INFO'
+} as const;
+
+export type RiskReviewVerdict = typeof RiskReviewVerdict[keyof typeof RiskReviewVerdict];
 export type SavedAdminView = {
   __typename?: 'SavedAdminView';
   createdAt: Scalars['DateTime']['output'];
@@ -900,6 +1007,11 @@ export type ResolversTypes = ResolversObject<{
   AuditExportStatus: AuditExportStatus;
   AuditResult: AuditResult;
   CaseNote: ResolverTypeWrapper<CaseNote>;
+  ContentRiskAnalysis: ResolverTypeWrapper<ContentRiskAnalysis>;
+  ContentRiskAnalysisConfiguration: ResolverTypeWrapper<ContentRiskAnalysisConfiguration>;
+  ContentRiskAnalysisConnection: ResolverTypeWrapper<ContentRiskAnalysisConnection>;
+  ContentRiskSignal: ResolverTypeWrapper<ContentRiskSignal>;
+  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   ContentType: ContentType;
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   DirectoryEntityType: DirectoryEntityType;
@@ -924,6 +1036,10 @@ export type ResolversTypes = ResolversObject<{
   PlacementTargetType: PlacementTargetType;
   Query: ResolverTypeWrapper<{}>;
   ReportReasonCode: ReportReasonCode;
+  RiskAnalysisStatus: RiskAnalysisStatus;
+  RiskLevel: RiskLevel;
+  RiskRecommendedAction: RiskRecommendedAction;
+  RiskReviewVerdict: RiskReviewVerdict;
   SavedAdminView: ResolverTypeWrapper<SavedAdminView>;
   SavedViewModule: SavedViewModule;
   SystemDependency: ResolverTypeWrapper<SystemDependency>;
@@ -950,6 +1066,11 @@ export type ResolversParentTypes = ResolversObject<{
   AuditEventConnection: AuditEventConnection;
   AuditExport: AuditExport;
   CaseNote: CaseNote;
+  ContentRiskAnalysis: ContentRiskAnalysis;
+  ContentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration;
+  ContentRiskAnalysisConnection: ContentRiskAnalysisConnection;
+  ContentRiskSignal: ContentRiskSignal;
+  Float: Scalars['Float']['output'];
   DateTime: Scalars['DateTime']['output'];
   EmailDelivery: EmailDelivery;
   EmailDeliveryConfiguration: EmailDeliveryConfiguration;
@@ -1092,6 +1213,55 @@ export type CaseNoteResolvers<ContextType = GraphQLContext, ParentType extends R
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ContentRiskAnalysisResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ContentRiskAnalysis'] = ResolversParentTypes['ContentRiskAnalysis']> = ResolversObject<{
+  attemptCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  completedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  error?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  level?: Resolver<Maybe<ResolversTypes['RiskLevel']>, ParentType, ContextType>;
+  mode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  recommendedAction?: Resolver<Maybe<ResolversTypes['RiskRecommendedAction']>, ParentType, ContextType>;
+  reviewedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  reviewedByFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  reviewerNote?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  reviewerVerdict?: Resolver<Maybe<ResolversTypes['RiskReviewVerdict']>, ParentType, ContextType>;
+  score?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  signals?: Resolver<Array<ResolversTypes['ContentRiskSignal']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['RiskAnalysisStatus'], ParentType, ContextType>;
+  summary?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  targetId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ContentRiskAnalysisConfigurationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ContentRiskAnalysisConfiguration'] = ResolversParentTypes['ContentRiskAnalysisConfiguration']> = ResolversObject<{
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  mode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  model?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  provider?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ContentRiskAnalysisConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ContentRiskAnalysisConnection'] = ResolversParentTypes['ContentRiskAnalysisConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['ContentRiskAnalysis']>, ParentType, ContextType>;
+  endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ContentRiskSignalResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ContentRiskSignal'] = ResolversParentTypes['ContentRiskSignal']> = ResolversObject<{
+  code?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  confidence?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  evidenceExcerpt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  explanation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['DateTime'], any> {
   name: 'DateTime';
 }
@@ -1179,6 +1349,7 @@ export type ModerationCaseResolvers<ContextType = GraphQLContext, ParentType ext
   resolutionReason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   resolvedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   resolvedByFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  riskAnalyses?: Resolver<Array<ResolversTypes['ContentRiskAnalysis']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['ModerationCaseStatus'], ParentType, ContextType>;
   targetId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   targetStatus?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1226,7 +1397,9 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   reorderFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationReorderFeaturedPlacementArgs, 'id' | 'rank'>>;
   requestAuditExport?: Resolver<ResolversTypes['AuditExport'], ParentType, ContextType, RequireFields<MutationRequestAuditExportArgs, 'from' | 'to'>>;
   resolveModerationCase?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationResolveModerationCaseArgs, 'action' | 'expectedVersion' | 'id' | 'reason'>>;
+  retryContentRiskAnalysis?: Resolver<ResolversTypes['ContentRiskAnalysis'], ParentType, ContextType, RequireFields<MutationRetryContentRiskAnalysisArgs, 'id'>>;
   retryEmailDelivery?: Resolver<ResolversTypes['EmailDelivery'], ParentType, ContextType, RequireFields<MutationRetryEmailDeliveryArgs, 'id'>>;
+  reviewContentRiskAnalysis?: Resolver<ResolversTypes['ContentRiskAnalysis'], ParentType, ContextType, RequireFields<MutationReviewContentRiskAnalysisArgs, 'id' | 'verdict'>>;
   saveAdminView?: Resolver<ResolversTypes['SavedAdminView'], ParentType, ContextType, RequireFields<MutationSaveAdminViewArgs, 'filtersJson' | 'module' | 'name'>>;
   sendTestEmail?: Resolver<ResolversTypes['EmailDelivery'], ParentType, ContextType, RequireFields<MutationSendTestEmailArgs, 'to'>>;
   updateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationUpdateFeaturedPlacementArgs, 'id' | 'input'>>;
@@ -1242,6 +1415,8 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   auditEvents?: Resolver<ResolversTypes['AuditEventConnection'], ParentType, ContextType, Partial<QueryAuditEventsArgs>>;
   auditExportContent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryAuditExportContentArgs, 'id'>>;
   auditExports?: Resolver<Array<ResolversTypes['AuditExport']>, ParentType, ContextType>;
+  contentRiskAnalyses?: Resolver<ResolversTypes['ContentRiskAnalysisConnection'], ParentType, ContextType, Partial<QueryContentRiskAnalysesArgs>>;
+  contentRiskAnalysisConfiguration?: Resolver<ResolversTypes['ContentRiskAnalysisConfiguration'], ParentType, ContextType>;
   emailDeliveries?: Resolver<ResolversTypes['EmailDeliveryConnection'], ParentType, ContextType, Partial<QueryEmailDeliveriesArgs>>;
   emailDeliveryConfiguration?: Resolver<ResolversTypes['EmailDeliveryConfiguration'], ParentType, ContextType>;
   featuredPlacements?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType, Partial<QueryFeaturedPlacementsArgs>>;
@@ -1321,6 +1496,10 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AuditEventConnection?: AuditEventConnectionResolvers<ContextType>;
   AuditExport?: AuditExportResolvers<ContextType>;
   CaseNote?: CaseNoteResolvers<ContextType>;
+  ContentRiskAnalysis?: ContentRiskAnalysisResolvers<ContextType>;
+  ContentRiskAnalysisConfiguration?: ContentRiskAnalysisConfigurationResolvers<ContextType>;
+  ContentRiskAnalysisConnection?: ContentRiskAnalysisConnectionResolvers<ContextType>;
+  ContentRiskSignal?: ContentRiskSignalResolvers<ContextType>;
   DateTime?: GraphQLScalarType;
   EmailDelivery?: EmailDeliveryResolvers<ContextType>;
   EmailDeliveryConfiguration?: EmailDeliveryConfigurationResolvers<ContextType>;

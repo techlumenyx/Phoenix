@@ -41,6 +41,23 @@ Email intents are stored in `cl_admin`, queued with BullMQ, and delivered by `ap
 
 Redis runs with AOF persistence and `noeviction` in the supplied Compose files, as required for queue reliability.
 
+## AI content risk analysis (classifieds + admin + worker)
+
+Marketplace listing text is submitted asynchronously to a provider-neutral risk workflow. Gemini runs only in the worker. Results are advisory, are visible to trust-and-safety administrators, and never change listing visibility in shadow mode.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AI_RISK_ENABLED` | No | Enables marketplace text analysis when `true`. Defaults to `false`. Must be set consistently for classifieds, admin and worker. |
+| `AI_RISK_PROVIDER` | No | Provider identifier. Currently `gemini`. |
+| `GEMINI_API_KEY` | Yes for worker when enabled | Server-only Gemini API key. Never expose it as a `CL_*` browser variable. |
+| `GEMINI_MODEL` | No | Stable model identifier; defaults to `gemini-2.5-flash`. |
+| `GEMINI_TIMEOUT_MS` | No | Per-request provider timeout; defaults to 30000 ms. |
+| `AI_RISK_WORKER_CONCURRENCY` | No | Concurrent analysis jobs; defaults to 2. |
+| `AI_RISK_MAX_ATTEMPTS` | No | Exponential retry attempts; defaults to 3. |
+| `AI_RISK_RETRY_DELAY_MS` | No | Initial retry delay; defaults to 10000 ms. |
+
+See `docs/AI-RISK-ANALYSIS.md` for activation and safety constraints.
+
 ## Remote database seeding
 
 `SEED_ENVIRONMENT` and `SEED_REMOTE_CONFIRM` are temporary command-scoped safeguards for the one-off production Compose seed service. Do not store the confirmation permanently in `.env`. See `docs/SEEDING.md` for the exact commands.
