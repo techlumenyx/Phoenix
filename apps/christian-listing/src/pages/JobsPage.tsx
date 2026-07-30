@@ -2,6 +2,7 @@ import { gql, useQuery } from '@apollo/client';
 import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import JobCard from '../components/cards/JobCard';
+import SectorIllustration from '../components/jobs/SectorIllustration';
 import { ArrowRightIcon, SearchIcon } from '../components/layout/icons';
 import { formatPrice, usePreferredRegion } from '../lib/discovery';
 import { mergeUniqueById } from '../lib/homepage-selection';
@@ -21,7 +22,12 @@ const JOBS_HOME = gql`
 
 interface HomeJob { id: string; title: string; roleType: string; workLocation: string; region: string; skillsRequired: string[]; salaryRange?: { min: number; max: number; currency: string } | null; isPromoted: boolean; organisation: { id: string; name: string; isVerified: boolean } }
 interface HomeData { regionalTrending?: { edges: HomeJob[] }; globalTrending: { edges: HomeJob[] }; regionalNewest?: { edges: HomeJob[] }; globalNewest: { edges: HomeJob[] }; regionalVolunteering?: { edges: HomeJob[] }; globalVolunteering: { edges: HomeJob[] } }
-const SECTORS = [['Social Media', 'Technology', '▣'], ['Project Management', 'Operations', '⌘'], ['Teaching', 'Education', '☆'], ['Counselling', 'Health & Care', '♡']] as const;
+const SECTORS = [
+  { skill: 'Social Media', label: 'Technology', illustration: 'technology', gradient: 'from-[#202c31] via-[#43575b] to-[#99837b]' },
+  { skill: 'Project Management', label: 'Operations', illustration: 'operations', gradient: 'from-[#332822] via-[#6f5548] to-[#b68d75]' },
+  { skill: 'Teaching', label: 'Education', illustration: 'education', gradient: 'from-[#242d29] via-[#51675d] to-[#9b8d78]' },
+  { skill: 'Counselling', label: 'Health & Care', illustration: 'care', gradient: 'from-[#36262a] via-[#765158] to-[#b18b7c]' },
+] as const;
 const EMPTY_PREFERENCES: string[] = [];
 
 export default function JobsPage() {
@@ -44,7 +50,7 @@ export default function JobsPage() {
     <section className="relative flex min-h-[440px] items-center justify-center overflow-hidden bg-[#2d302d] px-6 text-center"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20" /><div className="relative w-full max-w-2xl"><h1 className="font-serif text-4xl font-bold text-white md:text-5xl">Find Opportunities<br />that grow your Career</h1><form onSubmit={submit} className="mx-auto mt-7 flex max-w-xl items-center overflow-hidden rounded-full bg-white shadow-lg"><SearchIcon className="ml-4 h-5 w-5 text-gray-400" /><input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search jobs, skills or organisations…" className="min-w-0 flex-1 px-3 py-3 text-sm outline-none" /><button className="m-1 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white">Explore</button></form>{region && <p className="mt-3 text-xs text-white/70">Showing opportunities near {region}</p>}</div></section>
     {error && <p className="py-10 text-center text-red-700">Jobs are temporarily unavailable.</p>}
     {isShowingGlobalFallback && <p className="bg-amber-50 px-6 py-3 text-center text-sm text-amber-900">No current jobs near {region}. Showing opportunities from across Christian Listings.</p>}
-    <section className="px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Search by Sector</h2><div className="grid grid-cols-2 gap-4 md:grid-cols-4">{SECTORS.map(([skill, label, icon]) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className="relative flex h-44 items-end overflow-hidden rounded-2xl bg-gradient-to-br from-[#292f35] to-[#8d7c79] p-5 text-white"><span className="absolute right-4 top-4 text-3xl">{icon}</span><strong className="font-serif text-xl">{label}</strong></Link>)}</div><div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">{['Accounting', 'Delivery Driver', 'Community Outreach', 'Social Media', 'Counselling', 'Project Management', 'Administration', 'Event Planning'].map((skill) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className="rounded-lg bg-[#b9b8ff] px-4 py-2 text-xs">{skill} Jobs →</Link>)}</div></section>
+    <section className="px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Search by Sector</h2><div className="grid grid-cols-2 gap-4 md:grid-cols-4">{SECTORS.map(({ skill, label, illustration, gradient }) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className={`group relative flex h-44 items-end overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 text-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f5548]`}><div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-white/5" /><SectorIllustration sector={illustration} className="absolute -right-5 -top-1 h-[150px] w-[190px] text-white/80 transition duration-500 group-hover:scale-105 group-hover:text-white" /><strong className="relative z-10 max-w-[9rem] font-serif text-xl leading-tight">{label}</strong><ArrowRightIcon className="relative z-10 mb-0.5 ml-auto h-4 w-4 -rotate-45 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" /></Link>)}</div><div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">{['Accounting', 'Delivery Driver', 'Community Outreach', 'Social Media', 'Counselling', 'Project Management', 'Administration', 'Event Planning'].map((skill) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className="rounded-lg bg-[#b9b8ff] px-4 py-2 text-xs">{skill} Jobs →</Link>)}</div></section>
     <JobSection title="Based on your Interests" jobs={(interests.length ? interests : newest).slice(0, 4)} loading={loading} />
     <JobSection title="Volunteer Opportunities" jobs={volunteering} loading={loading} />
     <JobSection title="Trending Opportunities" jobs={trending} loading={loading} />
