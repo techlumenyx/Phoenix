@@ -75,6 +75,9 @@ test-cli all
 test-cli public
 test-preview admin
 test-preview all
+
+# Create an organisation and verify it in admin in visible preview mode
+test-account-preview
 ```
 
 ### Direct pytest commands
@@ -107,6 +110,10 @@ All runtime configuration is environment-driven:
 | `ADMIN_URL` | Admin-site base URL | Production admin URL |
 | `ADMIN_EMAIL` | Admin automation account | Local compatibility value |
 | `ADMIN_PASSWORD` | Admin automation password | Local compatibility value |
+| `ORG_EMAIL_TEMPLATE` | Unique signup email; supports `{timestamp}` | `automation+{timestamp}@example.com` |
+| `ORG_PASSWORD` | Password for the created organisation account | `Automation123!` |
+| `ORG_PHONE` | Phone number entered during organisation signup | `+441234567890` |
+| `ORG_NAME_PREFIX` | Prefix for the unique organisation name | `Automation Organisation` |
 | `ADMIN_SECTIONS` | Comma-separated sidebar labels | Current 13 sections |
 | `NAVIGATION_TIMEOUT_MS` | Page/network timeout | `30000` |
 | `ELEMENT_TIMEOUT_MS` | Element visibility timeout | `10000` |
@@ -115,6 +122,18 @@ All runtime configuration is environment-driven:
 
 On failure, a full-page screenshot and browser-error log are written to
 `test-results/`. Use a dedicated least-privilege account for authenticated tests.
+
+The account-creation test writes real data to the configured environment. Run it
+explicitly after setting dedicated organisation and admin credentials:
+
+```powershell
+python -m pytest -m account_creation -v
+```
+
+This test completes every onboarding and verification field, uploads the test
+document in `test-data/`, and submits the registration. Successfully created
+account credentials are appended to `logs/org-accounts.csv`. The `logs/`
+directory is gitignored because this CSV contains passwords.
 
 ## Adding automation scripts
 

@@ -47,6 +47,10 @@ class TestSettings:
     admin_url: str
     admin_email: str
     admin_password: str
+    org_email_template: str
+    org_password: str
+    org_phone: str
+    org_name_prefix: str
     admin_sections: tuple[str, ...]
     navigation_timeout_ms: int
     element_timeout_ms: int
@@ -60,6 +64,12 @@ class TestSettings:
             admin_url=os.getenv("ADMIN_URL", DEFAULT_ADMIN_URL),
             admin_email=os.getenv("ADMIN_EMAIL", ""),
             admin_password=os.getenv("ADMIN_PASSWORD", ""),
+            org_email_template=os.getenv(
+                "ORG_EMAIL_TEMPLATE", "automation+{timestamp}@example.com"
+            ),
+            org_password=os.getenv("ORG_PASSWORD", "Automation123!"),
+            org_phone=os.getenv("ORG_PHONE", "+441234567890"),
+            org_name_prefix=os.getenv("ORG_NAME_PREFIX", "Automation Organisation"),
             admin_sections=_csv("ADMIN_SECTIONS", ADMIN_SIDEBAR_SECTIONS),
             navigation_timeout_ms=_integer(
                 "NAVIGATION_TIMEOUT_MS", DEFAULT_NAVIGATION_TIMEOUT_MS
