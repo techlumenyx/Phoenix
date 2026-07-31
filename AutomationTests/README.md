@@ -78,6 +78,12 @@ test-preview all
 
 # Create an organisation and verify it in admin in visible preview mode
 test-account-preview
+
+# Sign in with the latest organisation stored in logs/org-accounts.csv
+test-org-login-preview
+
+# Create a fully detailed recurring event and verify it in admin
+test-event-preview
 ```
 
 ### Direct pytest commands
