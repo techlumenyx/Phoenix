@@ -81,6 +81,24 @@ export type IdentityOrganisationNotification = {
   type: Scalars['String']['output'];
 };
 
+export type Location = {
+  __typename?: 'Location';
+  admin1Code?: Maybe<Scalars['String']['output']>;
+  admin1Name?: Maybe<Scalars['String']['output']>;
+  admin2Code?: Maybe<Scalars['String']['output']>;
+  admin2Name?: Maybe<Scalars['String']['output']>;
+  countryCode: Scalars['String']['output'];
+  countryName: Scalars['String']['output'];
+  displayName: Scalars['String']['output'];
+  geonameId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  latitude: Scalars['Float']['output'];
+  longitude: Scalars['Float']['output'];
+  name: Scalars['String']['output'];
+  population: Scalars['Float']['output'];
+  timezone?: Maybe<Scalars['String']['output']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   acceptOrganisationInvite: Organisation;
@@ -273,6 +291,8 @@ export type Query = {
   identityOrganisationNotifications: Array<IdentityOrganisationNotification>;
   identityOrganisationUnreadCount: Scalars['Int']['output'];
   isFollowingOrganisation: Scalars['Boolean']['output'];
+  location?: Maybe<Location>;
+  locationSuggestions: Array<Location>;
   me?: Maybe<User>;
   myFollowingOrganisations: Array<Organisation>;
   myOrganisations: Array<Organisation>;
@@ -299,6 +319,18 @@ export type QueryIdentityOrganisationUnreadCountArgs = {
 
 export type QueryIsFollowingOrganisationArgs = {
   organisationId: Scalars['ID']['input'];
+};
+
+
+export type QueryLocationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryLocationSuggestionsArgs = {
+  countryCode?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
 };
 
 
@@ -540,6 +572,8 @@ export type ResolversTypes = ResolversObject<{
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   FollowRelationship: ResolverTypeWrapper<FollowRelationship>;
   IdentityOrganisationNotification: ResolverTypeWrapper<IdentityOrganisationNotification>;
+  Location: ResolverTypeWrapper<Location>;
+  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   Mutation: ResolverTypeWrapper<{}>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   Organisation: ResolverTypeWrapper<Organisation>;
@@ -575,6 +609,8 @@ export type ResolversParentTypes = ResolversObject<{
   DateTime: Scalars['DateTime']['output'];
   FollowRelationship: FollowRelationship;
   IdentityOrganisationNotification: IdentityOrganisationNotification;
+  Location: Location;
+  Float: Scalars['Float']['output'];
   Mutation: {};
   Boolean: Scalars['Boolean']['output'];
   Organisation: Organisation;
@@ -633,6 +669,24 @@ export type IdentityOrganisationNotificationResolvers<ContextType = GraphQLConte
   sourceId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type LocationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Location'] = ResolversParentTypes['Location']> = ResolversObject<{
+  admin1Code?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  admin1Name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  admin2Code?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  admin2Name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  countryCode?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  countryName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  displayName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  geonameId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  latitude?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  longitude?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  population?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  timezone?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -717,6 +771,8 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   identityOrganisationNotifications?: Resolver<Array<ResolversTypes['IdentityOrganisationNotification']>, ParentType, ContextType, RequireFields<QueryIdentityOrganisationNotificationsArgs, 'organisationId'>>;
   identityOrganisationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryIdentityOrganisationUnreadCountArgs, 'organisationId'>>;
   isFollowingOrganisation?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryIsFollowingOrganisationArgs, 'organisationId'>>;
+  location?: Resolver<Maybe<ResolversTypes['Location']>, ParentType, ContextType, RequireFields<QueryLocationArgs, 'id'>>;
+  locationSuggestions?: Resolver<Array<ResolversTypes['Location']>, ParentType, ContextType, RequireFields<QueryLocationSuggestionsArgs, 'limit' | 'query'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   myFollowingOrganisations?: Resolver<Array<ResolversTypes['Organisation']>, ParentType, ContextType>;
   myOrganisations?: Resolver<Array<ResolversTypes['Organisation']>, ParentType, ContextType>;
@@ -788,6 +844,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   DateTime?: GraphQLScalarType;
   FollowRelationship?: FollowRelationshipResolvers<ContextType>;
   IdentityOrganisationNotification?: IdentityOrganisationNotificationResolvers<ContextType>;
+  Location?: LocationResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Organisation?: OrganisationResolvers<ContextType>;
   OrganisationConnection?: OrganisationConnectionResolvers<ContextType>;

@@ -5,6 +5,7 @@ import { FollowRelationshipSchema, type IFollowRelationship } from './follow-rel
 import { OrgInviteSchema, type IOrgInvite } from './org-invite.model';
 import { IdentityOrganisationNotificationSchema, type IIdentityOrganisationNotification } from './organisation-notification.model';
 import { AdminSchema, type IAdmin } from './admin.model';
+import { LocationSchema, type ILocation } from './location.model';
 import { MediaAssetSchema, type IMediaAsset } from '@christian-listings/db';
 
 export let UserModel: mongoose.Model<IUser>;
@@ -14,6 +15,7 @@ export let OrgInviteModel: mongoose.Model<IOrgInvite>;
 export let IdentityOrganisationNotificationModel: mongoose.Model<IIdentityOrganisationNotification>;
 export let AdminModel: mongoose.Model<IAdmin>;
 export let MediaAssetModel: mongoose.Model<IMediaAsset>;
+export let LocationModel: mongoose.Model<ILocation>;
 
 export function setupModels(connection: mongoose.Connection): void {
   UserModel = connection.model<IUser>('User', UserSchema);
@@ -23,4 +25,5 @@ export function setupModels(connection: mongoose.Connection): void {
   IdentityOrganisationNotificationModel = connection.model<IIdentityOrganisationNotification>('OrganisationNotification', IdentityOrganisationNotificationSchema);
   AdminModel = connection.model<IAdmin>('Admin', AdminSchema);
   MediaAssetModel = connection.model<IMediaAsset>('MediaAsset', MediaAssetSchema);
+  LocationModel = connection.model<ILocation>('Location', LocationSchema);
 }

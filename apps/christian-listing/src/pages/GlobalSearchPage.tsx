@@ -6,6 +6,7 @@ import JobCard from '../components/cards/JobCard';
 import MarketplaceCard from '../components/cards/MarketplaceCard';
 import { SearchIcon } from '../components/layout/icons';
 import LoadMoreButton from '../components/ui/LoadMoreButton';
+import LocationCombobox from '../components/location/LocationCombobox';
 import {
   DiscoveryData,
   GLOBAL_SEARCH_QUERY,
@@ -177,7 +178,7 @@ export default function GlobalSearchPage() {
     [params, query, region],
   );
 
-  const { data, loading, error, refetch, fetchMore } = useQuery<DiscoveryData>(
+  const primary = useQuery<DiscoveryData>(
     GLOBAL_SEARCH_QUERY,
     {
       variables,
@@ -185,6 +186,20 @@ export default function GlobalSearchPage() {
       notifyOnNetworkStatusChange: true,
     },
   );
+  const primaryCount = primary.data
+    ? primary.data.events.edges.length
+      + primary.data.jobListings.edges.length
+      + primary.data.marketplaceItems.edges.length
+      + primary.data.organisations.edges.length
+    : 0;
+  const broadenSearch = Boolean(region && !primary.loading && primary.data && primaryCount === 0);
+  const fallback = useQuery<DiscoveryData>(GLOBAL_SEARCH_QUERY, {
+    variables: { ...variables, region: null },
+    skip: !broadenSearch,
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
+  });
+  const { data, loading, error, refetch, fetchMore } = broadenSearch ? fallback : primary;
 
   function setParam(name: string, value: string) {
     const next = new URLSearchParams(params);
@@ -286,6 +301,14 @@ export default function GlobalSearchPage() {
         </div>
       </section>
 
+      {broadenSearch && !fallback.loading && totalLoaded > 0 ? (
+        <div className="mx-auto mt-6 max-w-7xl px-5 md:px-10 lg:px-16">
+          <div className="rounded-xl border border-[#eadfc9] bg-[#fff9ed] px-4 py-3 text-sm text-[#6f5428]">
+            Nothing matched in {region}. Results have been broadened to all locations.
+          </div>
+        </div>
+      ) : null}
+
       <div className="mx-auto max-w-7xl px-5 py-8 md:px-10 lg:px-16">
         <nav className="flex gap-2 overflow-x-auto pb-2" aria-label="Search result types">
           {TYPE_TABS.map((tab) => (
@@ -300,15 +323,15 @@ export default function GlobalSearchPage() {
         </nav>
 
         <div className="mt-5 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4">
-          <label className="block min-w-[210px] flex-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          <div className="block min-w-[210px] flex-1 text-xs font-bold uppercase tracking-wide text-gray-500">
             Region
-            <input
-              value={region}
-              onChange={(event) => setParam('region', event.target.value)}
+            <LocationCombobox
+              initialLabel={region}
+              onChange={(location) => setParam('region', location.displayName)}
               placeholder="All regions"
-              className="mt-1.5 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-gray-700 outline-none focus:border-[#C9A96E]"
+              className="mt-1.5 font-normal normal-case tracking-normal"
             />
-          </label>
+          </div>
           {(type === 'all' || type === 'events') && (
             <>
               <SelectFilter

@@ -17,6 +17,7 @@ const ME_QUERY = gql`
       isVerified
       onboardingCompleted
       region
+      regionCode
       preferences
       roles
       orgId
@@ -32,6 +33,7 @@ export interface DbUser {
   isVerified: boolean;
   onboardingCompleted: boolean;
   region: string;
+  regionCode: string | null;
   preferences: string[];
   roles: string[];
   orgId: string | null;

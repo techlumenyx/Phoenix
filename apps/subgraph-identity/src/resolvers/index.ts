@@ -8,6 +8,7 @@ import { followResolvers } from './follow.resolver';
 import { teamResolvers } from './team.resolver';
 import { identityNotificationResolvers } from './notification.resolver';
 import { adminResolvers } from './admin.resolver';
+import { locationResolvers } from './location.resolver';
 
 export const resolvers = {
   Query: {
@@ -18,6 +19,7 @@ export const resolvers = {
     ...teamResolvers.Query,
     ...identityNotificationResolvers.Query,
     ...adminResolvers.Query,
+    ...locationResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,

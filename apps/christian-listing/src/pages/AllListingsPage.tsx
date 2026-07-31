@@ -8,6 +8,7 @@ import { formatPrice, usePreferredRegion } from '../lib/discovery';
 import DirectoryFilters from '../components/ui/DirectoryFilters';
 import DirectoryState from '../components/ui/DirectoryState';
 import LoadMoreButton from '../components/ui/LoadMoreButton';
+import LocationCombobox from '../components/location/LocationCombobox';
 
 const ALL_LISTINGS = gql`
   query AllMarketplaceListings(
@@ -129,11 +130,19 @@ export default function AllListingsPage() {
     limit: 12,
     after: null,
   };
-  const { data, loading, error, fetchMore, networkStatus } = useQuery<ListingsData>(ALL_LISTINGS, {
+  const primary = useQuery<ListingsData>(ALL_LISTINGS, {
     variables,
     notifyOnNetworkStatusChange: true,
     fetchPolicy: 'cache-and-network',
   });
+  const broadenSearch = Boolean(region && !primary.loading && primary.data?.marketplaceItems.edges.length === 0);
+  const fallback = useQuery<ListingsData>(ALL_LISTINGS, {
+    variables: { ...variables, region: null },
+    skip: !broadenSearch,
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'cache-and-network',
+  });
+  const { data, loading, error, fetchMore, networkStatus } = broadenSearch ? fallback : primary;
   const clear = () => {
     setSearch('');
     setCategory('');
@@ -247,12 +256,7 @@ export default function AllListingsPage() {
                 ))}
               </Filter>
               <Filter title="Location">
-                <input
-                  value={region}
-                  onChange={(event) => setRegion(event.target.value)}
-                  placeholder="City or country"
-                  className="w-full rounded-lg bg-[#e5f5e7] px-3 py-2 text-sm"
-                />
+                <LocationCombobox initialLabel={region} onChange={(location) => setRegion(location.displayName)} />
               </Filter>
               <Filter title="Price Range">
                 <div className="grid grid-cols-2 gap-2">
@@ -279,6 +283,11 @@ export default function AllListingsPage() {
               </button>
         </DirectoryFilters>
             <section>
+              {broadenSearch && !fallback.loading && fallback.data?.marketplaceItems.edges.length ? (
+                <div className="mb-5 rounded-xl border border-[#cfe6d1] bg-[#f1faf2] px-4 py-3 text-sm text-[#35623a]">
+                  No listings were found in {region}. Showing listings from all locations instead.
+                </div>
+              ) : null}
               <div className="mb-6 flex gap-2 overflow-x-auto">
                 {SORTS.map(([value, label]) => (
                   <button

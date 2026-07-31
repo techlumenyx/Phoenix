@@ -113,6 +113,23 @@ type Admin @key(fields: "id") {
   updatedAt: DateTime!
 }
 
+type Location {
+  id: ID!
+  geonameId: ID!
+  name: String!
+  displayName: String!
+  countryCode: String!
+  countryName: String!
+  admin1Code: String
+  admin1Name: String
+  admin2Code: String
+  admin2Name: String
+  latitude: Float!
+  longitude: Float!
+  population: Float!
+  timezone: String
+}
+
 type VerificationRequest @key(fields: "id") {
   id: ID!
   organisation: Organisation!
@@ -145,6 +162,8 @@ type Query {
   organisationInvite(token: String!): OrganisationInvite
   identityOrganisationNotifications(organisationId: ID!, unreadOnly: Boolean, limit: Int): [IdentityOrganisationNotification!]!
   identityOrganisationUnreadCount(organisationId: ID!): Int!
+  location(id: ID!): Location
+  locationSuggestions(query: String!, countryCode: String, limit: Int = 8): [Location!]!
 }
 
 type UserConnection {

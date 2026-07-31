@@ -8,6 +8,7 @@ import { formatPrice, usePreferredRegion } from '../lib/discovery';
 import DirectoryFilters from '../components/ui/DirectoryFilters';
 import DirectoryState from '../components/ui/DirectoryState';
 import LoadMoreButton from '../components/ui/LoadMoreButton';
+import LocationCombobox from '../components/location/LocationCombobox';
 
 const ALL_JOBS = gql`
   query AllJobsDirectory(
@@ -117,11 +118,19 @@ export default function AllJobsPage() {
     limit: 12,
     after: null,
   };
-  const { data, loading, error, fetchMore, networkStatus } = useQuery<JobsData>(ALL_JOBS, {
+  const primary = useQuery<JobsData>(ALL_JOBS, {
     variables,
     notifyOnNetworkStatusChange: true,
     fetchPolicy: 'cache-and-network',
   });
+  const broadenSearch = Boolean(region && !primary.loading && primary.data?.jobListings.edges.length === 0);
+  const fallback = useQuery<JobsData>(ALL_JOBS, {
+    variables: { ...variables, region: null },
+    skip: !broadenSearch,
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'cache-and-network',
+  });
+  const { data, loading, error, fetchMore, networkStatus } = broadenSearch ? fallback : primary;
   const clear = () => {
     setSearch('');
     setRoleType('');
@@ -212,12 +221,7 @@ export default function AllJobsPage() {
                 ))}
               </Filter>
               <Filter title="Location">
-                <input
-                  value={region}
-                  onChange={(event) => setRegion(event.target.value)}
-                  placeholder="City or country"
-                  className="w-full rounded-lg bg-[#eef0ff] px-3 py-2 text-sm"
-                />
+                <LocationCombobox initialLabel={region} onChange={(location) => setRegion(location.displayName)} />
               </Filter>
               <Filter title="Salary Range">
                 <div className="grid grid-cols-2 gap-2">
@@ -244,6 +248,11 @@ export default function AllJobsPage() {
               </button>
         </DirectoryFilters>
             <section>
+              {broadenSearch && !fallback.loading && fallback.data?.jobListings.edges.length ? (
+                <div className="mb-5 rounded-xl border border-[#dfe2fa] bg-[#f5f6ff] px-4 py-3 text-sm text-[#454b82]">
+                  No jobs were found in {region}. Showing jobs from all locations instead.
+                </div>
+              ) : null}
               <div className="mb-6 flex gap-2 overflow-x-auto">
                 {SORTS.map(([value, label]) => (
                   <button

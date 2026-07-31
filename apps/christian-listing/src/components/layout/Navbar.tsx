@@ -4,6 +4,15 @@ import { ChevronDownIcon, ChurchLogo, MapPinIcon } from './icons';
 import SignInModal from './SignInModal';
 import { useAuthStore } from '../../store/authStore';
 import { getDashboardRoute } from '../../lib/dashboard-route';
+import { gql, useMutation } from '@apollo/client';
+import LocationCombobox, { type CanonicalLocation } from '../location/LocationCombobox';
+import { usePreferredRegion } from '../../lib/discovery';
+
+const UPDATE_NAVBAR_REGION = gql`
+  mutation UpdateNavbarRegion($input: UpdateProfileInput!) {
+    updateProfile(input: $input) { id region regionCode }
+  }
+`;
 
 const NAV_LINKS = [
   { label: 'Home',        href: '/' },
@@ -14,18 +23,56 @@ const NAV_LINKS = [
 
 function RegionSelector() {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const dbUser = useAuthStore((state) => state.dbUser);
+  const { region, setRegion } = usePreferredRegion();
+  const [updateProfile, { loading }] = useMutation(UPDATE_NAVBAR_REGION);
+
+  useEffect(() => {
+    if (!open) return;
+    function close(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  async function selectLocation(location: CanonicalLocation) {
+    if (dbUser) {
+      const result = await updateProfile({
+        variables: { input: { region: location.displayName, regionCode: location.id } },
+      });
+      const updated = result.data?.updateProfile;
+      if (updated) {
+        useAuthStore.setState({ dbUser: { ...dbUser, region: updated.region, regionCode: updated.regionCode } });
+      }
+    } else {
+      setRegion(location.displayName);
+    }
+    setOpen(false);
+  }
 
   return (
-    <button
-      onClick={() => setOpen((o) => !o)}
-      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#2A2A2A] text-white text-sm font-medium hover:bg-[#333] transition-colors"
-      aria-haspopup="listbox"
-      aria-expanded={open}
-    >
-      <MapPinIcon className="w-4 h-4 text-white/70" />
-      <span>United Kingdom</span>
-      <ChevronDownIcon className={`w-4 h-4 text-white/70 transition-transform ${open ? 'rotate-180' : ''}`} />
-    </button>
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((value) => !value)}
+        className="flex items-center gap-2 rounded-full bg-[#2A2A2A] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#333]"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <MapPinIcon className="h-4 w-4 text-white/70" />
+        <span className="max-w-[150px] truncate">{region ? region.split(',')[0] : 'Choose location'}</span>
+        <ChevronDownIcon className={`h-4 w-4 text-white/70 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-[65] mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+          <p className="mb-1 text-sm font-semibold text-[#1B1B1B]">{dbUser ? 'Update your home city' : 'Results near you'}</p>
+          <p className="mb-3 text-xs text-gray-500">Search and select a city from GeoNames.</p>
+          <LocationCombobox initialLabel={region} onChange={selectLocation} autoFocus />
+          {loading && <p className="mt-2 text-xs text-gray-500">Saving location…</p>}
+        </div>
+      )}
+    </div>
   );
 }
 

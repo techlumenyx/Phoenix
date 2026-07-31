@@ -1,11 +1,12 @@
 import { GraphQLError } from 'graphql';
 import { type HydratedDocument } from 'mongoose';
 import { type IUser } from '../models/user.model';
-import { UserModel as _UserModel } from '../models';
+import { LocationModel as _LocationModel, UserModel as _UserModel } from '../models';
 import type { GraphQLContext } from '../context';
 import { resolveLocationRegion } from '@christian-listings/utils';
 
 function UserModel() { return _UserModel; }
+function LocationModel() { return _LocationModel; }
 
 const DEFAULT_PRIVACY = {
   profileVisibility: 'MEMBERS_ONLY' as const,
@@ -83,7 +84,14 @@ export const userResolvers = {
         throw new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHENTICATED' } });
       }
       const update = { ...input };
-      if (typeof input['region'] === 'string') {
+      if (typeof input['regionCode'] === 'string' && input['regionCode'].startsWith('geonames:')) {
+        const location = await LocationModel().findOne({ _id: input['regionCode'], active: true }).lean();
+        if (!location) {
+          throw new GraphQLError('Select a valid location from the suggestions', { extensions: { code: 'BAD_USER_INPUT' } });
+        }
+        update['region'] = location.displayName;
+        update['regionCode'] = location._id;
+      } else if (typeof input['region'] === 'string') {
         const resolved = resolveLocationRegion(input['region']);
         if (resolved) {
           update['region'] = resolved.displayName;
