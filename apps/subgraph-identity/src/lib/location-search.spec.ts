@@ -24,9 +24,8 @@ function location(name: string, population: number, aliases: string[] = []): ILo
     population,
     featureCode: 'PPL',
     timezone: 'Europe/London',
+    normalizedName: normalizeLocationSearch(name),
     normalizedNames: [normalizeLocationSearch(name), ...aliases.map(normalizeLocationSearch)],
-    primaryPrefixes: makeLocationPrefixes(name),
-    searchTrigrams: makeLocationTrigrams(name),
     active: true,
     updatedAt: new Date(),
   };

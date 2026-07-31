@@ -36,13 +36,15 @@ npm run locations:import -- \
   --admin2 ./tmp/geonames/admin2Codes.txt
 ```
 
+The importer defaults to `--min-population 15000`, producing approximately 34,000 worldwide cities from `cities500.txt`. This limit is required for the current 512 MB Atlas tier because the autocomplete indexes make the full 235,000-place dump too large. Do not lower it in production without increasing Atlas storage and measuring index size first.
+
 Do not commit the downloaded dump or put the MongoDB URI in shell history, source control, or deployment logs.
 
 ## Runtime behaviour
 
 - Empty searches return globally popular cities.
-- Prefix matches use precomputed, indexed prefixes.
-- Misspellings use indexed trigrams to find a bounded candidate set, then rank candidates in memory.
+- Prefix matches use one indexed scalar normalized-name field.
+- Misspellings use a bounded same-prefix candidate set and rank candidates in memory, avoiding storage-heavy multikey indexes.
 - Exact matches rank first; population is only a tie breaker.
 - Guests store the selected display location in local storage.
 - Signed-in users store the canonical GeoNames ID in `User.regionCode` and the human-readable label in `User.region`.

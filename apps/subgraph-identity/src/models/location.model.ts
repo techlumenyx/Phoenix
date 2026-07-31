@@ -17,9 +17,8 @@ export interface ILocation {
   population: number;
   featureCode: string;
   timezone: string | null;
+  normalizedName: string;
   normalizedNames: string[];
-  primaryPrefixes: string[];
-  searchTrigrams: string[];
   active: boolean;
   updatedAt: Date;
 }
@@ -44,16 +43,14 @@ export const LocationSchema = new Schema<ILocation>(
     population: { type: Number, required: true, default: 0 },
     featureCode: { type: String, required: true },
     timezone: { type: String, default: null },
+    normalizedName: { type: String, required: true },
     normalizedNames: [{ type: String, required: true }],
-    primaryPrefixes: [{ type: String, required: true }],
-    searchTrigrams: [{ type: String, required: true }],
     active: { type: Boolean, required: true, default: true },
   },
   { timestamps: { createdAt: false, updatedAt: true } },
 );
 
 LocationSchema.index({ normalizedNames: 1 });
-LocationSchema.index({ primaryPrefixes: 1 });
-LocationSchema.index({ searchTrigrams: 1 });
+LocationSchema.index({ normalizedName: 1 });
 LocationSchema.index({ countryCode: 1, population: -1 });
 LocationSchema.index({ countryCode: 1, admin1Code: 1, population: -1 });

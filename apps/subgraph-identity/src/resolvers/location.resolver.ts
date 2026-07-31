@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { LocationModel as _LocationModel } from '../models';
 import type { ILocation } from '../models/location.model';
-import { makeLocationTrigrams, normalizeLocationSearch, rankLocation } from '../lib/location-search';
+import { normalizeLocationSearch, rankLocation } from '../lib/location-search';
 
 function LocationModel() { return _LocationModel; }
 
@@ -50,19 +50,28 @@ export const locationResolvers = {
       }
 
       let matches = await LocationModel()
-        .find({ ...baseFilter, $or: [{ normalizedNames: normalized }, { primaryPrefixes: normalized }] })
+        .find({
+          ...baseFilter,
+          $or: [
+            { normalizedNames: normalized },
+            { normalizedName: { $regex: `^${normalized}` } },
+          ],
+        })
         .sort({ population: -1 })
         .limit(Math.max(safeLimit * 4, 30))
-        .lean();
+        .lean() as ILocation[];
 
       if (matches.length < safeLimit && normalized.length >= 4) {
+        const fuzzyPrefix = normalized.slice(0, normalized.length >= 6 ? 2 : 1);
         const fuzzyMatches = await LocationModel()
-          .find({ ...baseFilter, searchTrigrams: { $in: makeLocationTrigrams(normalized) } })
+          .find({ ...baseFilter, normalizedName: { $regex: `^${fuzzyPrefix}` } })
           .sort({ population: -1 })
-          .limit(200)
-          .lean();
+          .limit(750)
+          .lean() as ILocation[];
         const byId = new Map(matches.map((match) => [match._id, match]));
-        fuzzyMatches.forEach((match) => byId.set(match._id, match));
+        fuzzyMatches
+          .filter((match) => rankLocation(match, normalized) < 50)
+          .forEach((match) => byId.set(match._id, match));
         matches = [...byId.values()];
       }
 

@@ -3,8 +3,6 @@ import { createInterface } from 'node:readline';
 import { createMongoConnection } from '../../libs/db/src';
 import { LocationSchema } from '../../apps/subgraph-identity/src/models/location.model';
 import {
-  makeLocationPrefixes,
-  makeLocationTrigrams,
   normalizeLocationSearch,
 } from '../../apps/subgraph-identity/src/lib/location-search';
 
@@ -38,6 +36,10 @@ async function main() {
   const countryFile = argument('countries', false);
   const admin1File = argument('admin1', false);
   const admin2File = argument('admin2', false);
+  const minPopulation = Number(argument('min-population', false) ?? '15000');
+  if (!Number.isFinite(minPopulation) || minPopulation < 0) {
+    throw new Error('--min-population must be a non-negative number');
+  }
   const mongoUri = argument('mongo-uri', false) ?? process.env['MONGODB_URI'];
   if (!mongoUri) throw new Error('Set MONGODB_URI or pass --mongo-uri');
 
@@ -68,7 +70,8 @@ async function main() {
     const name = columns[1]?.trim();
     const asciiName = columns[2]?.trim() || name;
     const countryCode = columns[8]?.trim().toUpperCase();
-    if (!geonameId || !name || !countryCode) continue;
+    const population = Number(columns[14]) || 0;
+    if (!geonameId || !name || !countryCode || population < minPopulation) continue;
 
     const admin1Code = columns[10]?.trim() || null;
     const admin2Code = columns[11]?.trim() || null;
@@ -83,8 +86,7 @@ async function main() {
 
     const aliases = (columns[3] ?? '').split(',').map((value) => value.trim()).filter(Boolean).slice(0, 20);
     const normalizedNames = unique([name, asciiName, ...aliases].map(normalizeLocationSearch));
-    const primaryPrefixes = unique([name, asciiName].flatMap((value) => makeLocationPrefixes(value)));
-    const searchTrigrams = unique([name, asciiName, ...aliases.slice(0, 6)].flatMap(makeLocationTrigrams));
+    const normalizedName = normalizeLocationSearch(asciiName);
     const id = `geonames:${geonameId}`;
 
     operations.push({
@@ -104,12 +106,11 @@ async function main() {
             admin2Name,
             latitude: Number(columns[4]),
             longitude: Number(columns[5]),
-            population: Number(columns[14]) || 0,
+            population,
             featureCode: columns[7] || 'PPL',
             timezone: columns[17] || null,
+            normalizedName,
             normalizedNames,
-            primaryPrefixes,
-            searchTrigrams,
             active: true,
           },
         },
