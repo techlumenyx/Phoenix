@@ -1,0 +1,1 @@
+"""Admin website automation tests."""

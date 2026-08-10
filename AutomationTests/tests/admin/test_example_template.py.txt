@@ -1,0 +1,13 @@
+"""Copy this file to test_<feature>.py when adding an admin test."""
+
+import pytest
+
+
+pytestmark = pytest.mark.admin
+
+
+def test_admin_feature(authenticated_admin_page, settings):
+    # Arrange: create a page object from pages/admin/ when behavior is reusable.
+    # Act: interact with authenticated_admin_page.
+    # Assert: verify the user-visible result.
+    pass

@@ -1,0 +1,13 @@
+"""Copy this file to test_<feature>.py when adding a public website test."""
+
+import pytest
+
+
+pytestmark = pytest.mark.public
+
+
+def test_public_feature(cl_home_page, settings):
+    # Arrange reusable behavior in pages/cl_website/.
+    cl_home_page.open()
+    # Act and assert the new website behavior here.
+    pass
