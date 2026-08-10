@@ -40,6 +40,7 @@ import OrgSettingsPage from '../pages/org/OrgSettingsPage';
 import OrgNotificationsPage from '../pages/org/OrgNotificationsPage';
 import OrgAnalyticsPage from '../pages/org/OrgAnalyticsPage';
 import OrgSettingsAccess from '../components/routing/OrgSettingsAccess';
+import ReportConversationsPage from '../pages/ReportConversationsPage';
 
 const router = createBrowserRouter([
   {
@@ -78,6 +79,7 @@ const router = createBrowserRouter([
           { path: 'dashboard/following', element: <FollowingPage /> },
           { path: 'dashboard/messages', element: <MessagingPage /> },
           { path: 'dashboard/messages/:threadId', element: <MessagingPage /> },
+          { path: 'dashboard/reports', element: <ReportConversationsPage /> },
           { path: 'profile',   element: <ProfilePage /> },
           { path: 'jobs/:id/apply', element: <JobApplicationPage /> },
         ],
@@ -99,6 +101,7 @@ const router = createBrowserRouter([
       { path: 'messages',   element: <MessagingPage sellerMode /> },
       { path: 'messages/:threadId', element: <MessagingPage sellerMode /> },
       { path: 'notifications', element: <OrgNotificationsPage /> },
+      { path: 'report-communications', element: <ReportConversationsPage organisationMode /> },
       { path: 'settings',   element: <OrgSettingsAccess><OrgSettingsPage /></OrgSettingsAccess> },
       { path: 'team',       element: <OrgTeamPage /> },
       { path: 'analytics',  element: <OrgAnalyticsPage /> },

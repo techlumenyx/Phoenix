@@ -1,6 +1,6 @@
 import mongoose, { Schema, type HydratedDocument } from 'mongoose';
 
-export const MODERATION_CASE_STATUSES = ['OPEN', 'PENDING_REVIEW', 'RESOLVED'] as const;
+export const MODERATION_CASE_STATUSES = ['OPEN', 'PENDING_REVIEW', 'APPEAL_PENDING', 'RESOLVED'] as const;
 export type ModerationCaseStatus = (typeof MODERATION_CASE_STATUSES)[number];
 export const MODERATION_PRIORITIES = ['NORMAL', 'HIGH', 'CRITICAL'] as const;
 export type ModerationPriority = (typeof MODERATION_PRIORITIES)[number];
@@ -9,8 +9,8 @@ export interface IModerationCase {
   _id: mongoose.Types.ObjectId;
   targetKey: string;
   targetId: string;
-  targetType: 'MARKETPLACE_ITEM';
-  targetService: 'CLASSIFIEDS';
+  targetType: 'MARKETPLACE_ITEM' | 'JOB' | 'EVENT' | 'ORGANISATION' | 'USER';
+  targetService: 'CLASSIFIEDS' | 'EVENTS' | 'IDENTITY';
   title: string;
   ownerFirebaseUid: string;
   organisationId: string | null;
@@ -37,8 +37,8 @@ export const ModerationCaseSchema = new Schema<IModerationCase>(
   {
     targetKey: { type: String, required: true, unique: true },
     targetId: { type: String, required: true, index: true },
-    targetType: { type: String, enum: ['MARKETPLACE_ITEM'], required: true },
-    targetService: { type: String, enum: ['CLASSIFIEDS'], required: true },
+    targetType: { type: String, enum: ['MARKETPLACE_ITEM', 'JOB', 'EVENT', 'ORGANISATION', 'USER'], required: true },
+    targetService: { type: String, enum: ['CLASSIFIEDS', 'EVENTS', 'IDENTITY'], required: true },
     title: { type: String, required: true },
     ownerFirebaseUid: { type: String, required: true },
     organisationId: { type: String, default: null },

@@ -35,11 +35,12 @@ const NAV_ITEMS = [
   { label: 'Hiring & Jobs',    icon: BriefcaseIcon,  path: '/org/jobs' },
   { label: 'Messages',         icon: ChatBubbleIcon, path: '/org/messages' },
   { label: 'Notifications',    icon: BellIcon,       path: '/org/notifications' },
+  { label: 'Report Communications', icon: ChatBubbleIcon, path: '/org/report-communications' },
   { label: 'Team & Roles',     icon: UsersIcon,      path: '/org/team' },
   { label: 'Settings',         icon: CogIcon,        path: '/org/settings' },
 ] as const;
 
-const ORG_NOTIFICATION_COUNTS = gql`query OrganisationSidebarNotificationCounts($organisationId: ID!) { identityOrganisationUnreadCount(organisationId: $organisationId) eventOrganisationUnreadCount(organisationId: $organisationId) classifiedOrganisationUnreadCount(organisationId: $organisationId) }`;
+const ORG_NOTIFICATION_COUNTS = gql`query OrganisationSidebarNotificationCounts($organisationId: ID!) { identityOrganisationUnreadCount(organisationId: $organisationId) eventOrganisationUnreadCount(organisationId: $organisationId) classifiedOrganisationUnreadCount(organisationId: $organisationId) organisationReportUnreadCount(organisationId: $organisationId) }`;
 
 function OrgUserMenu() {
   const [open, setOpen] = useState(false);
@@ -141,8 +142,9 @@ export default function OrgLayout() {
   const { data: orgData } = useQuery<{ myOrganisations: { id: string; name: string | null }[] }>(MY_ORGANISATIONS);
   const orgName = orgData?.myOrganisations?.[0]?.name ?? 'Organisation';
   const organisationId = orgData?.myOrganisations?.[0]?.id;
-  const { data: notificationData } = useQuery<{ identityOrganisationUnreadCount: number; eventOrganisationUnreadCount: number; classifiedOrganisationUnreadCount: number }>(ORG_NOTIFICATION_COUNTS, { variables: { organisationId }, skip: !organisationId, pollInterval: 30000 });
+  const { data: notificationData } = useQuery<{ identityOrganisationUnreadCount: number; eventOrganisationUnreadCount: number; classifiedOrganisationUnreadCount: number; organisationReportUnreadCount: number }>(ORG_NOTIFICATION_COUNTS, { variables: { organisationId }, skip: !organisationId, pollInterval: 30000 });
   const unreadNotifications = (notificationData?.identityOrganisationUnreadCount ?? 0) + (notificationData?.eventOrganisationUnreadCount ?? 0) + (notificationData?.classifiedOrganisationUnreadCount ?? 0);
+  const unreadReportCommunications = notificationData?.organisationReportUnreadCount ?? 0;
   const orgInitials = orgName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
@@ -206,6 +208,7 @@ export default function OrgLayout() {
                   </span>
                 )}
                 {label === 'Notifications' && unreadNotifications > 0 && <span className="ml-auto rounded-full bg-[#302D2E] px-2 py-0.5 text-[10px] font-bold text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}
+                {label === 'Report Communications' && unreadReportCommunications > 0 && <span className="ml-auto rounded-full bg-[#302D2E] px-2 py-0.5 text-[10px] font-bold text-white">{unreadReportCommunications > 99 ? '99+' : unreadReportCommunications}</span>}
               </button>
             );
           })}

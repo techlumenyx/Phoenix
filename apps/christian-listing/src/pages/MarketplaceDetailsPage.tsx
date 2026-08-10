@@ -9,6 +9,7 @@ import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '
 import ContentPlaceholder from '../components/media/ContentPlaceholder';
 import NameAvatar from '../components/media/NameAvatar';
 import ResilientImage from '../components/media/ResilientImage';
+import ReportContentButton from '../components/reports/ReportContentButton';
 
 const MARKETPLACE_DETAILS = gql`
   query MarketplaceDetails($id: ID!, $region: String, $category: MarketplaceCategory) {
@@ -26,8 +27,8 @@ const MARKETPLACE_DETAILS = gql`
 `;
 
 const REPORT_LISTING = gql`
-  mutation MarketplaceDetailsReport($itemId: ID!, $reason: String!) {
-    reportListing(itemId: $itemId, reason: $reason)
+  mutation MarketplaceDetailsReport($targetType: ContentType!, $targetId: ID!, $reason: String!, $details: String) {
+    submitContentReport(targetType: $targetType, targetId: $targetId, reason: $reason, details: $details) { id }
   }
 `;
 const MARKETPLACE_SAVED = gql`query MarketplaceSavedState($id: ID!) { isMarketplaceItemSaved(id: $id) }`;
@@ -72,7 +73,8 @@ export default function MarketplaceDetailsPage() {
   const sendFirstMessage = async () => { const message = firstMessage.trim(); if (!message) return; const result = await startConversation({ variables: { listingId: id, message } }); const threadId = result.data?.startListingConversation?.id; if (threadId) navigate(`/dashboard/messages/${threadId}`); };
 
   const report = async (reason: string) => {
-    await reportListing({ variables: { itemId: id, reason } });
+    const [label, ...detailParts] = reason.split(':');
+    await reportListing({ variables: { targetType: 'MARKETPLACE_ITEM', targetId: id, reason: label.trim(), details: detailParts.join(':').trim() || null } });
     setShowReportModal(false);
     setNotice('Thank you. The listing has been reported for review.');
   };
@@ -125,6 +127,7 @@ export default function MarketplaceDetailsPage() {
             </section>
 
             <SellerCard seller={item.seller} organisation={item.organisation} />
+            {!item.organisation && <ReportContentButton targetType="USER" targetId={item.seller.id} label="Report this seller" className="mt-3 w-full text-xs text-gray-500 underline hover:text-gray-900" />}
             <section className="mt-5 rounded-xl border border-gray-200 bg-[#eef3fd] p-5 shadow-sm"><h3 className="text-sm font-bold text-[#1e3714]">◉ Sanctuary Trust Guarantee</h3><p className="mt-2 pl-5 text-xs leading-4 text-gray-600">Check item condition and meet safely. Verified seller information helps protect the community.</p><p className="mt-3 text-right text-[10px] font-bold underline">Learn about safe meetups →</p></section>
             <div className="mt-7 flex items-center justify-between"><span className="text-[10px] uppercase tracking-widest text-gray-500">Share this listing:</span><button onClick={share} className="rounded-full bg-[#dfe8f7] px-4 py-2 text-xs font-semibold">Share / Copy Link</button></div>
           </aside>

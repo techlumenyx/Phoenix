@@ -5,6 +5,7 @@ import JobCard from '../components/cards/JobCard';
 import MarketplaceCard from '../components/cards/MarketplaceCard';
 import { useAuthStore } from '../store/authStore';
 import NameAvatar from '../components/media/NameAvatar';
+import ReportContentButton from '../components/reports/ReportContentButton';
 
 const ORGANISATION_PROFILE = gql`
   query PublicOrganisationProfile($id: ID!) {
@@ -64,6 +65,7 @@ export default function OrganisationProfilePage() {
             <div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-3"><h1 className="font-serif text-3xl font-bold md:text-5xl">{org.name}</h1>{org.isVerified && <span title="Verified organisation" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#74b938] text-sm font-bold text-white">✓</span>}</div><p className="mt-2 border-l-4 border-gray-200 pl-4 text-sm italic text-gray-500 md:text-base">{org.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Faith Community Organisation'}{org.region ? ` · ${org.region}` : ''}</p></div><button type="button" disabled={following} onClick={toggleFollow} className={`rounded-full px-5 py-2.5 text-xs font-semibold disabled:opacity-50 ${isFollowing ? 'border border-gray-400 bg-white text-gray-800' : 'bg-[#282828] text-white'}`}>{isFollowing ? '✓ Following' : '+ Follow Organisation'}</button></div>
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600"><span><strong className="text-black">{org.followerCount.toLocaleString()}</strong> followers</span><span><strong className="text-black">{activeCount}</strong> active listings</span>{website && <a href={normaliseUrl(website)} target="_blank" rel="noreferrer" className="font-medium text-black hover:underline">Visit website ↗</a>}<span>Active since {new Date(org.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span></div>
             <div className="mt-6 rounded-xl border border-dashed border-gray-300 bg-white p-5"><p className="text-xs uppercase tracking-widest text-gray-400">Our mission</p><p className="mt-2 max-w-4xl text-sm leading-7 text-gray-700 md:text-base">{org.description || `${org.name} serves its local faith community through events, opportunities and practical support.`}</p></div>
+            <ReportContentButton targetType="ORGANISATION" targetId={org.id} label="Report this organisation" className="mt-4 text-xs text-gray-500 underline hover:text-gray-900" />
           </div>
         </div>
       </section>

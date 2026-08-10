@@ -1,8 +1,10 @@
+import { gql, useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore();
+  const { data } = useQuery<{ myReportUnreadCount: number }>(gql`query DashboardReportUnreadCount { myReportUnreadCount }`);
 
   return (
     <main className="mx-auto max-w-7xl px-6 pb-12 pt-28 md:px-10">
@@ -25,6 +27,7 @@ export default function DashboardPage() {
           { label: 'Saved Items', href: '/dashboard/saved' },
           { label: 'Following', href: '/dashboard/following' },
           { label: 'Messages', href: '/dashboard/messages' },
+          { label: `My Reports${data?.myReportUnreadCount ? ` (${data.myReportUnreadCount})` : ''}`, href: '/dashboard/reports' },
           { label: 'Browse Opportunities', href: '/jobs/all' },
           { label: 'My Profile', href: '/profile' },
         ].map(({ label, href }) => (

@@ -14,6 +14,9 @@ import { MediaAssetSchema, type IMediaAsset } from '@christian-listings/db';
 import { EmailDeliverySchema, type IEmailDelivery } from './email-delivery.model';
 import { ScheduledEmailSchema, type IScheduledEmail } from './scheduled-email.model';
 import { ContentRiskAnalysisSchema, type IContentRiskAnalysis } from './content-risk-analysis.model';
+import { ReportConversationSchema, type IReportConversation } from './report-conversation.model';
+import { ReportMessageSchema, type IReportMessage } from './report-message.model';
+import { ReportAppealSchema, type IReportAppeal } from './report-appeal.model';
 
 export let ModerationReportModel: mongoose.Model<IModerationReport>;
 export let ModerationCaseModel: mongoose.Model<IModerationCase>;
@@ -30,6 +33,9 @@ export let MediaAssetModel: mongoose.Model<IMediaAsset>;
 export let EmailDeliveryModel: mongoose.Model<IEmailDelivery>;
 export let ScheduledEmailModel: mongoose.Model<IScheduledEmail>;
 export let ContentRiskAnalysisModel: mongoose.Model<IContentRiskAnalysis>;
+export let ReportConversationModel: mongoose.Model<IReportConversation>;
+export let ReportMessageModel: mongoose.Model<IReportMessage>;
+export let ReportAppealModel: mongoose.Model<IReportAppeal>;
 
 export function setupModels(connection: Connection) {
   ModerationReportModel = connection.model<IModerationReport>('ModerationReport', ModerationReportSchema);
@@ -47,4 +53,7 @@ export function setupModels(connection: Connection) {
   EmailDeliveryModel = connection.model<IEmailDelivery>('EmailDelivery', EmailDeliverySchema);
   ScheduledEmailModel = connection.model<IScheduledEmail>('ScheduledEmail', ScheduledEmailSchema);
   ContentRiskAnalysisModel = connection.model<IContentRiskAnalysis>('ContentRiskAnalysis', ContentRiskAnalysisSchema);
+  ReportConversationModel = connection.model<IReportConversation>('ReportConversation', ReportConversationSchema);
+  ReportMessageModel = connection.model<IReportMessage>('ReportMessage', ReportMessageSchema);
+  ReportAppealModel = connection.model<IReportAppeal>('ReportAppeal', ReportAppealSchema);
 }

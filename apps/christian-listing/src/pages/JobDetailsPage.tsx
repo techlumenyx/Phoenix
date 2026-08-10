@@ -5,6 +5,7 @@ import { formatPrice } from '../lib/discovery';
 import { useAuthStore } from '../store/authStore';
 import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '../components/trust/OrganisationVerification';
 import NameAvatar from '../components/media/NameAvatar';
+import ReportContentButton from '../components/reports/ReportContentButton';
 
 const JOB_DETAILS = gql`
   query JobDetails($id: ID!) {
@@ -132,7 +133,7 @@ export default function JobDetailsPage() {
             {!organisation.isVerified && <div className="mb-4"><OrganisationVerificationNotice organisationName={organisation.name} isVerified={false} context="job" /></div>}
             {isActive && user && applicationLoading ? <button disabled className="w-full rounded-lg bg-gray-200 px-4 py-3 text-sm font-medium text-gray-600">Checking application…</button> : hasApplied ? <div><button disabled className="w-full rounded-lg bg-green-100 px-4 py-3 text-sm font-semibold text-green-800">Application Submitted ✓</button><Link to="/dashboard/applications" className="mt-2 block text-center text-xs font-medium text-[#11167b] hover:underline">View application</Link></div> : isActive ? <Link to={`/jobs/${job.id}/apply`} className="block w-full rounded-lg bg-[#11167b] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#181e96]">Apply Now →</Link> : <button disabled className="w-full rounded-lg bg-gray-300 px-4 py-3 text-sm font-medium text-gray-600">Applications Closed</button>}
             <button disabled={saving} onClick={toggleSaved} className="mt-4 w-full py-2 text-xs text-gray-600 hover:text-gray-900 disabled:opacity-50">{saved ? '♥ Saved' : '♡ Save Job'}</button>
-            <button className="w-full py-2 text-xs text-gray-600 hover:text-gray-900">◈ Report the listing</button>
+            <ReportContentButton targetType="JOB" targetId={job.id} label="Report this job" className="w-full py-2 text-xs text-gray-600 hover:text-gray-900" />
             {notice && <p role="status" className="mt-2 text-center text-xs text-green-700">{notice}</p>}
           </section>
 

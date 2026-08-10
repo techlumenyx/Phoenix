@@ -136,11 +136,17 @@ export const AuditAction = {
   AddNote: 'ADD_NOTE',
   AiRiskRetry: 'AI_RISK_RETRY',
   AiRiskReview: 'AI_RISK_REVIEW',
+  AppealNeedsInformation: 'APPEAL_NEEDS_INFORMATION',
+  AppealOverturn: 'APPEAL_OVERTURN',
+  AppealSubmit: 'APPEAL_SUBMIT',
+  AppealUphold: 'APPEAL_UPHOLD',
   Assign: 'ASSIGN',
+  ChangePriority: 'CHANGE_PRIORITY',
   Dismiss: 'DISMISS',
   DownloadAuditExport: 'DOWNLOAD_AUDIT_EXPORT',
   EmailRetry: 'EMAIL_RETRY',
   EmailTest: 'EMAIL_TEST',
+  Escalate: 'ESCALATE',
   EventCancel: 'EVENT_CANCEL',
   EventRestore: 'EVENT_RESTORE',
   NotificationRead: 'NOTIFICATION_READ',
@@ -149,10 +155,18 @@ export const AuditAction = {
   PlacementPause: 'PLACEMENT_PAUSE',
   PlacementReorder: 'PLACEMENT_REORDER',
   PlacementUpdate: 'PLACEMENT_UPDATE',
+  Reactivate: 'REACTIVATE',
   Remove: 'REMOVE',
+  Reopen: 'REOPEN',
+  ReportReply: 'REPORT_REPLY',
   RequestAuditExport: 'REQUEST_AUDIT_EXPORT',
+  RequestChanges: 'REQUEST_CHANGES',
+  Resolve: 'RESOLVE',
+  Restore: 'RESTORE',
   SavedViewCreate: 'SAVED_VIEW_CREATE',
   SavedViewDelete: 'SAVED_VIEW_DELETE',
+  SendReportMessage: 'SEND_REPORT_MESSAGE',
+  Suspend: 'SUSPEND',
   TemplateActivate: 'TEMPLATE_ACTIVATE',
   TemplateCreate: 'TEMPLATE_CREATE',
   VerificationApprove: 'VERIFICATION_APPROVE',
@@ -413,15 +427,24 @@ export type FeaturedPlacementInput = {
 
 export const ModerationAction = {
   Dismiss: 'DISMISS',
+  Escalate: 'ESCALATE',
+  Reactivate: 'REACTIVATE',
   Remove: 'REMOVE',
+  Reopen: 'REOPEN',
+  RequestChanges: 'REQUEST_CHANGES',
+  Resolve: 'RESOLVE',
+  Restore: 'RESTORE',
+  Suspend: 'SUSPEND',
   Warn: 'WARN'
 } as const;
 
 export type ModerationAction = typeof ModerationAction[keyof typeof ModerationAction];
 export type ModerationCase = {
   __typename?: 'ModerationCase';
+  appeals: Array<ReportAppeal>;
   assigneeFirebaseUid?: Maybe<Scalars['String']['output']>;
   auditTimeline: Array<AuditEvent>;
+  conversations: Array<ReportConversation>;
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
   notes: Array<CaseNote>;
@@ -442,6 +465,7 @@ export type ModerationCase = {
   targetStatus: Scalars['String']['output'];
   targetType: ContentType;
   title: Scalars['String']['output'];
+  unreadCommunicationCount: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
 };
@@ -455,6 +479,7 @@ export type ModerationCaseConnection = {
 };
 
 export const ModerationCaseStatus = {
+  AppealPending: 'APPEAL_PENDING',
   Open: 'OPEN',
   PendingReview: 'PENDING_REVIEW',
   Resolved: 'RESOLVED'
@@ -489,11 +514,13 @@ export type Mutation = {
   assignVerificationSubmission: VerificationSubmission;
   createAdminTemplate: AdminTemplate;
   createFeaturedPlacement: FeaturedPlacement;
+  decideReportAppeal: ReportAppeal;
   decideVerificationSubmission: VerificationSubmission;
   deleteSavedAdminView: Scalars['Boolean']['output'];
   duplicateFeaturedPlacement: FeaturedPlacement;
   markAdminNotificationRead: AdminNotification;
   markAllAdminNotificationsRead: Scalars['Boolean']['output'];
+  markReportConversationRead: Scalars['Boolean']['output'];
   pauseFeaturedPlacement: FeaturedPlacement;
   reorderFeaturedPlacement: FeaturedPlacement;
   requestAuditExport: AuditExport;
@@ -502,7 +529,12 @@ export type Mutation = {
   retryEmailDelivery: EmailDelivery;
   reviewContentRiskAnalysis: ContentRiskAnalysis;
   saveAdminView: SavedAdminView;
+  sendAdminReportMessage: ReportConversation;
+  sendReportConversationMessage: ReportMessage;
   sendTestEmail: EmailDelivery;
+  setModerationCasePriority: ModerationCase;
+  submitContentReport: ReportConversation;
+  submitReportAppeal: ReportAppeal;
   updateFeaturedPlacement: FeaturedPlacement;
 };
 
@@ -575,6 +607,13 @@ export type MutationCreateFeaturedPlacementArgs = {
 };
 
 
+export type MutationDecideReportAppealArgs = {
+  appealId: Scalars['ID']['input'];
+  decision: ReportAppealDecision;
+  reason: Scalars['String']['input'];
+};
+
+
 export type MutationDecideVerificationSubmissionArgs = {
   action: VerificationDecision;
   id: Scalars['ID']['input'];
@@ -601,6 +640,11 @@ export type MutationMarkAdminNotificationReadArgs = {
 };
 
 
+export type MutationMarkReportConversationReadArgs = {
+  conversationId: Scalars['ID']['input'];
+};
+
+
 export type MutationPauseFeaturedPlacementArgs = {
   id: Scalars['ID']['input'];
   paused: Scalars['Boolean']['input'];
@@ -624,6 +668,7 @@ export type MutationResolveModerationCaseArgs = {
   expectedVersion: Scalars['Int']['input'];
   id: Scalars['ID']['input'];
   reason: Scalars['String']['input'];
+  scope?: InputMaybe<EventActionScope>;
 };
 
 
@@ -651,8 +696,44 @@ export type MutationSaveAdminViewArgs = {
 };
 
 
+export type MutationSendAdminReportMessageArgs = {
+  audience: ReportConversationAudience;
+  body: Scalars['String']['input'];
+  caseId: Scalars['ID']['input'];
+  reportId?: InputMaybe<Scalars['ID']['input']>;
+  templateKey?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationSendReportConversationMessageArgs = {
+  body: Scalars['String']['input'];
+  conversationId: Scalars['ID']['input'];
+};
+
+
 export type MutationSendTestEmailArgs = {
   to: Scalars['String']['input'];
+};
+
+
+export type MutationSetModerationCasePriorityArgs = {
+  expectedVersion: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
+  priority: ModerationPriority;
+};
+
+
+export type MutationSubmitContentReportArgs = {
+  details?: InputMaybe<Scalars['String']['input']>;
+  reason: Scalars['String']['input'];
+  targetId: Scalars['ID']['input'];
+  targetType: ContentType;
+};
+
+
+export type MutationSubmitReportAppealArgs = {
+  body: Scalars['String']['input'];
+  conversationId: Scalars['ID']['input'];
 };
 
 
@@ -704,6 +785,11 @@ export type Query = {
   featuredPlacements: Array<FeaturedPlacement>;
   moderationCase?: Maybe<ModerationCase>;
   moderationCases: ModerationCaseConnection;
+  myReportConversations: Array<ReportConversation>;
+  myReportUnreadCount: Scalars['Int']['output'];
+  organisationReportConversations: Array<ReportConversation>;
+  organisationReportUnreadCount: Scalars['Int']['output'];
+  reportConversation?: Maybe<ReportConversation>;
   savedAdminViews: Array<SavedAdminView>;
   verificationSubmission?: Maybe<VerificationSubmission>;
   verificationSubmissions: VerificationSubmissionConnection;
@@ -826,6 +912,21 @@ export type QueryModerationCasesArgs = {
 };
 
 
+export type QueryOrganisationReportConversationsArgs = {
+  organisationId: Scalars['ID']['input'];
+};
+
+
+export type QueryOrganisationReportUnreadCountArgs = {
+  organisationId: Scalars['ID']['input'];
+};
+
+
+export type QueryReportConversationArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type QuerySavedAdminViewsArgs = {
   module?: InputMaybe<SavedViewModule>;
 };
@@ -847,6 +948,79 @@ export type QueryVerificationSubmissionsArgs = {
   status?: InputMaybe<VerificationReviewStatus>;
 };
 
+export type ReportAppeal = {
+  __typename?: 'ReportAppeal';
+  body: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  decidedAt?: Maybe<Scalars['DateTime']['output']>;
+  decisionReason?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  status: ReportAppealStatus;
+};
+
+export const ReportAppealDecision = {
+  NeedsInformation: 'NEEDS_INFORMATION',
+  Overturn: 'OVERTURN',
+  Uphold: 'UPHOLD'
+} as const;
+
+export type ReportAppealDecision = typeof ReportAppealDecision[keyof typeof ReportAppealDecision];
+export const ReportAppealStatus = {
+  NeedsInformation: 'NEEDS_INFORMATION',
+  Overturned: 'OVERTURNED',
+  Pending: 'PENDING',
+  Upheld: 'UPHELD'
+} as const;
+
+export type ReportAppealStatus = typeof ReportAppealStatus[keyof typeof ReportAppealStatus];
+export type ReportConversation = {
+  __typename?: 'ReportConversation';
+  appeals: Array<ReportAppeal>;
+  audience: ReportConversationAudience;
+  caseId: Scalars['ID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  lastMessageAt?: Maybe<Scalars['DateTime']['output']>;
+  messages: Array<ReportMessage>;
+  reportId?: Maybe<Scalars['ID']['output']>;
+  status: ReportConversationStatus;
+  subject: Scalars['String']['output'];
+  targetId: Scalars['String']['output'];
+  targetTitle: Scalars['String']['output'];
+  targetType: ContentType;
+  unread: Scalars['Boolean']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export const ReportConversationAudience = {
+  Owner: 'OWNER',
+  Reporter: 'REPORTER'
+} as const;
+
+export type ReportConversationAudience = typeof ReportConversationAudience[keyof typeof ReportConversationAudience];
+export const ReportConversationStatus = {
+  AppealPending: 'APPEAL_PENDING',
+  Open: 'OPEN',
+  Resolved: 'RESOLVED'
+} as const;
+
+export type ReportConversationStatus = typeof ReportConversationStatus[keyof typeof ReportConversationStatus];
+export type ReportMessage = {
+  __typename?: 'ReportMessage';
+  authorType: ReportMessageAuthorType;
+  body: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  templateKey?: Maybe<Scalars['String']['output']>;
+};
+
+export const ReportMessageAuthorType = {
+  Admin: 'ADMIN',
+  Participant: 'PARTICIPANT',
+  System: 'SYSTEM'
+} as const;
+
+export type ReportMessageAuthorType = typeof ReportMessageAuthorType[keyof typeof ReportMessageAuthorType];
 export const ReportReasonCode = {
   Duplicate: 'DUPLICATE',
   FraudScam: 'FRAUD_SCAM',
@@ -1110,6 +1284,14 @@ export type ResolversTypes = ResolversObject<{
   PlacementStatus: PlacementStatus;
   PlacementTargetType: PlacementTargetType;
   Query: ResolverTypeWrapper<{}>;
+  ReportAppeal: ResolverTypeWrapper<ReportAppeal>;
+  ReportAppealDecision: ReportAppealDecision;
+  ReportAppealStatus: ReportAppealStatus;
+  ReportConversation: ResolverTypeWrapper<ReportConversation>;
+  ReportConversationAudience: ReportConversationAudience;
+  ReportConversationStatus: ReportConversationStatus;
+  ReportMessage: ResolverTypeWrapper<ReportMessage>;
+  ReportMessageAuthorType: ReportMessageAuthorType;
   ReportReasonCode: ReportReasonCode;
   RiskAnalysisStatus: RiskAnalysisStatus;
   RiskLevel: RiskLevel;
@@ -1160,6 +1342,9 @@ export type ResolversParentTypes = ResolversObject<{
   ModerationReport: ModerationReport;
   Mutation: {};
   Query: {};
+  ReportAppeal: ReportAppeal;
+  ReportConversation: ReportConversation;
+  ReportMessage: ReportMessage;
   SavedAdminView: SavedAdminView;
   SystemDependency: SystemDependency;
   VerificationSubmission: VerificationSubmission;
@@ -1430,8 +1615,10 @@ export type FeaturedPlacementConnectionResolvers<ContextType = GraphQLContext, P
 
 export type ModerationCaseResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ModerationCase'] = ResolversParentTypes['ModerationCase']> = ResolversObject<{
   __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ModerationCase']>, { __typename: 'ModerationCase' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  appeals?: Resolver<Array<ResolversTypes['ReportAppeal']>, ParentType, ContextType>;
   assigneeFirebaseUid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   auditTimeline?: Resolver<Array<ResolversTypes['AuditEvent']>, ParentType, ContextType>;
+  conversations?: Resolver<Array<ResolversTypes['ReportConversation']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   notes?: Resolver<Array<ResolversTypes['CaseNote']>, ParentType, ContextType>;
@@ -1452,6 +1639,7 @@ export type ModerationCaseResolvers<ContextType = GraphQLContext, ParentType ext
   targetStatus?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   targetType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  unreadCommunicationCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   version?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -1486,11 +1674,13 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   assignVerificationSubmission?: Resolver<ResolversTypes['VerificationSubmission'], ParentType, ContextType, RequireFields<MutationAssignVerificationSubmissionArgs, 'id'>>;
   createAdminTemplate?: Resolver<ResolversTypes['AdminTemplate'], ParentType, ContextType, RequireFields<MutationCreateAdminTemplateArgs, 'key' | 'publicMessage' | 'title' | 'type'>>;
   createFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationCreateFeaturedPlacementArgs, 'input'>>;
+  decideReportAppeal?: Resolver<ResolversTypes['ReportAppeal'], ParentType, ContextType, RequireFields<MutationDecideReportAppealArgs, 'appealId' | 'decision' | 'reason'>>;
   decideVerificationSubmission?: Resolver<ResolversTypes['VerificationSubmission'], ParentType, ContextType, RequireFields<MutationDecideVerificationSubmissionArgs, 'action' | 'id' | 'reason'>>;
   deleteSavedAdminView?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteSavedAdminViewArgs, 'id'>>;
   duplicateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationDuplicateFeaturedPlacementArgs, 'endsAt' | 'id' | 'rank' | 'startsAt'>>;
   markAdminNotificationRead?: Resolver<ResolversTypes['AdminNotification'], ParentType, ContextType, RequireFields<MutationMarkAdminNotificationReadArgs, 'id'>>;
   markAllAdminNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  markReportConversationRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkReportConversationReadArgs, 'conversationId'>>;
   pauseFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationPauseFeaturedPlacementArgs, 'id' | 'paused'>>;
   reorderFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationReorderFeaturedPlacementArgs, 'id' | 'rank'>>;
   requestAuditExport?: Resolver<ResolversTypes['AuditExport'], ParentType, ContextType, RequireFields<MutationRequestAuditExportArgs, 'from' | 'to'>>;
@@ -1499,7 +1689,12 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   retryEmailDelivery?: Resolver<ResolversTypes['EmailDelivery'], ParentType, ContextType, RequireFields<MutationRetryEmailDeliveryArgs, 'id'>>;
   reviewContentRiskAnalysis?: Resolver<ResolversTypes['ContentRiskAnalysis'], ParentType, ContextType, RequireFields<MutationReviewContentRiskAnalysisArgs, 'id' | 'verdict'>>;
   saveAdminView?: Resolver<ResolversTypes['SavedAdminView'], ParentType, ContextType, RequireFields<MutationSaveAdminViewArgs, 'filtersJson' | 'module' | 'name'>>;
+  sendAdminReportMessage?: Resolver<ResolversTypes['ReportConversation'], ParentType, ContextType, RequireFields<MutationSendAdminReportMessageArgs, 'audience' | 'body' | 'caseId'>>;
+  sendReportConversationMessage?: Resolver<ResolversTypes['ReportMessage'], ParentType, ContextType, RequireFields<MutationSendReportConversationMessageArgs, 'body' | 'conversationId'>>;
   sendTestEmail?: Resolver<ResolversTypes['EmailDelivery'], ParentType, ContextType, RequireFields<MutationSendTestEmailArgs, 'to'>>;
+  setModerationCasePriority?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationSetModerationCasePriorityArgs, 'expectedVersion' | 'id' | 'priority'>>;
+  submitContentReport?: Resolver<ResolversTypes['ReportConversation'], ParentType, ContextType, RequireFields<MutationSubmitContentReportArgs, 'reason' | 'targetId' | 'targetType'>>;
+  submitReportAppeal?: Resolver<ResolversTypes['ReportAppeal'], ParentType, ContextType, RequireFields<MutationSubmitReportAppealArgs, 'body' | 'conversationId'>>;
   updateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationUpdateFeaturedPlacementArgs, 'id' | 'input'>>;
 }>;
 
@@ -1522,9 +1717,55 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   featuredPlacements?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType, Partial<QueryFeaturedPlacementsArgs>>;
   moderationCase?: Resolver<Maybe<ResolversTypes['ModerationCase']>, ParentType, ContextType, RequireFields<QueryModerationCaseArgs, 'id'>>;
   moderationCases?: Resolver<ResolversTypes['ModerationCaseConnection'], ParentType, ContextType, Partial<QueryModerationCasesArgs>>;
+  myReportConversations?: Resolver<Array<ResolversTypes['ReportConversation']>, ParentType, ContextType>;
+  myReportUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  organisationReportConversations?: Resolver<Array<ResolversTypes['ReportConversation']>, ParentType, ContextType, RequireFields<QueryOrganisationReportConversationsArgs, 'organisationId'>>;
+  organisationReportUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryOrganisationReportUnreadCountArgs, 'organisationId'>>;
+  reportConversation?: Resolver<Maybe<ResolversTypes['ReportConversation']>, ParentType, ContextType, RequireFields<QueryReportConversationArgs, 'id'>>;
   savedAdminViews?: Resolver<Array<ResolversTypes['SavedAdminView']>, ParentType, ContextType, Partial<QuerySavedAdminViewsArgs>>;
   verificationSubmission?: Resolver<Maybe<ResolversTypes['VerificationSubmission']>, ParentType, ContextType, RequireFields<QueryVerificationSubmissionArgs, 'id'>>;
   verificationSubmissions?: Resolver<ResolversTypes['VerificationSubmissionConnection'], ParentType, ContextType, Partial<QueryVerificationSubmissionsArgs>>;
+}>;
+
+export type ReportAppealResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ReportAppeal'] = ResolversParentTypes['ReportAppeal']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ReportAppeal']>, { __typename: 'ReportAppeal' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  decidedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  decisionReason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['ReportAppealStatus'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ReportConversationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ReportConversation'] = ResolversParentTypes['ReportConversation']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ReportConversation']>, { __typename: 'ReportConversation' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  appeals?: Resolver<Array<ResolversTypes['ReportAppeal']>, ParentType, ContextType>;
+  audience?: Resolver<ResolversTypes['ReportConversationAudience'], ParentType, ContextType>;
+  caseId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  lastMessageAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  messages?: Resolver<Array<ResolversTypes['ReportMessage']>, ParentType, ContextType>;
+  reportId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['ReportConversationStatus'], ParentType, ContextType>;
+  subject?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetTitle?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  targetType?: Resolver<ResolversTypes['ContentType'], ParentType, ContextType>;
+  unread?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ReportMessageResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ReportMessage'] = ResolversParentTypes['ReportMessage']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ReportMessage']>, { __typename: 'ReportMessage' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  authorType?: Resolver<ResolversTypes['ReportMessageAuthorType'], ParentType, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  templateKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SavedAdminViewResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SavedAdminView'] = ResolversParentTypes['SavedAdminView']> = ResolversObject<{
@@ -1614,6 +1855,9 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ModerationReport?: ModerationReportResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  ReportAppeal?: ReportAppealResolvers<ContextType>;
+  ReportConversation?: ReportConversationResolvers<ContextType>;
+  ReportMessage?: ReportMessageResolvers<ContextType>;
   SavedAdminView?: SavedAdminViewResolvers<ContextType>;
   SystemDependency?: SystemDependencyResolvers<ContextType>;
   VerificationSubmission?: VerificationSubmissionResolvers<ContextType>;

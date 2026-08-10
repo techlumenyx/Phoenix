@@ -6,7 +6,14 @@ scalar DateTime
 enum ModerationAction {
   DISMISS
   WARN
+  REQUEST_CHANGES
   REMOVE
+  RESTORE
+  SUSPEND
+  REACTIVATE
+  ESCALATE
+  RESOLVE
+  REOPEN
 }
 
 enum AuditAction {
@@ -15,6 +22,20 @@ enum AuditAction {
   DISMISS
   WARN
   REMOVE
+  REQUEST_CHANGES
+  RESTORE
+  SUSPEND
+  REACTIVATE
+  ESCALATE
+  CHANGE_PRIORITY
+  RESOLVE
+  REOPEN
+  SEND_REPORT_MESSAGE
+  REPORT_REPLY
+  APPEAL_SUBMIT
+  APPEAL_UPHOLD
+  APPEAL_OVERTURN
+  APPEAL_NEEDS_INFORMATION
   ACCESS_DOCUMENT
   ACCESS_PRIVATE_DATA
   VERIFICATION_ASSIGN
@@ -84,8 +105,15 @@ enum EventActionScope { OCCURRENCE SERIES }
 enum ModerationCaseStatus {
   OPEN
   PENDING_REVIEW
+  APPEAL_PENDING
   RESOLVED
 }
+
+enum ReportConversationAudience { REPORTER OWNER }
+enum ReportConversationStatus { OPEN RESOLVED APPEAL_PENDING }
+enum ReportMessageAuthorType { ADMIN PARTICIPANT SYSTEM }
+enum ReportAppealStatus { PENDING UPHELD OVERTURNED NEEDS_INFORMATION }
+enum ReportAppealDecision { UPHOLD OVERTURN NEEDS_INFORMATION }
 
 enum ModerationPriority {
   NORMAL
@@ -114,6 +142,41 @@ type CaseNote @key(fields: "id") {
   id: ID!
   authorFirebaseUid: String!
   body: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ReportMessage @key(fields: "id") {
+  id: ID!
+  authorType: ReportMessageAuthorType!
+  body: String!
+  templateKey: String
+  createdAt: DateTime!
+}
+
+type ReportAppeal @key(fields: "id") {
+  id: ID!
+  body: String!
+  status: ReportAppealStatus!
+  decisionReason: String
+  decidedAt: DateTime
+  createdAt: DateTime!
+}
+
+type ReportConversation @key(fields: "id") {
+  id: ID!
+  caseId: ID!
+  reportId: ID
+  audience: ReportConversationAudience!
+  subject: String!
+  targetId: String!
+  targetType: ContentType!
+  targetTitle: String!
+  status: ReportConversationStatus!
+  unread: Boolean!
+  messages: [ReportMessage!]!
+  appeals: [ReportAppeal!]!
+  lastMessageAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -167,6 +230,9 @@ type ModerationCase @key(fields: "id") {
   version: Int!
   reports: [ModerationReport!]!
   notes: [CaseNote!]!
+  conversations: [ReportConversation!]!
+  appeals: [ReportAppeal!]!
+  unreadCommunicationCount: Int!
   auditTimeline: [AuditEvent!]!
   riskAnalyses: [ContentRiskAnalysis!]!
   createdAt: DateTime!
@@ -293,6 +359,11 @@ type ContentRiskAnalysisConnection { edges: [ContentRiskAnalysis!]! totalCount: 
 type ContentRiskAnalysisConfiguration { enabled: Boolean! provider: String! model: String! mode: String! }
 
 type Query {
+  myReportConversations: [ReportConversation!]!
+  myReportUnreadCount: Int!
+  organisationReportConversations(organisationId: ID!): [ReportConversation!]!
+  organisationReportUnreadCount(organisationId: ID!): Int!
+  reportConversation(id: ID!): ReportConversation
   moderationCases(
     status: ModerationCaseStatus
     priority: ModerationPriority
@@ -327,13 +398,21 @@ type Query {
 }
 
 type Mutation {
+  submitContentReport(targetType: ContentType!, targetId: ID!, reason: String!, details: String): ReportConversation!
+  sendReportConversationMessage(conversationId: ID!, body: String!): ReportMessage!
+  markReportConversationRead(conversationId: ID!): Boolean!
+  submitReportAppeal(conversationId: ID!, body: String!): ReportAppeal!
+  sendAdminReportMessage(caseId: ID!, audience: ReportConversationAudience!, reportId: ID, body: String!, templateKey: String): ReportConversation!
+  decideReportAppeal(appealId: ID!, decision: ReportAppealDecision!, reason: String!): ReportAppeal!
   assignModerationCase(id: ID!, assigneeFirebaseUid: String, expectedVersion: Int!): ModerationCase!
+  setModerationCasePriority(id: ID!, priority: ModerationPriority!, expectedVersion: Int!): ModerationCase!
   addModerationCaseNote(caseId: ID!, body: String!): CaseNote!
   resolveModerationCase(
     id: ID!
     action: ModerationAction!
     reason: String!
     expectedVersion: Int!
+    scope: EventActionScope
   ): ModerationCase!
   assignVerificationSubmission(id: ID!, assigneeFirebaseUid: String): VerificationSubmission!
   accessVerificationDocument(id: ID!, documentIndex: Int!): String!

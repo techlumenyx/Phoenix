@@ -1,4 +1,4 @@
-import { ModerationCaseModel, ModerationReportModel } from '../models';
+import { ModerationCaseModel, ModerationReportModel, ReportConversationModel } from '../models';
 import type { ReportReasonCode } from '../models/moderation-report.model';
 
 export interface MarketplaceReportInput {
@@ -11,6 +11,17 @@ export interface MarketplaceReportInput {
     organisationId: string | null;
     status: string;
   };
+}
+
+export type ReportableContentType = 'MARKETPLACE_ITEM' | 'JOB' | 'EVENT' | 'ORGANISATION' | 'USER';
+export type ReportTargetService = 'CLASSIFIEDS' | 'EVENTS' | 'IDENTITY';
+export interface ContentReportInput {
+  targetId: string;
+  targetType: ReportableContentType;
+  targetService: ReportTargetService;
+  reporterFirebaseUid: string;
+  reason: string;
+  snapshot: MarketplaceReportInput['snapshot'];
 }
 
 export interface ReportIntakeResult {
@@ -29,12 +40,21 @@ export class ReportRateLimitError extends Error {
 }
 
 export async function ingestMarketplaceReport(input: MarketplaceReportInput): Promise<ReportIntakeResult> {
-  const targetKey = `MARKETPLACE_ITEM:${input.itemId}`;
+  return ingestContentReport({ ...input, targetId: input.itemId, targetType: 'MARKETPLACE_ITEM', targetService: 'CLASSIFIEDS' });
+}
+
+export async function ingestContentReport(input: ContentReportInput): Promise<ReportIntakeResult> {
+  const targetKey = `${input.targetType}:${input.targetId}`;
   const dedupeKey = `${targetKey}:${input.reporterFirebaseUid}`;
   const existing = await ModerationReportModel.findOne({ dedupeKey });
   if (existing) {
     const existingCase = await ModerationCaseModel.findById(existing.caseId);
     if (!existingCase) throw new Error('Moderation case is missing for an existing report');
+    await ReportConversationModel.updateOne(
+      { caseId: existingCase._id, audience: 'REPORTER', reportId: existing._id },
+      { $setOnInsert: { participantFirebaseUid: input.reporterFirebaseUid, organisationId: null, subject: `Report about ${input.snapshot.title}`, status: 'OPEN', unreadForParticipant: false, unreadForAdmin: false, lastMessageAt: null } },
+      { upsert: true },
+    );
     return {
       reportId: existing._id.toString(),
       caseId: existingCase._id.toString(),
@@ -55,9 +75,9 @@ export async function ingestMarketplaceReport(input: MarketplaceReportInput): Pr
   try {
     report = await ModerationReportModel.create({
       caseId: null,
-      targetId: input.itemId,
-      targetType: 'MARKETPLACE_ITEM',
-      targetService: 'CLASSIFIEDS',
+      targetId: input.targetId,
+      targetType: input.targetType,
+      targetService: input.targetService,
       reporterFirebaseUid: input.reporterFirebaseUid,
       reasonCode,
       details,
@@ -82,9 +102,9 @@ export async function ingestMarketplaceReport(input: MarketplaceReportInput): Pr
     { targetKey },
     {
       $setOnInsert: {
-        targetId: input.itemId,
-        targetType: 'MARKETPLACE_ITEM',
-        targetService: 'CLASSIFIEDS',
+        targetId: input.targetId,
+        targetType: input.targetType,
+        targetService: input.targetService,
         ownerFirebaseUid: input.snapshot.ownerFirebaseUid,
         organisationId: input.snapshot.organisationId,
         previousStatus: input.snapshot.status,
@@ -117,6 +137,20 @@ export async function ingestMarketplaceReport(input: MarketplaceReportInput): Pr
 
   report.caseId = moderationCase._id;
   await report.save();
+
+  await ReportConversationModel.updateOne(
+    { caseId: moderationCase._id, audience: 'REPORTER', reportId: report._id },
+    { $setOnInsert: {
+      participantFirebaseUid: input.reporterFirebaseUid,
+      organisationId: null,
+      subject: `Report about ${input.snapshot.title}`,
+      status: 'OPEN',
+      unreadForParticipant: false,
+      unreadForAdmin: false,
+      lastMessageAt: null,
+    } },
+    { upsert: true },
+  );
 
   return {
     reportId: report._id.toString(),

@@ -9,14 +9,18 @@ import {
   CaseNoteModel,
   ModerationCaseModel,
   ModerationReportModel,
+  ReportAppealModel,
+  ReportConversationModel,
+  ReportMessageModel,
 } from '../models';
 import type { ModerationCaseDocument } from '../models/moderation-case.model';
 import type { ModerationReportDocument } from '../models/moderation-report.model';
 import type { CaseNoteDocument } from '../models/case-note.model';
 import type { AuditEventDocument } from '../models/audit-event.model';
 import { adminPage, pageResult, type AdminPageArgs } from './admin-pagination';
+import { internalPost } from './verification.resolver';
 
-const MODERATOR_ROLES = ['TRUST_SAFETY'] as const;
+const MODERATOR_ROLES = ['TRUST_SAFETY', 'CONTENT_MANAGER'] as const;
 
 export const moderationResolvers = {
   Query: {
@@ -32,9 +36,10 @@ export const moderationResolvers = {
       },
       ctx: GraphQLContext,
     ) => {
-      requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES, 'AUDITOR']);
+      const admin = requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES, 'AUDITOR']);
       const page = adminPage(args, 'createdAt', ['createdAt', 'updatedAt', 'priority', 'status', 'title']);
       const filter: Record<string, unknown> = {};
+      if (isContentOnlyAdmin(admin.roles)) filter['targetType'] = { $in: ['MARKETPLACE_ITEM', 'JOB', 'EVENT'] };
       if (args.status) filter['status'] = args.status;
       if (args.priority) filter['priority'] = args.priority;
       if (args.assigneeFirebaseUid) filter['assigneeFirebaseUid'] = args.assigneeFirebaseUid;
@@ -56,6 +61,7 @@ export const moderationResolvers = {
       requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES, 'AUDITOR']);
       if (!mongoose.isValidObjectId(id)) return null;
       const doc = await ModerationCaseModel.findById(id);
+      if (doc && isContentOnlyAdmin(requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES, 'AUDITOR']).roles) && ['USER', 'ORGANISATION'].includes(doc.targetType)) throw new GraphQLError('Insufficient admin permissions', { extensions: { code: 'FORBIDDEN' } });
       return doc ? mapCase(doc) : null;
     },
     auditEvents: async (
@@ -82,17 +88,18 @@ export const moderationResolvers = {
       ctx: GraphQLContext,
     ) => {
       requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES]);
+      const admin = requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES]);
       const doc = await ModerationCaseModel.findOneAndUpdate(
-        { _id: id, version: expectedVersion, status: { $ne: 'RESOLVED' } },
+        { _id: id, version: expectedVersion, status: { $ne: 'RESOLVED' }, ...(isContentOnlyAdmin(admin.roles) ? { targetType: { $in: ['MARKETPLACE_ITEM', 'JOB', 'EVENT'] } } : {}) },
         { $set: { assigneeFirebaseUid: assigneeFirebaseUid?.trim() || null }, $inc: { version: 1 } },
         { new: true },
       );
       if (!doc) throw staleCaseError();
       await AuditEventModel.create({
-        adminFirebaseUid: ctx.admin.firebaseUid,
+        adminFirebaseUid: admin.firebaseUid,
         action: 'ASSIGN',
         targetId: doc.targetId,
-        targetType: 'MARKETPLACE_ITEM',
+        targetType: doc.targetType,
         caseId: doc._id,
         reason: assigneeFirebaseUid?.trim() ? `Assigned to ${assigneeFirebaseUid.trim()}` : 'Case unassigned',
         beforeStatus: doc.targetStatus,
@@ -106,6 +113,13 @@ export const moderationResolvers = {
       );
       return mapCase(doc);
     },
+    setModerationCasePriority: async (_: unknown, { id, priority, expectedVersion }: { id: string; priority: 'NORMAL' | 'HIGH' | 'CRITICAL'; expectedVersion: number }, ctx: GraphQLContext) => {
+      const admin = requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES]);
+      const doc = await ModerationCaseModel.findOneAndUpdate({ _id: id, version: expectedVersion, ...(isContentOnlyAdmin(admin.roles) ? { targetType: { $in: ['MARKETPLACE_ITEM', 'JOB', 'EVENT'] } } : {}) }, { $set: { priority }, $inc: { version: 1 } }, { new: true });
+      if (!doc) throw staleCaseError();
+      await AuditEventModel.create({ adminFirebaseUid: admin.firebaseUid, action: 'CHANGE_PRIORITY', targetId: doc.targetId, targetType: doc.targetType, caseId: doc._id, reason: `Priority changed to ${priority}`, beforeStatus: doc.targetStatus, afterStatus: doc.targetStatus, requestId: headerValue(ctx.request.headers['x-request-id']) });
+      return mapCase(doc);
+    },
     addModerationCaseNote: async (
       _: unknown,
       { caseId, body }: { caseId: string; body: string },
@@ -116,29 +130,28 @@ export const moderationResolvers = {
       if (!value || value.length > 2000) {
         throw new GraphQLError('Note must contain between 1 and 2000 characters', { extensions: { code: 'BAD_USER_INPUT' } });
       }
-      if (!await ModerationCaseModel.exists({ _id: caseId })) {
+      const moderationCase = await ModerationCaseModel.findById(caseId);
+      if (!moderationCase) {
         throw new GraphQLError('Moderation case not found', { extensions: { code: 'NOT_FOUND' } });
       }
+      if (isContentOnlyAdmin(admin.roles) && ['USER', 'ORGANISATION'].includes(moderationCase.targetType)) throw new GraphQLError('Insufficient admin permissions', { extensions: { code: 'FORBIDDEN' } });
       const note = await CaseNoteModel.create({ caseId, authorFirebaseUid: admin.firebaseUid, body: value });
-      const moderationCase = await ModerationCaseModel.findById(caseId);
-      if (moderationCase) {
-        await AuditEventModel.create({
+      await AuditEventModel.create({
           adminFirebaseUid: admin.firebaseUid,
           action: 'ADD_NOTE',
           targetId: moderationCase.targetId,
-          targetType: 'MARKETPLACE_ITEM',
+          targetType: moderationCase.targetType,
           caseId: moderationCase._id,
           reason: 'Internal note added',
           beforeStatus: moderationCase.targetStatus,
           afterStatus: moderationCase.targetStatus,
           requestId: headerValue(ctx.request.headers['x-request-id']),
         });
-      }
       return mapNote(note);
     },
     resolveModerationCase: async (
       _: unknown,
-      { id, action, reason, expectedVersion }: { id: string; action: string; reason: string; expectedVersion: number },
+      { id, action, reason, expectedVersion, scope }: { id: string; action: string; reason: string; expectedVersion: number; scope?: 'OCCURRENCE' | 'SERIES' | null },
       ctx: GraphQLContext,
     ) => {
       const admin = requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES]);
@@ -146,8 +159,10 @@ export const moderationResolvers = {
       if (value.length < 5 || value.length > 1000) {
         throw new GraphQLError('A reason between 5 and 1000 characters is required', { extensions: { code: 'BAD_USER_INPUT' } });
       }
-      const moderationCase = await ModerationCaseModel.findOne({ _id: id, version: expectedVersion, status: { $ne: 'RESOLVED' } });
+      const statusFilter = action === 'REOPEN' || action === 'RESTORE' ? {} : { status: { $ne: 'RESOLVED' } };
+      const moderationCase = await ModerationCaseModel.findOne({ _id: id, version: expectedVersion, ...statusFilter });
       if (!moderationCase) throw staleCaseError();
+      if (['USER', 'ORGANISATION'].includes(moderationCase.targetType) || ['SUSPEND', 'REACTIVATE'].includes(action)) requirePlatformAdmin(ctx.auth, ['TRUST_SAFETY']);
 
       const requestId = headerValue(ctx.request.headers['x-request-id']);
       const idempotencyKey = `${moderationCase._id}:${expectedVersion}:${action}`;
@@ -159,13 +174,15 @@ export const moderationResolvers = {
       if (command.state !== 'PENDING') throw staleCaseError();
 
       try {
-        const commandResult = await sendClassifiedsCommand({ itemId: moderationCase.targetId, caseId: moderationCase._id.toString(), action, reason: value, requestId });
+        const commandResult = await sendModerationCommand({ targetType: moderationCase.targetType, targetId: moderationCase.targetId, currentStatus: moderationCase.targetStatus, caseId: moderationCase._id.toString(), action, reason: value, requestId, scope: scope ?? 'OCCURRENCE' });
         command.state = 'DOMAIN_APPLIED'; command.canonicalStatus = commandResult.status; await command.save();
         const beforeStatus = moderationCase.targetStatus;
-        moderationCase.status = 'RESOLVED'; moderationCase.targetStatus = commandResult.status; moderationCase.resolutionAction = action;
+        moderationCase.status = action === 'ESCALATE' || action === 'REQUEST_CHANGES' ? 'PENDING_REVIEW' : action === 'REOPEN' ? 'OPEN' : 'RESOLVED'; moderationCase.targetStatus = commandResult.status; moderationCase.resolutionAction = action;
+        if (action === 'ESCALATE') moderationCase.priority = 'CRITICAL';
         moderationCase.resolutionReason = value; moderationCase.resolvedByFirebaseUid = admin.firebaseUid; moderationCase.resolvedAt = new Date(); moderationCase.version += 1;
         await moderationCase.save();
-        await AuditEventModel.create({ adminFirebaseUid: admin.firebaseUid, action, targetId: moderationCase.targetId, targetType: 'MARKETPLACE_ITEM', caseId: moderationCase._id, reason: value, beforeStatus, afterStatus: commandResult.status, requestId });
+        await publishDecisionMessages(moderationCase, admin.firebaseUid, action, value);
+        await AuditEventModel.create({ adminFirebaseUid: admin.firebaseUid, action, targetId: moderationCase.targetId, targetType: moderationCase.targetType, caseId: moderationCase._id, reason: value, beforeStatus, afterStatus: commandResult.status, requestId });
         command.state = 'COMPLETED'; await command.save();
         return mapCase(moderationCase);
       } catch (error) {
@@ -196,6 +213,9 @@ export const moderationResolvers = {
     },
     notes: async (parent: { id: string }) => (await CaseNoteModel.find({ caseId: parent.id }).sort({ createdAt: 1 })).map(mapNote),
     auditTimeline: async (parent: { id: string }) => (await AuditEventModel.find({ caseId: parent.id }).sort({ createdAt: 1 })).map(mapAudit),
+    conversations: async (parent: { id: string }, _: unknown, ctx: GraphQLContext) => canAccessReportCommunication(ctx) ? (await ReportConversationModel.find({ caseId: parent.id }).sort({ updatedAt: -1 })).map((doc) => ({ ...doc.toObject(), id: doc._id.toString(), caseId: doc.caseId.toString(), reportId: doc.reportId?.toString() ?? null, unread: doc.unreadForAdmin })) : [],
+    appeals: async (parent: { id: string }, _: unknown, ctx: GraphQLContext) => canAccessReportCommunication(ctx) ? (await ReportAppealModel.find({ caseId: parent.id }).sort({ createdAt: -1 })).map((doc) => ({ ...doc.toObject(), id: doc._id.toString() })) : [],
+    unreadCommunicationCount: async (parent: { id: string }, _: unknown, ctx: GraphQLContext) => canAccessReportCommunication(ctx) ? ReportConversationModel.countDocuments({ caseId: parent.id, unreadForAdmin: true }) : 0,
   },
 };
 
@@ -219,17 +239,29 @@ function staleCaseError() {
   return new GraphQLError('This case changed since it was opened. Refresh and try again.', { extensions: { code: 'CONFLICT' } });
 }
 
-async function sendClassifiedsCommand(input: { itemId: string; caseId: string; action: string; reason: string; requestId: string | null }) {
-  const secret = process.env['INTERNAL_SERVICE_KEY'];
-  if (!secret) throw new GraphQLError('Moderation service credentials are not configured', { extensions: { code: 'INTERNAL_SERVER_ERROR' } });
-  const baseUrl = process.env['CLASSIFIEDS_INTERNAL_URL'] ?? 'http://localhost:4003';
-  const response = await fetch(`${baseUrl}/internal/moderation/marketplace`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-cl-service-key': secret, ...(input.requestId ? { 'x-request-id': input.requestId } : {}) },
-    body: JSON.stringify(input),
-  });
-  if (!response.ok) throw new GraphQLError('The listing could not be updated. The case remains open.', { extensions: { code: 'BAD_GATEWAY' } });
-  return response.json() as Promise<{ status: string }>;
+async function sendModerationCommand(input: { targetType: string; targetId: string; currentStatus: string; caseId: string; action: string; reason: string; requestId: string | null; scope: 'OCCURRENCE' | 'SERIES' }) {
+  if (['ESCALATE', 'RESOLVE', 'REOPEN'].includes(input.action)) return { status: input.currentStatus };
+  if (input.targetType === 'MARKETPLACE_ITEM' || input.targetType === 'JOB') {
+    if (input.action === 'SUSPEND' || input.action === 'REACTIVATE') throw new GraphQLError('Account actions are not valid for content', { extensions: { code: 'BAD_USER_INPUT' } });
+    if (input.targetType === 'JOB' && ['DISMISS', 'WARN'].includes(input.action)) return { status: input.currentStatus };
+    return internalPost<{ status: string }>('CLASSIFIEDS_INTERNAL_URL', 'http://localhost:4003', '/internal/moderation/content', input);
+  }
+  if (input.targetType === 'EVENT') {
+    if (['WARN', 'DISMISS'].includes(input.action)) return { status: input.currentStatus };
+    const action = ['REMOVE', 'REQUEST_CHANGES'].includes(input.action) ? 'CANCEL' : 'RESTORE';
+    return internalPost<{ status: string }>('EVENTS_INTERNAL_URL', 'http://localhost:4002', '/internal/admin/event-action', { id: input.targetId, action, scope: input.scope, reason: input.reason });
+  }
+  if (input.targetType === 'USER' || input.targetType === 'ORGANISATION') {
+    if (input.action === 'DISMISS') return { status: input.currentStatus };
+    if (!['WARN', 'SUSPEND', 'REACTIVATE'].includes(input.action)) throw new GraphQLError('Choose an account action for this report', { extensions: { code: 'BAD_USER_INPUT' } });
+    const identityResult = await internalPost<{ status: string }>('IDENTITY_INTERNAL_URL', 'http://localhost:4001', '/internal/admin/account-action', { type: input.targetType, id: input.targetId, action: input.action, reason: input.reason });
+    if (input.targetType === 'ORGANISATION' && (input.action === 'SUSPEND' || input.action === 'REACTIVATE')) await Promise.all([
+      internalPost('EVENTS_INTERNAL_URL', 'http://localhost:4002', '/internal/admin/organisation-action', { organisationId: input.targetId, action: input.action }),
+      internalPost('CLASSIFIEDS_INTERNAL_URL', 'http://localhost:4003', '/internal/admin/organisation-action', { organisationId: input.targetId, action: input.action }),
+    ]);
+    return identityResult;
+  }
+  throw new GraphQLError('Unsupported report target', { extensions: { code: 'BAD_USER_INPUT' } });
 }
 
 function headerValue(value: string | string[] | undefined) {
@@ -255,4 +287,33 @@ async function reserveCommand(input: { idempotencyKey: string; caseId: mongoose.
 function safeFailure(error: unknown) {
   const message = error instanceof Error ? error.message : 'Unknown command failure';
   return message.replace(/Bearer\s+\S+|https?:\/\/\S+/gi, '[REDACTED]').slice(0, 500);
+}
+function isContentOnlyAdmin(roles: readonly string[]) { return roles.includes('CONTENT_MANAGER') && !roles.includes('SUPER_ADMIN') && !roles.includes('TRUST_SAFETY'); }
+function canAccessReportCommunication(ctx: GraphQLContext) { return Boolean(ctx.admin?.roles.some((role) => role === 'SUPER_ADMIN' || role === 'TRUST_SAFETY' || role === 'CONTENT_MANAGER')); }
+
+async function publishDecisionMessages(moderationCase: ModerationCaseDocument, adminFirebaseUid: string, action: string, reason: string) {
+  const reporterConversations = await ReportConversationModel.find({ caseId: moderationCase._id, audience: 'REPORTER' });
+  let ownerConversation = await ReportConversationModel.findOne({ caseId: moderationCase._id, audience: 'OWNER', reportId: null });
+  if (!ownerConversation) ownerConversation = await ReportConversationModel.create({
+    caseId: moderationCase._id,
+    reportId: null,
+    audience: 'OWNER',
+    participantFirebaseUid: moderationCase.organisationId ? null : moderationCase.ownerFirebaseUid,
+    organisationId: moderationCase.organisationId,
+    subject: `Report about ${moderationCase.title}`,
+    status: 'OPEN',
+    unreadForParticipant: false,
+    unreadForAdmin: false,
+    lastMessageAt: null,
+  });
+  const conversations = [...reporterConversations, ownerConversation];
+  for (const conversation of conversations) {
+    const body = `${action.replaceAll('_', ' ')}: ${reason}`;
+    const message = await ReportMessageModel.create({ conversationId: conversation._id, authorType: 'ADMIN', authorFirebaseUid: adminFirebaseUid, body, templateKey: `MODERATION_${action}` });
+    conversation.unreadForParticipant = true;
+    conversation.unreadForAdmin = false;
+    conversation.lastMessageAt = message.createdAt;
+    conversation.status = moderationCase.status === 'RESOLVED' ? 'RESOLVED' : 'OPEN';
+    await conversation.save();
+  }
 }

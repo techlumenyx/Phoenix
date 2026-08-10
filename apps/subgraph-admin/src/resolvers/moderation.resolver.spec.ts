@@ -8,6 +8,9 @@ jest.mock('../models', () => ({
   CaseNoteModel: { create: jest.fn(), find: jest.fn() },
   ModerationCaseModel: { findOne: jest.fn(), findById: jest.fn(), findOneAndUpdate: jest.fn(), exists: jest.fn() },
   ModerationReportModel: { find: jest.fn() },
+  ReportAppealModel: { find: jest.fn() },
+  ReportConversationModel: { find: jest.fn(), findOne: jest.fn(), create: jest.fn(), countDocuments: jest.fn() },
+  ReportMessageModel: { create: jest.fn() },
 }));
 
 const context = {
@@ -18,7 +21,7 @@ const context = {
 
 function caseDocument() {
   const doc = {
-    _id: { toString: () => 'case-1' }, targetId: 'listing-1', targetStatus: 'PENDING_REVIEW', status: 'OPEN', version: 1,
+    _id: { toString: () => 'case-1' }, targetId: 'listing-1', targetType: 'MARKETPLACE_ITEM', title: 'Listing', ownerFirebaseUid: 'owner-1', organisationId: null, targetStatus: 'PENDING_REVIEW', status: 'OPEN', version: 1,
     resolutionAction: null, resolutionReason: null, resolvedByFirebaseUid: null, resolvedAt: null,
     save: jest.fn().mockResolvedValue(undefined),
     toObject() { return { ...this, _id: undefined }; },
@@ -37,6 +40,11 @@ describe('moderation command safety', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'REMOVED' }) }) as jest.Mock;
     (AuditEventModel.create as jest.Mock).mockResolvedValue({});
     (AdminNotificationModel.updateOne as jest.Mock).mockResolvedValue({});
+    const { ReportConversationModel, ReportMessageModel } = jest.requireMock('../models');
+    ReportConversationModel.find.mockResolvedValue([]);
+    ReportConversationModel.findOne.mockResolvedValue(null);
+    ReportConversationModel.create.mockResolvedValue({ _id: 'conversation-1', unreadForParticipant: false, unreadForAdmin: false, lastMessageAt: null, status: 'OPEN', save: jest.fn() });
+    ReportMessageModel.create.mockResolvedValue({ createdAt: new Date() });
   });
 
   it('rejects a stale second decision and calls the canonical service once', async () => {

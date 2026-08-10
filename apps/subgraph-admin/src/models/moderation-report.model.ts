@@ -14,8 +14,8 @@ export interface IModerationReport {
   _id: mongoose.Types.ObjectId;
   caseId: mongoose.Types.ObjectId | null;
   targetId: string;
-  targetType: 'MARKETPLACE_ITEM';
-  targetService: 'CLASSIFIEDS';
+  targetType: 'MARKETPLACE_ITEM' | 'JOB' | 'EVENT' | 'ORGANISATION' | 'USER';
+  targetService: 'CLASSIFIEDS' | 'EVENTS' | 'IDENTITY';
   reporterFirebaseUid: string;
   reasonCode: ReportReasonCode;
   details: string | null;
@@ -36,8 +36,8 @@ export const ModerationReportSchema = new Schema<IModerationReport>(
   {
     caseId: { type: Schema.Types.ObjectId, default: null, index: true },
     targetId: { type: String, required: true, index: true },
-    targetType: { type: String, enum: ['MARKETPLACE_ITEM'], required: true },
-    targetService: { type: String, enum: ['CLASSIFIEDS'], required: true },
+    targetType: { type: String, enum: ['MARKETPLACE_ITEM', 'JOB', 'EVENT', 'ORGANISATION', 'USER'], required: true },
+    targetService: { type: String, enum: ['CLASSIFIEDS', 'EVENTS', 'IDENTITY'], required: true },
     reporterFirebaseUid: { type: String, required: true },
     reasonCode: { type: String, enum: REPORT_REASON_CODES, required: true },
     details: { type: String, default: null, maxlength: 1000 },

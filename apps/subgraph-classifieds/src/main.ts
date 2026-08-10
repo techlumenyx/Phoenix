@@ -12,7 +12,7 @@ import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
 import { MediaAssetModel, setupModels } from './models';
 import { resolvers } from './resolvers';
-import { executeMarketplaceModerationCommand, type MarketplaceModerationCommand } from './services/moderation-command.service';
+import { executeClassifiedModerationCommand, executeMarketplaceModerationCommand, type ClassifiedModerationCommand, type MarketplaceModerationCommand } from './services/moderation-command.service';
 import { applyAdminOrganisationClassifiedsAction, classifiedsDirectory } from './services/admin-directory.service';
 
 const typeDefs = parse(
@@ -66,6 +66,14 @@ async function bootstrap() {
     return result ?? reply.code(404).send({ error: 'Marketplace item not found' });
   });
 
+  fastify.post('/internal/moderation/content', async (request, reply) => {
+    if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
+    const input = request.body as ClassifiedModerationCommand;
+    if (!input || !['JOB', 'MARKETPLACE_ITEM'].includes(input.targetType) || typeof input.targetId !== 'string' || typeof input.caseId !== 'string' || !['DISMISS', 'WARN', 'REMOVE', 'RESTORE', 'REQUEST_CHANGES'].includes(input.action) || typeof input.reason !== 'string' || input.reason.trim().length < 5) return reply.code(400).send({ error: 'Invalid moderation command' });
+    const result = await executeClassifiedModerationCommand(input);
+    return result ?? reply.code(404).send({ error: 'Content not found' });
+  });
+
   fastify.post('/internal/admin/directory', async (request, reply) => {
     if (!isInternalServiceRequest(request)) return reply.code(401).send({ error: 'Invalid internal service credentials' });
     const input = request.body as Parameters<typeof classifiedsDirectory>[0];
@@ -97,7 +105,7 @@ function isModerationCommand(value: unknown): value is MarketplaceModerationComm
   const input = value as Partial<MarketplaceModerationCommand>;
   return typeof input.itemId === 'string' && input.itemId.length > 0 &&
     typeof input.caseId === 'string' && input.caseId.length > 0 &&
-    typeof input.action === 'string' && ['DISMISS', 'WARN', 'REMOVE'].includes(input.action) &&
+    typeof input.action === 'string' && ['DISMISS', 'WARN', 'REMOVE', 'RESTORE', 'REQUEST_CHANGES'].includes(input.action) &&
     typeof input.reason === 'string' && input.reason.trim().length >= 5 && input.reason.length <= 1000;
 }
 

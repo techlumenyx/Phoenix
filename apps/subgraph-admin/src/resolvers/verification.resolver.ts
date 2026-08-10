@@ -129,7 +129,7 @@ export type AuditableTarget = 'ORGANISATION_VERIFICATION' | 'USER' | 'ORGANISATI
 export async function audit(ctx: GraphQLContext, adminFirebaseUid: string, action: string, targetId: string, targetType: AuditableTarget, reason: string, beforeStatus?: string | null, afterStatus?: string | null, result: 'SUCCESS' | 'FAILED' = 'SUCCESS') {
   const routeHeader = ctx.request.headers['x-admin-route'];
   const userAgent = ctx.request.headers['user-agent'];
-  await AuditEventModel.create({ adminFirebaseUid, action, targetId, targetType, caseId: null, reason, beforeStatus: beforeStatus ?? null, afterStatus: afterStatus ?? null, requestId: requestId(ctx), adminRoles: ctx.admin.roles, result, route: Array.isArray(routeHeader) ? routeHeader[0] ?? null : routeHeader ?? null, ipAddress: ctx.request.ip ?? null, userAgent: Array.isArray(userAgent) ? userAgent[0] ?? null : userAgent ?? null });
+  await AuditEventModel.create({ adminFirebaseUid, action, targetId, targetType, caseId: null, reason, beforeStatus: beforeStatus ?? null, afterStatus: afterStatus ?? null, requestId: requestId(ctx), adminRoles: ctx.admin?.roles ?? [], result, route: Array.isArray(routeHeader) ? routeHeader[0] ?? null : routeHeader ?? null, ipAddress: ctx.request.ip ?? null, userAgent: Array.isArray(userAgent) ? userAgent[0] ?? null : userAgent ?? null });
 }
 
 export async function notifyAdmin(recipientFirebaseUid: string, type: 'ASSIGNMENT' | 'SLA_WARNING' | 'ESCALATION' | 'ACTION_FAILED' | 'MENTION', title: string, message: string, href: string | null, dedupeKey: string) {

@@ -20,7 +20,7 @@ describe('admin GraphQL context', () => {
     });
   });
 
-  it('rejects an authenticated non-admin account', () => {
+  it('allows an authenticated member into participant-facing resolvers without admin access', () => {
     const request = {
       firebaseUser: {
         uid: 'member-uid',
@@ -29,6 +29,8 @@ describe('admin GraphQL context', () => {
       },
     };
 
-    expect(() => buildContext(request as never)).toThrow('Admin access required');
+    const context = buildContext(request as never);
+    expect(context.auth.firebaseUid).toBe('member-uid');
+    expect(context.admin).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '
 import ContentPlaceholder from '../components/media/ContentPlaceholder';
 import NameAvatar from '../components/media/NameAvatar';
 import ResilientImage from '../components/media/ResilientImage';
+import ReportContentButton from '../components/reports/ReportContentButton';
 
 const EVENT_DETAILS = gql`
   query EventDetails($id: ID!) {
@@ -217,6 +218,7 @@ export default function EventDetailsPage() {
             <span className="text-[10px] uppercase tracking-widest text-gray-500">Share this event:</span>
             <button onClick={share} className="rounded-full bg-[#dfe8f7] px-4 py-2 text-xs font-semibold hover:bg-[#d2def0]">Share / Copy Link</button>
           </div>
+          <ReportContentButton targetType="EVENT" targetId={event.id} label="Report this event" className="mt-4 w-full py-2 text-xs text-gray-500 underline hover:text-gray-900" />
         </aside>
       </div>
       <section className="mx-auto mt-14 max-w-7xl"><div className="mb-6 flex items-end justify-between"><h2 className="font-serif text-3xl font-bold">Related Events</h2><Link to={`/events/all?category=${event.category}`} className="text-xs font-semibold uppercase tracking-wider text-gray-500">View all events</Link></div>{relatedEvents.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{relatedEvents.map((related) => <EventCard key={related.id} badge={related.category.replaceAll('_', ' ')} date={new Date(related.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} title={related.title} description={related.description} location={[related.location.city, related.location.country].filter(Boolean).join(', ') || related.region} invites={`${related.rsvpCount} RSVPs`} imageSrc={related.imageUrls[0]} href={`/events/${related.id}`} className="h-[330px]" />)}</div> : <p className="text-sm text-gray-500">No related events are available right now.</p>}</section>

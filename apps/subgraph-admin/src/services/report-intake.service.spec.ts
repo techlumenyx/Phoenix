@@ -1,9 +1,10 @@
 import { ingestMarketplaceReport, ReportRateLimitError } from './report-intake.service';
-import { ModerationCaseModel, ModerationReportModel } from '../models';
+import { ModerationCaseModel, ModerationReportModel, ReportConversationModel } from '../models';
 
 jest.mock('../models', () => ({
   ModerationReportModel: { findOne: jest.fn(), countDocuments: jest.fn(), create: jest.fn() },
   ModerationCaseModel: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
+  ReportConversationModel: { updateOne: jest.fn() },
 }));
 
 const input = {
@@ -19,7 +20,7 @@ const input = {
 };
 
 describe('ingestMarketplaceReport', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => { jest.clearAllMocks(); (ReportConversationModel.updateOne as jest.Mock).mockResolvedValue({}); });
 
   it('normalises evidence and raises the third distinct report to high priority', async () => {
     (ModerationReportModel.findOne as jest.Mock).mockResolvedValue(null);
