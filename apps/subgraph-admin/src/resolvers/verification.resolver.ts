@@ -6,14 +6,15 @@ import { AdminNotificationModel, AuditEventModel, ModerationCaseModel, Verificat
 import type { VerificationSubmissionDocument } from '../models/verification-submission.model';
 import { resolvePrivateMediaRef } from '@christian-listings/utils';
 import { acceptEmailIntent } from '../services/email-orchestration.service';
+import { adminPage, pageResult, type AdminPageArgs } from './admin-pagination';
 
 const REVIEW_ROLES = ['VERIFICATION_REVIEWER'] as const;
 
 export const verificationResolvers = {
   Query: {
-    verificationSubmissions: async (_: unknown, args: { status?: string; assigneeFirebaseUid?: string; search?: string; limit?: number; after?: string }, ctx: GraphQLContext) => {
+    verificationSubmissions: async (_: unknown, args: AdminPageArgs & { status?: string; assigneeFirebaseUid?: string; search?: string; after?: string }, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...REVIEW_ROLES, 'AUDITOR']);
-      const limit = Math.min(Math.max(args.limit ?? 25, 1), 100);
+      const page = adminPage(args, 'createdAt', ['createdAt', 'updatedAt', 'dueAt', 'status', 'organisationName']);
       const filter: Record<string, unknown> = {};
       if (args.status) filter['status'] = args.status;
       if (args.assigneeFirebaseUid) filter['assigneeFirebaseUid'] = args.assigneeFirebaseUid;
@@ -21,9 +22,12 @@ export const verificationResolvers = {
         const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
         filter['$or'] = [{ organisationName: pattern }, { organisationId: pattern }, { 'snapshot.registrationNumber': pattern }];
       }
-      if (args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
-      const docs = await VerificationSubmissionModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
-      return { edges: docs.slice(0, limit).map(mapVerification), hasNextPage: docs.length > limit, endCursor: docs[Math.min(limit, docs.length) - 1]?._id.toString() ?? null };
+      if (args.offset == null && args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
+      const [docs, totalCount] = await Promise.all([
+        VerificationSubmissionModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        VerificationSubmissionModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapVerification), totalCount, page.limit, page.offset);
     },
     verificationSubmission: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...REVIEW_ROLES, 'AUDITOR']);

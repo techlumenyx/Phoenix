@@ -1,20 +1,28 @@
 import mongoose from 'mongoose';
 import { EventModel, EventOrganisationNotificationModel, EventSeriesModel } from '../models';
 
-export async function eventDirectory(input: { search?: string; limit?: number; after?: string; id?: string }) {
-  const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
+export async function eventDirectory(input: { search?: string; limit?: number; after?: string; offset?: number; sortBy?: string; sortDirection?: 'ASC' | 'DESC'; id?: string }) {
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 100);
+  const offset = Math.max(input.offset ?? 0, 0);
   const filter: Record<string, unknown> = {};
   if (input.id && mongoose.isValidObjectId(input.id)) filter['_id'] = new mongoose.Types.ObjectId(input.id);
-  else if (input.after && mongoose.isValidObjectId(input.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(input.after) };
+  else if (input.offset == null && input.after && mongoose.isValidObjectId(input.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(input.after) };
   if (input.search?.trim()) {
     const pattern = { $regex: escapeRegex(input.search.trim()), $options: 'i' };
     filter['$or'] = [{ title: pattern }, { description: pattern }, { region: pattern }];
   }
-  const docs = await EventModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
+  const sortFields = { title: 'title', status: 'status', region: 'region', createdAt: 'createdAt' };
+  const sortField = sortFields[input.sortBy as keyof typeof sortFields] ?? 'createdAt';
+  const direction = input.sortDirection === 'ASC' ? 1 : -1;
+  const [docs, totalCount] = await Promise.all([
+    EventModel.find(filter).sort({ [sortField]: direction, _id: direction }).skip(offset).limit(limit),
+    EventModel.countDocuments(filter),
+  ]);
   return {
-    items: docs.slice(0, limit).map((doc) => ({ id: doc._id.toString(), type: 'EVENT', title: doc.title, subtitle: doc.seriesId ? `Recurring occurrence ${doc.occurrenceNumber ?? ''}`.trim() : 'Single event', status: doc.status, region: doc.region, ownerFirebaseUid: doc.createdBy, organisationId: doc.organisationId.toString(), seriesId: doc.seriesId?.toString() ?? null, createdAt: doc.createdAt, privateSummary: null })),
-    hasNextPage: docs.length > limit,
-    endCursor: docs[Math.min(limit, docs.length) - 1]?._id.toString() ?? null,
+    items: docs.map((doc) => ({ id: doc._id.toString(), type: 'EVENT', title: doc.title, subtitle: doc.seriesId ? `Recurring occurrence ${doc.occurrenceNumber ?? ''}`.trim() : 'Single event', status: doc.status, region: doc.region, ownerFirebaseUid: doc.createdBy, organisationId: doc.organisationId.toString(), seriesId: doc.seriesId?.toString() ?? null, createdAt: doc.createdAt, privateSummary: null })),
+    totalCount,
+    hasNextPage: offset + docs.length < totalCount,
+    endCursor: docs.at(-1)?._id.toString() ?? null,
   };
 }
 

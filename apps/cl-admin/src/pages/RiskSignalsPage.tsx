@@ -1,16 +1,17 @@
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { useState, type FormEvent } from 'react';
+import { AdminPagination, useAdminTableState, useClampAdminPage } from '../components/AdminTableControls';
 
 const RISK_SIGNALS = gql`
-  query AdminContentRiskSignals($status: RiskAnalysisStatus, $level: RiskLevel, $reviewerVerdict: RiskReviewVerdict, $limit: Int, $after: String) {
+  query AdminContentRiskSignals($status: RiskAnalysisStatus, $level: RiskLevel, $reviewerVerdict: RiskReviewVerdict, $search: String, $limit: Int, $offset: Int, $sortBy: String, $sortDirection: AdminSortDirection) {
     contentRiskAnalysisConfiguration { enabled provider model mode }
-    contentRiskAnalyses(status: $status, level: $level, reviewerVerdict: $reviewerVerdict, limit: $limit, after: $after) {
+    contentRiskAnalyses(status: $status, level: $level, reviewerVerdict: $reviewerVerdict, search: $search, limit: $limit, offset: $offset, sortBy: $sortBy, sortDirection: $sortDirection) {
       edges {
         id targetId targetType title mode status provider model score level summary recommendedAction
         signals { code confidence explanation evidenceExcerpt }
         error attemptCount reviewerVerdict reviewerNote reviewedByFirebaseUid reviewedAt completedAt createdAt updatedAt
       }
-      hasNextPage endCursor
+      totalCount hasNextPage endCursor
     }
   }
 `;
@@ -34,21 +35,23 @@ type Analysis = {
 };
 type Data = {
   contentRiskAnalysisConfiguration: { enabled: boolean; provider: string; model: string; mode: string };
-  contentRiskAnalyses: { edges: Analysis[]; hasNextPage: boolean; endCursor: string | null };
+  contentRiskAnalyses: { edges: Analysis[]; totalCount: number; hasNextPage: boolean; endCursor: string | null };
 };
 
 export default function RiskSignalsPage() {
-  const [status, setStatus] = useState('');
-  const [level, setLevel] = useState('');
-  const [reviewerVerdict, setReviewerVerdict] = useState('');
+  const table = useAdminTableState('createdAt');
+  const status = table.get('status');
+  const level = table.get('level');
+  const reviewerVerdict = table.get('verdict');
   const [reviewing, setReviewing] = useState<Analysis | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [retryError, setRetryError] = useState('');
-  const variables = { status: status || null, level: level || null, reviewerVerdict: reviewerVerdict || null, limit: 25, after: null };
-  const { data, loading, error, refetch, fetchMore } = useQuery<Data>(RISK_SIGNALS, { variables, fetchPolicy: 'cache-and-network' });
+  const variables = { status: status || null, level: level || null, reviewerVerdict: reviewerVerdict || null, search: table.search || null, limit: table.pageSize, offset: table.offset, sortBy: table.sortBy, sortDirection: table.sortDirection };
+  const { data, loading, error, refetch } = useQuery<Data>(RISK_SIGNALS, { variables, fetchPolicy: 'cache-and-network' });
   const [retry] = useMutation(RETRY_SIGNAL);
   const config = data?.contentRiskAnalysisConfiguration;
   const analyses = data?.contentRiskAnalyses.edges ?? [];
+  useClampAdminPage(data?.contentRiskAnalyses.totalCount, table.page, table.pageSize, table.setPage);
 
   return (
     <div className="mx-auto max-w-[1440px]">
@@ -57,10 +60,12 @@ export default function RiskSignalsPage() {
         {config && <span className={`w-fit rounded px-3 py-1.5 text-xs font-semibold ${config.enabled ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'}`}>{config.enabled ? 'Analysis enabled' : 'Analysis disabled'} · {config.provider} · {config.model} · {config.mode}</span>}
       </div>
 
-      <div className="mt-5 grid gap-3 rounded-lg border border-[#DFE1E6] bg-white p-4 sm:grid-cols-3">
-        <Filter label="Status" value={status} onChange={setStatus} options={['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'SKIPPED']} />
-        <Filter label="Risk level" value={level} onChange={setLevel} options={['LOW', 'MEDIUM', 'HIGH']} />
-        <Filter label="Human review" value={reviewerVerdict} onChange={setReviewerVerdict} options={['ACCURATE', 'FALSE_POSITIVE', 'NEEDS_MORE_INFO']} />
+      <div className="mt-5 grid gap-3 rounded-lg border border-[#DFE1E6] bg-white p-4 sm:grid-cols-2 xl:grid-cols-5">
+        <form onSubmit={(event) => { event.preventDefault(); table.setSearch(new FormData(event.currentTarget).get('search')?.toString().trim() ?? ''); }} className="flex items-end gap-2"><label className="flex-1 text-xs font-semibold text-slate-600">Search<input name="search" defaultValue={table.search} placeholder="Title or target ID" className="mt-1.5 h-9 w-full rounded border border-[#B7BEC8] px-3 text-sm font-normal" /></label><button className="h-9 rounded bg-[#0C66E4] px-3 text-sm font-semibold text-white">Search</button></form>
+        <Filter label="Status" value={status} onChange={(value) => table.update({ status: value })} options={['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'SKIPPED']} />
+        <Filter label="Risk level" value={level} onChange={(value) => table.update({ level: value })} options={['LOW', 'MEDIUM', 'HIGH']} />
+        <Filter label="Human review" value={reviewerVerdict} onChange={(value) => table.update({ verdict: value })} options={['ACCURATE', 'FALSE_POSITIVE', 'NEEDS_MORE_INFO']} />
+        <label className="text-xs font-semibold text-slate-600">Sort<select value={`${table.sortBy}:${table.sortDirection}`} onChange={(event) => { const [sort, direction] = event.target.value.split(':'); table.update({ sort, direction }); }} className="mt-1.5 h-9 w-full rounded border border-[#B7BEC8] bg-white px-3 text-sm font-normal"><option value="createdAt:DESC">Newest</option><option value="createdAt:ASC">Oldest</option><option value="score:DESC">Highest score</option><option value="score:ASC">Lowest score</option><option value="title:ASC">Title A–Z</option></select></label>
       </div>
 
       {error && <div role="alert" className="mt-5 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-800">Risk signals could not be loaded. <button type="button" onClick={() => void refetch()} className="font-semibold underline">Try again</button></div>}
@@ -78,7 +83,7 @@ export default function RiskSignalsPage() {
           } finally { setRetryingId(null); }
         }} />)}
       </div>
-      {data?.contentRiskAnalyses.hasNextPage && <button type="button" className="mt-5 h-9 rounded border border-[#B7BEC8] bg-white px-4 text-sm font-semibold hover:bg-slate-50" onClick={() => void fetchMore({ variables: { ...variables, after: data.contentRiskAnalyses.endCursor }, updateQuery: (previous, { fetchMoreResult }) => fetchMoreResult ? ({ ...fetchMoreResult, contentRiskAnalyses: { ...fetchMoreResult.contentRiskAnalyses, edges: [...previous.contentRiskAnalyses.edges, ...fetchMoreResult.contentRiskAnalyses.edges] } }) : previous })}>Load more</button>}
+      {data?.contentRiskAnalyses && <div className="mt-5 overflow-hidden rounded-lg border"><AdminPagination totalCount={data.contentRiskAnalyses.totalCount} page={table.page} pageSize={table.pageSize} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} /></div>}
       {reviewing && <ReviewDialog analysis={reviewing} onClose={() => setReviewing(null)} onSaved={async () => { setReviewing(null); await refetch(); }} />}
     </div>
   );

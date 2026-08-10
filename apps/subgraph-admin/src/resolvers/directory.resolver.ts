@@ -8,14 +8,14 @@ interface ServiceDirectoryItem {
   id: string; type: DirectoryType; title: string; subtitle?: string | null; status: string; region?: string | null;
   ownerFirebaseUid?: string | null; organisationId?: string | null; seriesId?: string | null; createdAt: string; privateSummary?: string | null;
 }
-interface ServiceDirectoryResult { items: ServiceDirectoryItem[]; hasNextPage: boolean; endCursor: string | null }
+interface ServiceDirectoryResult { items: ServiceDirectoryItem[]; totalCount: number; hasNextPage: boolean; endCursor: string | null }
 
 export const directoryResolvers = {
   Query: {
-    adminDirectory: async (_: unknown, args: { type: DirectoryType; search?: string; limit?: number; after?: string }, ctx: GraphQLContext) => {
+    adminDirectory: async (_: unknown, args: { type: DirectoryType; search?: string; limit?: number; after?: string; offset?: number; sortBy?: string; sortDirection?: 'ASC' | 'DESC' }, ctx: GraphQLContext) => {
       requireDirectoryAccess(ctx, args.type);
       const result = await fetchDirectory(args);
-      return { edges: result.items.map(publicItem), hasNextPage: result.hasNextPage, endCursor: result.endCursor };
+      return { edges: result.items.map(publicItem), totalCount: result.totalCount, hasNextPage: result.hasNextPage, endCursor: result.endCursor };
     },
   },
   Mutation: {
@@ -56,7 +56,7 @@ function requireDirectoryAccess(ctx: GraphQLContext, type: DirectoryType) {
   const roles: PlatformAdminRole[] = type === 'USER' ? ['SUPPORT_AGENT', 'TRUST_SAFETY', 'AUDITOR'] : type === 'ORGANISATION' ? ['SUPPORT_AGENT', 'TRUST_SAFETY', 'VERIFICATION_REVIEWER', 'AUDITOR'] : ['CONTENT_MANAGER', 'TRUST_SAFETY', 'AUDITOR'];
   return requirePlatformAdmin(ctx.auth, roles);
 }
-async function fetchDirectory(args: { type: DirectoryType; search?: string; limit?: number; after?: string; id?: string }) {
+async function fetchDirectory(args: { type: DirectoryType; search?: string; limit?: number; after?: string; offset?: number; sortBy?: string; sortDirection?: 'ASC' | 'DESC'; id?: string }) {
   if (args.type === 'USER' || args.type === 'ORGANISATION') return internalPost<ServiceDirectoryResult>('IDENTITY_INTERNAL_URL', 'http://localhost:4001', '/internal/admin/directory', args);
   if (args.type === 'EVENT') return internalPost<ServiceDirectoryResult>('EVENTS_INTERNAL_URL', 'http://localhost:4002', '/internal/admin/directory', args);
   return internalPost<ServiceDirectoryResult>('CLASSIFIEDS_INTERNAL_URL', 'http://localhost:4003', '/internal/admin/directory', args);

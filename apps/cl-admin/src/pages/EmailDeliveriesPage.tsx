@@ -1,12 +1,14 @@
 import { gql, useMutation, useQuery } from '@apollo/client';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { formatDate, StatusBadge } from './moderation/ModerationQueuePage';
+import { AdminPagination, SortableHeader, useAdminTableState, useClampAdminPage } from '../components/AdminTableControls';
 
 const QUERY = gql`
-  query EmailDeliveries($status: EmailDeliveryStatus, $search: String, $after: String) {
+  query EmailDeliveries($status: EmailDeliveryStatus, $search: String, $limit: Int, $offset: Int, $sortBy: String, $sortDirection: AdminSortDirection) {
     emailDeliveryConfiguration { enabled provider webhookConfigured }
-    emailDeliveries(status: $status, search: $search, after: $after, limit: 25) {
+    emailDeliveries(status: $status, search: $search, limit: $limit, offset: $offset, sortBy: $sortBy, sortDirection: $sortDirection) {
       edges { id templateKey to subject status provider providerMessageId error attemptCount sourceService sourceEntityType sourceEntityId queuedAt sentAt createdAt events { event occurredAt response } }
+      totalCount
       hasNextPage
       endCursor
     }
@@ -23,18 +25,20 @@ type Delivery = {
 };
 type QueryData = {
   emailDeliveryConfiguration: { enabled: boolean; provider: string; webhookConfigured: boolean };
-  emailDeliveries: { edges: Delivery[]; hasNextPage: boolean; endCursor: string | null };
+  emailDeliveries: { edges: Delivery[]; totalCount: number; hasNextPage: boolean; endCursor: string | null };
 };
 
 export default function EmailDeliveriesPage() {
-  const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
+  const table = useAdminTableState('createdAt');
+  const status = table.get('status');
+  const [search, setSearch] = useState(table.search);
+  useEffect(() => setSearch(table.search), [table.search]);
   const [selected, setSelected] = useState<Delivery | null>(null);
   const [testOpen, setTestOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
-  const { data, loading, error, refetch, fetchMore } = useQuery<QueryData>(QUERY, {
-    variables: { status: status || null, search: search.trim() || null }, fetchPolicy: 'network-only',
+  const { data, loading, error, refetch } = useQuery<QueryData>(QUERY, {
+    variables: { status: status || null, search: table.search || null, limit: table.pageSize, offset: table.offset, sortBy: table.sortBy, sortDirection: table.sortDirection }, fetchPolicy: 'network-only',
   });
   const [retry, { loading: retrying }] = useMutation(RETRY, { onCompleted: () => void refetch() });
   const [sendTest, { loading: sendingTest }] = useMutation(SEND_TEST, {
@@ -46,6 +50,7 @@ export default function EmailDeliveriesPage() {
   });
   const connection = data?.emailDeliveries;
   const configuration = data?.emailDeliveryConfiguration;
+  useClampAdminPage(connection?.totalCount, table.page, table.pageSize, table.setPage);
 
   function submitTest(event: FormEvent) {
     event.preventDefault();
@@ -60,8 +65,8 @@ export default function EmailDeliveriesPage() {
     </div>
     {configuration && <ConfigurationBanner configuration={configuration} />}
     {message && <div className={`mt-4 rounded-lg border px-4 py-3 text-sm ${message.tone === 'success' ? 'border-green-200 bg-green-50 text-green-900' : 'border-red-200 bg-red-50 text-red-800'}`}>{message.text}</div>}
-    <div className="mt-5 flex flex-wrap gap-3 rounded-lg border bg-white p-4"><input aria-label="Search email deliveries" value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && void refetch()} placeholder="Recipient, subject, or message ID" className="h-9 min-w-[280px] flex-1 rounded border px-3 text-sm" /><select aria-label="Delivery status" value={status} onChange={(event) => setStatus(event.target.value)} className="h-9 rounded border bg-white px-3 text-sm"><option value="">All statuses</option>{['QUEUED', 'ACCEPTED', 'SENT', 'FAILED', 'SUPPRESSED'].map((value) => <option key={value}>{value}</option>)}</select></div>
-    {loading && !connection ? <State text="Loading email deliveries…" /> : error ? <State text="Email delivery history could not be loaded." /> : !connection?.edges.length ? <State text="No email deliveries match these filters." /> : <DeliveryTable connection={connection} retrying={retrying} onInspect={setSelected} onRetry={(id) => void retry({ variables: { id } })} onLoadMore={() => void fetchMore({ variables: { after: connection.endCursor }, updateQuery: (previous, { fetchMoreResult }) => ({ emailDeliveryConfiguration: fetchMoreResult.emailDeliveryConfiguration ?? previous.emailDeliveryConfiguration, emailDeliveries: { ...fetchMoreResult.emailDeliveries, edges: [...previous.emailDeliveries.edges, ...fetchMoreResult.emailDeliveries.edges] } }) })} />}
+    <form onSubmit={(event) => { event.preventDefault(); table.setSearch(search.trim()); }} className="mt-5 flex flex-wrap gap-3 rounded-lg border bg-white p-4"><input aria-label="Search email deliveries" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Recipient, subject, or message ID" className="h-9 min-w-[280px] flex-1 rounded border px-3 text-sm" /><button className="h-9 rounded bg-[#0C66E4] px-4 text-sm font-semibold text-white">Search</button><select aria-label="Delivery status" value={status} onChange={(event) => table.update({ status: event.target.value })} className="h-9 rounded border bg-white px-3 text-sm"><option value="">All statuses</option>{['QUEUED', 'ACCEPTED', 'SENT', 'FAILED', 'SUPPRESSED'].map((value) => <option key={value}>{value}</option>)}</select></form>
+    {loading && !connection ? <State text="Loading email deliveries…" /> : error ? <State text="Email delivery history could not be loaded." /> : !connection?.edges.length ? <State text="No email deliveries match these filters." /> : <DeliveryTable connection={connection} table={table} retrying={retrying} onInspect={setSelected} onRetry={(id) => void retry({ variables: { id } })} />}
     {testOpen && <TestEmailDialog email={testEmail} busy={sendingTest} onEmail={setTestEmail} onClose={() => setTestOpen(false)} onSubmit={submitTest} />}
     {selected && <DeliveryDialog delivery={selected} onClose={() => setSelected(null)} />}
   </div>;
@@ -74,8 +79,8 @@ function ConfigurationBanner({ configuration }: { configuration: QueryData['emai
   return <div className={`mt-5 rounded-lg border p-4 text-sm ${styles}`}><strong>{configuration.enabled ? `${label(configuration.provider)} delivery enabled` : 'Email delivery disabled'}</strong><span className="ml-2">{detail}</span></div>;
 }
 
-function DeliveryTable({ connection, retrying, onInspect, onRetry, onLoadMore }: { connection: QueryData['emailDeliveries']; retrying: boolean; onInspect: (item: Delivery) => void; onRetry: (id: string) => void; onLoadMore: () => void }) {
-  return <section className="mt-5 overflow-x-auto rounded-lg border bg-white"><table className="w-full min-w-[980px] text-left text-sm"><thead className="bg-[#F7F8FA] text-[11px] uppercase text-slate-500"><tr><th className="px-4 py-3">Created</th><th className="px-4 py-3">Recipient</th><th className="px-4 py-3">Template</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Attempts</th><th className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y">{connection.edges.map((item) => <tr key={item.id}><td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{formatDate(item.createdAt)}</td><td className="px-4 py-3"><p className="font-semibold">{item.to}</p><p className="mt-1 max-w-[360px] truncate text-xs text-slate-500">{item.subject}</p></td><td className="px-4 py-3 font-mono text-xs">{label(item.templateKey)}</td><td className="px-4 py-3"><StatusBadge value={item.status} /></td><td className="px-4 py-3">{item.attemptCount}</td><td className="px-4 py-3"><button type="button" onClick={() => onInspect(item)} className="mr-3 text-sm font-semibold text-blue-700">Inspect</button>{item.status === 'FAILED' && <button type="button" disabled={retrying} onClick={() => onRetry(item.id)} className="text-sm font-semibold text-blue-700 disabled:opacity-50">Retry</button>}</td></tr>)}</tbody></table>{connection.hasNextPage && <div className="border-t p-4 text-center"><button type="button" onClick={onLoadMore} className="rounded border px-4 py-2 text-sm font-semibold">Load more</button></div>}</section>;
+function DeliveryTable({ connection, table, retrying, onInspect, onRetry }: { connection: QueryData['emailDeliveries']; table: ReturnType<typeof useAdminTableState>; retrying: boolean; onInspect: (item: Delivery) => void; onRetry: (id: string) => void }) {
+  return <section className="mt-5 overflow-hidden rounded-lg border bg-white"><div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead className="bg-[#F7F8FA] text-[11px] uppercase text-slate-500"><tr><SortableHeader field="createdAt" label="Created" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} /><SortableHeader field="to" label="Recipient" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} /><SortableHeader field="templateKey" label="Template" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} /><SortableHeader field="status" label="Status" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} /><SortableHeader field="attemptCount" label="Attempts" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} /><th className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y">{connection.edges.map((item) => <tr key={item.id}><td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{formatDate(item.createdAt)}</td><td className="px-4 py-3"><p className="font-semibold">{item.to}</p><p className="mt-1 max-w-[360px] truncate text-xs text-slate-500">{item.subject}</p></td><td className="px-4 py-3 font-mono text-xs">{label(item.templateKey)}</td><td className="px-4 py-3"><StatusBadge value={item.status} /></td><td className="px-4 py-3">{item.attemptCount}</td><td className="px-4 py-3"><button type="button" onClick={() => onInspect(item)} className="mr-3 text-sm font-semibold text-blue-700">Inspect</button>{item.status === 'FAILED' && <button type="button" disabled={retrying} onClick={() => onRetry(item.id)} className="text-sm font-semibold text-blue-700 disabled:opacity-50">Retry</button>}</td></tr>)}</tbody></table></div><AdminPagination totalCount={connection.totalCount} page={table.page} pageSize={table.pageSize} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} /></section>;
 }
 
 function TestEmailDialog({ email, busy, onEmail, onClose, onSubmit }: { email: string; busy: boolean; onEmail: (value: string) => void; onClose: () => void; onSubmit: (event: FormEvent) => void }) {

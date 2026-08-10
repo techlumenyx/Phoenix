@@ -63,6 +63,7 @@ enum AdminTemplateType { WARNING REJECTION REMOVAL SUSPENSION VERIFICATION }
 enum PlacementTargetType { EVENT JOB MARKETPLACE_ITEM ORGANISATION ANNOUNCEMENT }
 enum PlacementStatus { SCHEDULED ACTIVE PAUSED EXPIRED }
 enum PlacementSource { EDITORIAL PROMOTION }
+enum AdminSortDirection { ASC DESC }
 enum SavedViewModule { MODERATION VERIFICATION AUDIT DIRECTORY CURATION }
 enum AdminNotificationType { ASSIGNMENT SLA_WARNING ESCALATION ACTION_FAILED MENTION }
 enum AuditExportStatus { PENDING READY FAILED EXPIRED }
@@ -138,6 +139,8 @@ type AuditEvent @key(fields: "id") {
 type AuditExport @key(fields: "id") { id: ID! requesterFirebaseUid: String! requesterEmail: String! from: DateTime! to: DateTime! status: AuditExportStatus! rowCount: Int! failureReason: String expiresAt: DateTime! createdAt: DateTime! updatedAt: DateTime! }
 type AdminTemplate @key(fields: "id") { id: ID! key: String! type: AdminTemplateType! title: String! publicMessage: String! internalGuidance: String locale: String! version: Int! active: Boolean! createdByFirebaseUid: String! createdAt: DateTime! updatedAt: DateTime! history: [AdminTemplate!]! }
 type FeaturedPlacement @key(fields: "id") { id: ID! targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! status: PlacementStatus! placementSource: PlacementSource! createdByFirebaseUid: String! updatedByFirebaseUid: String! createdAt: DateTime! updatedAt: DateTime! }
+type AdminTemplateConnection { edges: [AdminTemplate!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
+type FeaturedPlacementConnection { edges: [FeaturedPlacement!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
 type SavedAdminView @key(fields: "id") { id: ID! name: String! module: SavedViewModule! filtersJson: String! createdAt: DateTime! updatedAt: DateTime! }
 type AdminNotification @key(fields: "id") { id: ID! type: AdminNotificationType! title: String! message: String! href: String readAt: DateTime createdAt: DateTime! }
 type SystemDependency { name: String! category: String! status: String! detail: String! latencyMs: Int checkedAt: DateTime! }
@@ -172,12 +175,14 @@ type ModerationCase @key(fields: "id") {
 
 type ModerationCaseConnection {
   edges: [ModerationCase!]!
+  totalCount: Int!
   hasNextPage: Boolean!
   endCursor: String
 }
 
 type AuditEventConnection {
   edges: [AuditEvent!]!
+  totalCount: Int!
   hasNextPage: Boolean!
   endCursor: String
 }
@@ -210,7 +215,7 @@ type VerificationSubmission @key(fields: "id") {
   auditTimeline: [AuditEvent!]!
 }
 
-type VerificationSubmissionConnection { edges: [VerificationSubmission!]! hasNextPage: Boolean! endCursor: String }
+type VerificationSubmissionConnection { edges: [VerificationSubmission!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
 
 type AdminDirectoryItem @key(fields: "id") {
   id: ID!
@@ -227,7 +232,7 @@ type AdminDirectoryItem @key(fields: "id") {
   privateSummary: String
 }
 
-type AdminDirectoryConnection { edges: [AdminDirectoryItem!]! hasNextPage: Boolean! endCursor: String }
+type AdminDirectoryConnection { edges: [AdminDirectoryItem!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
 
 type AdminDashboardStats {
   openModerationCases: Int!
@@ -257,7 +262,7 @@ type EmailDelivery {
   updatedAt: DateTime!
   events: [EmailDeliveryEvent!]!
 }
-type EmailDeliveryConnection { edges: [EmailDelivery!]! hasNextPage: Boolean! endCursor: String }
+type EmailDeliveryConnection { edges: [EmailDelivery!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
 type EmailDeliveryConfiguration { enabled: Boolean! provider: String! webhookConfigured: Boolean! }
 type ContentRiskSignal { code: String! confidence: Float! explanation: String! evidenceExcerpt: String }
 type ContentRiskAnalysis {
@@ -284,7 +289,7 @@ type ContentRiskAnalysis {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
-type ContentRiskAnalysisConnection { edges: [ContentRiskAnalysis!]! hasNextPage: Boolean! endCursor: String }
+type ContentRiskAnalysisConnection { edges: [ContentRiskAnalysis!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
 type ContentRiskAnalysisConfiguration { enabled: Boolean! provider: String! model: String! mode: String! }
 
 type Query {
@@ -295,24 +300,29 @@ type Query {
     search: String
     limit: Int
     after: String
+    offset: Int
+    sortBy: String
+    sortDirection: AdminSortDirection
   ): ModerationCaseConnection!
   moderationCase(id: ID!): ModerationCase
-  auditEvents(caseId: ID, adminFirebaseUid: String, targetType: ContentType, action: AuditAction, result: AuditResult, from: DateTime, to: DateTime, limit: Int, after: String): AuditEventConnection!
-  verificationSubmissions(status: VerificationReviewStatus, assigneeFirebaseUid: String, search: String, limit: Int, after: String): VerificationSubmissionConnection!
+  auditEvents(caseId: ID, adminFirebaseUid: String, targetType: ContentType, action: AuditAction, result: AuditResult, from: DateTime, to: DateTime, search: String, limit: Int, after: String, offset: Int, sortBy: String, sortDirection: AdminSortDirection): AuditEventConnection!
+  verificationSubmissions(status: VerificationReviewStatus, assigneeFirebaseUid: String, search: String, limit: Int, after: String, offset: Int, sortBy: String, sortDirection: AdminSortDirection): VerificationSubmissionConnection!
   verificationSubmission(id: ID!): VerificationSubmission
-  adminDirectory(type: DirectoryEntityType!, search: String, limit: Int, after: String): AdminDirectoryConnection!
+  adminDirectory(type: DirectoryEntityType!, search: String, limit: Int, after: String, offset: Int, sortBy: String, sortDirection: AdminSortDirection): AdminDirectoryConnection!
   adminDashboardStats: AdminDashboardStats!
   auditExports: [AuditExport!]!
   auditExportContent(id: ID!): String!
   adminTemplates(type: AdminTemplateType, activeOnly: Boolean): [AdminTemplate!]!
   featuredPlacements(status: PlacementStatus, region: String): [FeaturedPlacement!]!
+  adminTemplatePage(type: AdminTemplateType, activeOnly: Boolean, search: String, limit: Int, offset: Int, sortBy: String, sortDirection: AdminSortDirection): AdminTemplateConnection!
+  featuredPlacementPage(status: PlacementStatus, region: String, search: String, limit: Int, offset: Int, sortBy: String, sortDirection: AdminSortDirection): FeaturedPlacementConnection!
   savedAdminViews(module: SavedViewModule): [SavedAdminView!]!
   adminNotifications(unreadOnly: Boolean, limit: Int): [AdminNotification!]!
   adminNotificationUnreadCount: Int!
   adminSystemHealth: AdminSystemHealth!
-  emailDeliveries(status: EmailDeliveryStatus, templateKey: String, search: String, limit: Int, after: String): EmailDeliveryConnection!
+  emailDeliveries(status: EmailDeliveryStatus, templateKey: String, search: String, limit: Int, after: String, offset: Int, sortBy: String, sortDirection: AdminSortDirection): EmailDeliveryConnection!
   emailDeliveryConfiguration: EmailDeliveryConfiguration!
-  contentRiskAnalyses(status: RiskAnalysisStatus, level: RiskLevel, reviewerVerdict: RiskReviewVerdict, limit: Int, after: String): ContentRiskAnalysisConnection!
+  contentRiskAnalyses(status: RiskAnalysisStatus, level: RiskLevel, reviewerVerdict: RiskReviewVerdict, search: String, limit: Int, after: String, offset: Int, sortBy: String, sortDirection: AdminSortDirection): ContentRiskAnalysisConnection!
   contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration!
 }
 

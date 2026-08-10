@@ -50,6 +50,7 @@ export type AdminDirectoryConnection = {
   edges: Array<AdminDirectoryItem>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type AdminDirectoryItem = {
@@ -97,6 +98,11 @@ export enum AdminRole {
   VerificationReviewer = 'VERIFICATION_REVIEWER'
 }
 
+export enum AdminSortDirection {
+  Asc = 'ASC',
+  Desc = 'DESC'
+}
+
 export enum AdminStatus {
   Active = 'ACTIVE',
   Disabled = 'DISABLED'
@@ -125,6 +131,14 @@ export type AdminTemplate = {
   type: AdminTemplateType;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+};
+
+export type AdminTemplateConnection = {
+  __typename?: 'AdminTemplateConnection';
+  edges: Array<AdminTemplate>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export enum AdminTemplateType {
@@ -203,6 +217,7 @@ export type AuditEventConnection = {
   edges: Array<AuditEvent>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type AuditExport = {
@@ -345,6 +360,7 @@ export type ContentRiskAnalysisConnection = {
   edges: Array<ContentRiskAnalysis>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type ContentRiskSignal = {
@@ -499,6 +515,7 @@ export type EmailDeliveryConnection = {
   edges: Array<EmailDelivery>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type EmailDeliveryEvent = {
@@ -711,6 +728,14 @@ export type FeaturedPlacement = {
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   updatedByFirebaseUid: Scalars['String']['output'];
+};
+
+export type FeaturedPlacementConnection = {
+  __typename?: 'FeaturedPlacementConnection';
+  edges: Array<FeaturedPlacement>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type FeaturedPlacementInput = {
@@ -1020,6 +1045,7 @@ export type ModerationCaseConnection = {
   edges: Array<ModerationCase>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export enum ModerationCaseStatus {
@@ -1649,6 +1675,7 @@ export type Query = {
   adminNotificationUnreadCount: Scalars['Int']['output'];
   adminNotifications: Array<AdminNotification>;
   adminSystemHealth: AdminSystemHealth;
+  adminTemplatePage: AdminTemplateConnection;
   adminTemplates: Array<AdminTemplate>;
   auditEvents: AuditEventConnection;
   auditExportContent: Scalars['String']['output'];
@@ -1668,6 +1695,7 @@ export type Query = {
   eventSeries?: Maybe<EventSeries>;
   events: EventConnection;
   featuredEvents: Array<Event>;
+  featuredPlacementPage: FeaturedPlacementConnection;
   featuredPlacements: Array<FeaturedPlacement>;
   identityOrganisationNotifications: Array<IdentityOrganisationNotification>;
   identityOrganisationUnreadCount: Scalars['Int']['output'];
@@ -1709,7 +1737,10 @@ export type Query = {
 export type QueryAdminDirectoryArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   type: DirectoryEntityType;
 };
 
@@ -1717,6 +1748,17 @@ export type QueryAdminDirectoryArgs = {
 export type QueryAdminNotificationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryAdminTemplatePageArgs = {
+  activeOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
+  type?: InputMaybe<AdminTemplateType>;
 };
 
 
@@ -1733,7 +1775,11 @@ export type QueryAuditEventsArgs = {
   caseId?: InputMaybe<Scalars['ID']['input']>;
   from?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   result?: InputMaybe<AuditResult>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   targetType?: InputMaybe<ContentType>;
   to?: InputMaybe<Scalars['DateTime']['input']>;
 };
@@ -1773,7 +1819,11 @@ export type QueryContentRiskAnalysesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   level?: InputMaybe<RiskLevel>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   reviewerVerdict?: InputMaybe<RiskReviewVerdict>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<RiskAnalysisStatus>;
 };
 
@@ -1781,7 +1831,10 @@ export type QueryContentRiskAnalysesArgs = {
 export type QueryEmailDeliveriesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<EmailDeliveryStatus>;
   templateKey?: InputMaybe<Scalars['String']['input']>;
 };
@@ -1835,6 +1888,17 @@ export type QueryEventsArgs = {
 
 export type QueryFeaturedEventsArgs = {
   region?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryFeaturedPlacementPageArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
+  status?: InputMaybe<PlacementStatus>;
 };
 
 
@@ -1938,8 +2002,11 @@ export type QueryModerationCasesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   priority?: InputMaybe<ModerationPriority>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<ModerationCaseStatus>;
 };
 
@@ -2020,7 +2087,10 @@ export type QueryVerificationSubmissionsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<VerificationReviewStatus>;
 };
 
@@ -2377,6 +2447,7 @@ export type VerificationSubmissionConnection = {
   edges: Array<VerificationSubmission>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export enum VerificationTier {

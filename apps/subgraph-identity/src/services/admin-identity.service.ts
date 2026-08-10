@@ -34,18 +34,25 @@ export async function applyVerificationDecision(input: {
   return { status, verificationTier: organisation.verificationTier };
 }
 
-export async function identityDirectory(input: { type: 'USER' | 'ORGANISATION'; search?: string; limit?: number; after?: string; id?: string }) {
-  const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
+export async function identityDirectory(input: { type: 'USER' | 'ORGANISATION'; search?: string; limit?: number; after?: string; offset?: number; sortBy?: string; sortDirection?: 'ASC' | 'DESC'; id?: string }) {
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 100);
+  const offset = Math.max(input.offset ?? 0, 0);
   const filter: Record<string, unknown> = {};
   if (input.id && mongoose.isValidObjectId(input.id)) filter['_id'] = new mongoose.Types.ObjectId(input.id);
-  if (input.after && mongoose.isValidObjectId(input.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(input.after) };
+  if (input.offset == null && input.after && mongoose.isValidObjectId(input.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(input.after) };
   const pattern = input.search?.trim() ? { $regex: escapeRegex(input.search.trim()), $options: 'i' } : null;
   if (pattern) filter['$or'] = input.type === 'USER' ? [{ name: pattern }, { email: pattern }, { firebaseUid: pattern }] : [{ name: pattern }, { region: pattern }, { createdBy: pattern }];
-  const docs = input.type === 'USER'
-    ? await UserModel.find(filter).sort({ _id: -1 }).limit(limit + 1)
-    : await OrganisationModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
+  const sortFields = input.type === 'USER'
+    ? { title: 'name', status: 'accountStatus', region: 'region', createdAt: 'createdAt' }
+    : { title: 'name', status: 'verificationStatus', region: 'region', createdAt: 'createdAt' };
+  const sortField = sortFields[input.sortBy as keyof typeof sortFields] ?? 'createdAt';
+  const direction = input.sortDirection === 'ASC' ? 1 : -1;
+  const sort = { [sortField]: direction, _id: direction } as Record<string, 1 | -1>;
+  const [docs, totalCount] = await Promise.all(input.type === 'USER'
+    ? [UserModel.find(filter).sort(sort).skip(offset).limit(limit), UserModel.countDocuments(filter)]
+    : [OrganisationModel.find(filter).sort(sort).skip(offset).limit(limit), OrganisationModel.countDocuments(filter)]);
   return {
-    items: docs.slice(0, limit).map((value) => {
+    items: docs.map((value) => {
       const doc = value.toObject() as unknown as Record<string, unknown> & { _id: mongoose.Types.ObjectId };
       return input.type === 'USER' ? {
         id: doc._id.toString(), type: 'USER', title: String(doc['name'] ?? ''), subtitle: 'Member account',
@@ -58,8 +65,9 @@ export async function identityDirectory(input: { type: 'USER' | 'ORGANISATION'; 
         privateSummary: `Contact: ${String(doc['contactEmail'] ?? 'Not supplied')}`,
       };
     }),
-    hasNextPage: docs.length > limit,
-    endCursor: docs.length ? docs[Math.min(limit, docs.length) - 1]._id.toString() : null,
+    totalCount,
+    hasNextPage: offset + docs.length < totalCount,
+    endCursor: docs.length ? docs[docs.length - 1]._id.toString() : null,
   };
 }
 

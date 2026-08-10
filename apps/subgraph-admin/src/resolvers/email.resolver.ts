@@ -6,14 +6,15 @@ import { EmailDeliveryModel } from '../models';
 import { retryEmailDelivery } from '../services/email-orchestration.service';
 import { acceptEmailIntent } from '../services/email-orchestration.service';
 import { audit } from './verification.resolver';
+import { adminPage, pageResult, type AdminPageArgs } from './admin-pagination';
 
 const EMAIL_ROLES = ['SUPPORT_AGENT', 'AUDITOR'] as const;
 
 export const emailResolvers = {
   Query: {
-    emailDeliveries: async (_: unknown, args: { status?: string; templateKey?: string; search?: string; limit?: number; after?: string }, ctx: GraphQLContext) => {
+    emailDeliveries: async (_: unknown, args: AdminPageArgs & { status?: string; templateKey?: string; search?: string; after?: string }, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...EMAIL_ROLES]);
-      const limit = Math.min(Math.max(args.limit ?? 25, 1), 100);
+      const page = adminPage(args, 'createdAt', ['createdAt', 'updatedAt', 'status', 'to', 'templateKey', 'attemptCount']);
       const filter: Record<string, unknown> = {};
       if (args.status) filter['status'] = args.status;
       if (args.templateKey?.trim()) filter['templateKey'] = args.templateKey.trim();
@@ -21,9 +22,12 @@ export const emailResolvers = {
         const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
         filter['$or'] = [{ to: pattern }, { subject: pattern }, { providerMessageId: pattern }];
       }
-      if (args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
-      const docs = await EmailDeliveryModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
-      return { edges: docs.slice(0, limit).map(mapEmail), hasNextPage: docs.length > limit, endCursor: docs[Math.min(limit, docs.length) - 1]?._id.toString() ?? null };
+      if (args.offset == null && args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
+      const [docs, totalCount] = await Promise.all([
+        EmailDeliveryModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        EmailDeliveryModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapEmail), totalCount, page.limit, page.offset);
     },
     emailDeliveryConfiguration: (_: unknown, __: unknown, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...EMAIL_ROLES]);

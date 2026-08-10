@@ -18,6 +18,7 @@ import type { FeaturedPlacementDocument } from '../models/featured-placement.mod
 import type { SavedAdminViewDocument } from '../models/saved-admin-view.model';
 import type { AdminNotificationDocument } from '../models/admin-notification.model';
 import { audit, internalPost, notifyAdmin } from './verification.resolver';
+import { adminPage, pageResult, type AdminPageArgs } from './admin-pagination';
 
 type PlacementInput = {
   targetType: 'EVENT' | 'JOB' | 'MARKETPLACE_ITEM' | 'ORGANISATION' | 'ANNOUNCEMENT'; targetId?: string | null;
@@ -27,19 +28,26 @@ type PlacementInput = {
 
 export const stage4Resolvers = {
   Query: {
-    auditEvents: async (_: unknown, args: { caseId?: string; adminFirebaseUid?: string; targetType?: string; action?: string; result?: string; from?: Date | string; to?: Date | string; limit?: number; after?: string }, ctx: GraphQLContext) => {
+    auditEvents: async (_: unknown, args: AdminPageArgs & { caseId?: string; adminFirebaseUid?: string; targetType?: string; action?: string; result?: string; from?: Date | string; to?: Date | string; search?: string; after?: string }, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, ['AUDITOR', 'TRUST_SAFETY']);
-      const limit = Math.min(Math.max(args.limit ?? 50, 1), 100);
+      const page = adminPage(args, 'createdAt', ['createdAt', 'action', 'targetType', 'result', 'adminFirebaseUid']);
       const filter: Record<string, unknown> = {};
       if (args.caseId && mongoose.isValidObjectId(args.caseId)) filter['caseId'] = args.caseId;
       if (args.adminFirebaseUid) filter['adminFirebaseUid'] = args.adminFirebaseUid;
       if (args.targetType) filter['targetType'] = args.targetType;
       if (args.action) filter['action'] = args.action;
       if (args.result) filter['result'] = args.result;
+      if (args.search?.trim()) {
+        const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
+        filter['$or'] = [{ reason: pattern }, { targetId: pattern }, { adminFirebaseUid: pattern }, { requestId: pattern }];
+      }
       addDateFilter(filter, args.from, args.to);
-      if (args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
-      const docs = await AuditEventModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
-      return { edges: docs.slice(0, limit).map(mapDoc), hasNextPage: docs.length > limit, endCursor: docs[Math.min(limit, docs.length) - 1]?._id.toString() ?? null };
+      if (args.offset == null && args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
+      const [docs, totalCount] = await Promise.all([
+        AuditEventModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        AuditEventModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapDoc), totalCount, page.limit, page.offset);
     },
     auditExports: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
       const admin = requirePlatformAdmin(ctx.auth, ['AUDITOR', 'TRUST_SAFETY']);
@@ -66,6 +74,39 @@ export const stage4Resolvers = {
       if (status) filter['status'] = status;
       if (region) filter['regions'] = { $in: ['GLOBAL', region] };
       return (await FeaturedPlacementModel.find(filter).sort({ rank: 1, startsAt: 1 })).map(mapDoc);
+    },
+    adminTemplatePage: async (_: unknown, args: AdminPageArgs & { type?: string; activeOnly?: boolean; search?: string }, ctx: GraphQLContext) => {
+      requirePlatformAdmin(ctx.auth, ['TRUST_SAFETY', 'VERIFICATION_REVIEWER', 'SUPPORT_AGENT', 'CONTENT_MANAGER', 'AUDITOR']);
+      const page = adminPage(args, 'createdAt', ['createdAt', 'key', 'type', 'version', 'title']);
+      const filter: Record<string, unknown> = {};
+      if (args.type) filter['type'] = args.type;
+      if (args.activeOnly) filter['active'] = true;
+      if (args.search?.trim()) {
+        const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
+        filter['$or'] = [{ key: pattern }, { title: pattern }, { publicMessage: pattern }, { locale: pattern }];
+      }
+      const [docs, totalCount] = await Promise.all([
+        AdminTemplateModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        AdminTemplateModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapDoc), totalCount, page.limit, page.offset);
+    },
+    featuredPlacementPage: async (_: unknown, args: AdminPageArgs & { status?: string; region?: string; search?: string }, ctx: GraphQLContext) => {
+      requirePlatformAdmin(ctx.auth, ['CONTENT_MANAGER', 'AUDITOR']);
+      await refreshPlacementStatuses();
+      const page = adminPage(args, 'rank', ['rank', 'createdAt', 'startsAt', 'endsAt', 'status', 'title']);
+      const filter: Record<string, unknown> = {};
+      if (args.status) filter['status'] = args.status;
+      if (args.region) filter['regions'] = { $in: ['GLOBAL', args.region] };
+      if (args.search?.trim()) {
+        const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
+        filter['$or'] = [{ title: pattern }, { label: pattern }, { targetId: pattern }, { destinationUrl: pattern }];
+      }
+      const [docs, totalCount] = await Promise.all([
+        FeaturedPlacementModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        FeaturedPlacementModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapDoc), totalCount, page.limit, page.offset);
     },
     savedAdminViews: async (_: unknown, { module }: { module?: string }, ctx: GraphQLContext) => {
       const admin = requirePlatformAdmin(ctx.auth);
@@ -186,6 +227,7 @@ export function placementStatus(startsAt: Date, endsAt: Date) { const now = new 
 async function refreshPlacementStatuses() { const now = new Date(); await Promise.all([FeaturedPlacementModel.updateMany({ status: { $in: ['SCHEDULED', 'ACTIVE'] }, endsAt: { $lte: now } }, { $set: { status: 'EXPIRED' } }), FeaturedPlacementModel.updateMany({ status: 'SCHEDULED', startsAt: { $lte: now }, endsAt: { $gt: now } }, { $set: { status: 'ACTIVE' } })]); }
 function validateUrl(value: string, allowRelative: boolean) { if (allowRelative && value.startsWith('/') && !value.startsWith('//')) return; try { const url = new URL(value); if (url.protocol !== 'https:' && !(process.env['NODE_ENV'] !== 'production' && url.hostname === 'localhost')) throw new Error(); } catch { throw badInput('Use a secure HTTPS URL or an internal path'); } }
 function validateFilters(value: string) { if (value.length > 4000) throw badInput('Saved filters are too large'); try { const parsed = JSON.parse(value); if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error(); } catch { throw badInput('Saved filters must be a JSON object'); } }
+function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 async function refreshSlaNotifications(firebaseUid: string) { const now = new Date(); const soon = new Date(Date.now() + 24 * 60 * 60 * 1000); const submissions = await VerificationSubmissionModel.find({ assigneeFirebaseUid: firebaseUid, status: 'PENDING_REVIEW', dueAt: { $lte: soon } }).limit(50); await Promise.all(submissions.map((doc) => notifyAdmin(firebaseUid, doc.dueAt < now ? 'ESCALATION' : 'SLA_WARNING', doc.dueAt < now ? 'Verification SLA breached' : 'Verification SLA approaching', `${doc.organisationName} is ${doc.dueAt < now ? 'overdue' : 'due within 24 hours'}.`, `/verifications/${doc._id}`, `verification-sla:${doc._id}:${doc.dueAt < now ? 'overdue' : 'approaching'}`))); }
 async function checkHttp(name: string, baseUrl: string) { const started = Date.now(); try { const response = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2000) }); return { name, category: 'SUBGRAPH', status: response.ok ? 'OPERATIONAL' : 'DEGRADED', detail: response.ok ? 'Health endpoint responded' : `HTTP ${response.status}`, latencyMs: Date.now() - started }; } catch (error) { return { name, category: 'SUBGRAPH', status: 'DOWN', detail: error instanceof Error ? error.message : 'Health check failed', latencyMs: Date.now() - started }; } }
 function provider(name: string, category: string, configured: boolean, checkedAt: Date, missingDetail = 'Required provider is not configured') { return { name, category, status: configured ? 'OPERATIONAL' : 'DEGRADED', detail: configured ? 'Configuration present' : missingDetail, latencyMs: null, checkedAt }; }

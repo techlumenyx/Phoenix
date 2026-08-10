@@ -2,10 +2,12 @@ import { gql, useMutation, useQuery } from '@apollo/client';
 import { useState, type FormEvent } from 'react';
 import { formatDate, label, StatusBadge } from '../moderation/ModerationQueuePage';
 import { firebaseAuth } from '../../firebase';
+import { AdminPagination, SortableHeader, useAdminTableState, useClampAdminPage } from '../../components/AdminTableControls';
 
 const QUERY = gql`
-  query AdminPlacements($status: PlacementStatus, $region: String) {
-    featuredPlacements(status: $status, region: $region) {
+  query AdminPlacements($status: PlacementStatus, $region: String, $search: String, $limit: Int, $offset: Int, $sortBy: String, $sortDirection: AdminSortDirection) {
+    featuredPlacementPage(status: $status, region: $region, search: $search, limit: $limit, offset: $offset, sortBy: $sortBy, sortDirection: $sortDirection) {
+      edges {
       id
       targetType
       targetId
@@ -24,6 +26,8 @@ const QUERY = gql`
       updatedByFirebaseUid
       createdAt
       updatedAt
+      }
+      totalCount
     }
   }
 `;
@@ -133,22 +137,26 @@ async function uploadPlacementImage(file: File) {
 }
 
 export default function CurationPage() {
-  const [status, setStatus] = useState('');
-  const [region, setRegion] = useState('');
+  const table = useAdminTableState('rank', 'ASC');
+  const status = table.get('status');
+  const region = table.get('region');
+  const [searchInput, setSearchInput] = useState(table.search);
+  const [regionInput, setRegionInput] = useState(region);
   const [form, setForm] = useState(initial);
   const [editing, setEditing] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Placement | null>(null);
   const [message, setMessage] = useState('');
-  const { data, loading, error, refetch } = useQuery<{ featuredPlacements: Placement[] }>(QUERY, {
-    variables: { status: status || null, region: region || null },
+  const { data, loading, error, refetch } = useQuery<{ featuredPlacementPage: { edges: Placement[]; totalCount: number } }>(QUERY, {
+    variables: { status: status || null, region: region || null, search: table.search || null, limit: table.pageSize, offset: table.offset, sortBy: table.sortBy, sortDirection: table.sortDirection },
   });
   const [create, createState] = useMutation(CREATE);
   const [update, updateState] = useMutation(UPDATE);
   const [pause] = useMutation(PAUSE);
   const [duplicate] = useMutation(DUPLICATE);
   const [reorder] = useMutation(REORDER);
-  const rows = data?.featuredPlacements ?? [];
+  const rows = data?.featuredPlacementPage.edges ?? [];
+  useClampAdminPage(data?.featuredPlacementPage.totalCount, table.page, table.pageSize, table.setPage);
   function input() {
     return {
       targetType: form.targetType,
@@ -246,10 +254,11 @@ export default function CurationPage() {
           {message}
         </p>
       )}
-      <div className="mt-5 flex flex-wrap gap-2">
+      <form onSubmit={(event) => { event.preventDefault(); table.update({ q: searchInput.trim(), region: regionInput.trim() }); }} className="mt-5 flex flex-wrap gap-2">
+        <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search placements" className="h-9 min-w-64 flex-1 rounded border bg-white px-3 text-sm" />
         <select
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
+          onChange={(event) => table.update({ status: event.target.value })}
           className="h-9 rounded border bg-white px-3 text-sm"
         >
           <option value="">All statuses</option>
@@ -258,18 +267,18 @@ export default function CurationPage() {
           ))}
         </select>
         <input
-          value={region}
-          onChange={(event) => setRegion(event.target.value)}
+          value={regionInput}
+          onChange={(event) => setRegionInput(event.target.value)}
           placeholder="Region code, e.g. GB-LND"
           className="h-9 rounded border bg-white px-3 text-sm"
         />
         <button
-          onClick={() => void refetch()}
+          type="submit"
           className="h-9 rounded border px-3 text-sm font-semibold"
         >
           Apply
         </button>
-      </div>
+      </form>
       <section className="mt-4 overflow-hidden rounded-lg border bg-white">
         {loading ? (
           <State text="Loading placements…" />
@@ -282,12 +291,12 @@ export default function CurationPage() {
             <table className="w-full min-w-[1100px] text-left text-sm">
               <thead className="bg-[#F7F8FA] text-[11px] uppercase text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Rank</th>
-                  <th className="px-4 py-3">Placement</th>
+                  <SortableHeader field="rank" label="Rank" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} />
+                  <SortableHeader field="title" label="Placement" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} />
                   <th className="px-4 py-3">Target</th>
                   <th className="px-4 py-3">Regions</th>
-                  <th className="px-4 py-3">Schedule</th>
-                  <th className="px-4 py-3">Status</th>
+                  <SortableHeader field="startsAt" label="Schedule" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} />
+                  <SortableHeader field="status" label="Status" activeField={table.sortBy} direction={table.sortDirection} onSort={table.setSort} />
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
@@ -367,6 +376,7 @@ export default function CurationPage() {
             </table>
           </div>
         )}
+        {data?.featuredPlacementPage && <AdminPagination totalCount={data.featuredPlacementPage.totalCount} page={table.page} pageSize={table.pageSize} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />}
       </section>
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/40 p-4">

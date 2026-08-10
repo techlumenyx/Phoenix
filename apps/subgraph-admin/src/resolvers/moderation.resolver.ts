@@ -14,6 +14,7 @@ import type { ModerationCaseDocument } from '../models/moderation-case.model';
 import type { ModerationReportDocument } from '../models/moderation-report.model';
 import type { CaseNoteDocument } from '../models/case-note.model';
 import type { AuditEventDocument } from '../models/audit-event.model';
+import { adminPage, pageResult, type AdminPageArgs } from './admin-pagination';
 
 const MODERATOR_ROLES = ['TRUST_SAFETY'] as const;
 
@@ -21,7 +22,7 @@ export const moderationResolvers = {
   Query: {
     moderationCases: async (
       _: unknown,
-      args: {
+      args: AdminPageArgs & {
         status?: string;
         priority?: string;
         assigneeFirebaseUid?: string;
@@ -32,7 +33,7 @@ export const moderationResolvers = {
       ctx: GraphQLContext,
     ) => {
       requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES, 'AUDITOR']);
-      const limit = Math.min(Math.max(args.limit ?? 25, 1), 100);
+      const page = adminPage(args, 'createdAt', ['createdAt', 'updatedAt', 'priority', 'status', 'title']);
       const filter: Record<string, unknown> = {};
       if (args.status) filter['status'] = args.status;
       if (args.priority) filter['priority'] = args.priority;
@@ -41,14 +42,15 @@ export const moderationResolvers = {
         const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
         filter['$or'] = [{ title: pattern }, { targetId: pattern }, { ownerFirebaseUid: pattern }];
       }
-      if (args.after && mongoose.isValidObjectId(args.after)) {
+      if (args.offset == null && args.after && mongoose.isValidObjectId(args.after)) {
         filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
       }
 
-      const docs = await ModerationCaseModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
-      const hasNextPage = docs.length > limit;
-      const edges = docs.slice(0, limit).map(mapCase);
-      return { edges, hasNextPage, endCursor: edges.at(-1)?.id ?? null };
+      const [docs, totalCount] = await Promise.all([
+        ModerationCaseModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        ModerationCaseModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapCase), totalCount, page.limit, page.offset);
     },
     moderationCase: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...MODERATOR_ROLES, 'AUDITOR']);
@@ -70,7 +72,7 @@ export const moderationResolvers = {
       const docs = await AuditEventModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
       const hasNextPage = docs.length > limit;
       const edges = docs.slice(0, limit).map(mapAudit);
-      return { edges, hasNextPage, endCursor: edges.at(-1)?.id ?? null };
+      return { edges, totalCount: await AuditEventModel.countDocuments(filter), hasNextPage, endCursor: edges.at(-1)?.id ?? null };
     },
   },
   Mutation: {

@@ -5,23 +5,29 @@ import type { GraphQLContext } from '../context';
 import { AuditEventModel, ContentRiskAnalysisModel } from '../models';
 import { RISK_REVIEW_VERDICTS, type ContentRiskAnalysisDocument } from '../models/content-risk-analysis.model';
 import { retryRiskAnalysis, riskAnalysisEnabled } from '../services/risk-analysis.service';
+import { adminPage, pageResult, type AdminPageArgs } from './admin-pagination';
 
 const RISK_ROLES = ['TRUST_SAFETY'] as const;
 
 export const riskAnalysisResolvers = {
   Query: {
-    contentRiskAnalyses: async (_: unknown, args: { status?: string; level?: string; reviewerVerdict?: string; limit?: number; after?: string }, ctx: GraphQLContext) => {
+    contentRiskAnalyses: async (_: unknown, args: AdminPageArgs & { status?: string; level?: string; reviewerVerdict?: string; search?: string; after?: string }, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...RISK_ROLES, 'AUDITOR']);
-      const limit = Math.min(Math.max(args.limit ?? 25, 1), 100);
+      const page = adminPage(args, 'createdAt', ['createdAt', 'updatedAt', 'score', 'level', 'status', 'title']);
       const filter: Record<string, unknown> = {};
       if (args.status) filter['status'] = args.status;
       if (args.level) filter['level'] = args.level;
       if (args.reviewerVerdict) filter['reviewerVerdict'] = args.reviewerVerdict;
-      if (args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
-      const docs = await ContentRiskAnalysisModel.find(filter).sort({ _id: -1 }).limit(limit + 1);
-      const hasNextPage = docs.length > limit;
-      const edges = docs.slice(0, limit).map(mapRiskAnalysis);
-      return { edges, hasNextPage, endCursor: edges.at(-1)?.id ?? null };
+      if (args.search?.trim()) {
+        const pattern = { $regex: escapeRegex(args.search.trim()), $options: 'i' };
+        filter['$or'] = [{ title: pattern }, { targetId: pattern }, { summary: pattern }];
+      }
+      if (args.offset == null && args.after && mongoose.isValidObjectId(args.after)) filter['_id'] = { $lt: new mongoose.Types.ObjectId(args.after) };
+      const [docs, totalCount] = await Promise.all([
+        ContentRiskAnalysisModel.find(filter).sort(page.sort).skip(page.offset).limit(page.limit),
+        ContentRiskAnalysisModel.countDocuments(filter),
+      ]);
+      return pageResult(docs.map(mapRiskAnalysis), totalCount, page.limit, page.offset);
     },
     contentRiskAnalysisConfiguration: (_: unknown, __: unknown, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...RISK_ROLES, 'AUDITOR']);
@@ -81,3 +87,4 @@ function mapRiskAnalysis(doc: ContentRiskAnalysisDocument) {
 }
 
 function headerValue(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] ?? null : value ?? null; }
+function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }

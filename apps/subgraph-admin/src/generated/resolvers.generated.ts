@@ -40,6 +40,7 @@ export type AdminDirectoryConnection = {
   edges: Array<AdminDirectoryItem>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type AdminDirectoryItem = {
@@ -78,6 +79,12 @@ export const AdminNotificationType = {
 } as const;
 
 export type AdminNotificationType = typeof AdminNotificationType[keyof typeof AdminNotificationType];
+export const AdminSortDirection = {
+  Asc: 'ASC',
+  Desc: 'DESC'
+} as const;
+
+export type AdminSortDirection = typeof AdminSortDirection[keyof typeof AdminSortDirection];
 export type AdminSystemHealth = {
   __typename?: 'AdminSystemHealth';
   checkedAt: Scalars['DateTime']['output'];
@@ -101,6 +108,14 @@ export type AdminTemplate = {
   type: AdminTemplateType;
   updatedAt: Scalars['DateTime']['output'];
   version: Scalars['Int']['output'];
+};
+
+export type AdminTemplateConnection = {
+  __typename?: 'AdminTemplateConnection';
+  edges: Array<AdminTemplate>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export const AdminTemplateType = {
@@ -172,6 +187,7 @@ export type AuditEventConnection = {
   edges: Array<AuditEvent>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type AuditExport = {
@@ -251,6 +267,7 @@ export type ContentRiskAnalysisConnection = {
   edges: Array<ContentRiskAnalysis>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type ContentRiskSignal = {
@@ -318,6 +335,7 @@ export type EmailDeliveryConnection = {
   edges: Array<EmailDelivery>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type EmailDeliveryEvent = {
@@ -368,6 +386,14 @@ export type FeaturedPlacement = {
   title: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
   updatedByFirebaseUid: Scalars['String']['output'];
+};
+
+export type FeaturedPlacementConnection = {
+  __typename?: 'FeaturedPlacementConnection';
+  edges: Array<FeaturedPlacement>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type FeaturedPlacementInput = {
@@ -425,6 +451,7 @@ export type ModerationCaseConnection = {
   edges: Array<ModerationCase>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export const ModerationCaseStatus = {
@@ -664,6 +691,7 @@ export type Query = {
   adminNotificationUnreadCount: Scalars['Int']['output'];
   adminNotifications: Array<AdminNotification>;
   adminSystemHealth: AdminSystemHealth;
+  adminTemplatePage: AdminTemplateConnection;
   adminTemplates: Array<AdminTemplate>;
   auditEvents: AuditEventConnection;
   auditExportContent: Scalars['String']['output'];
@@ -672,6 +700,7 @@ export type Query = {
   contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration;
   emailDeliveries: EmailDeliveryConnection;
   emailDeliveryConfiguration: EmailDeliveryConfiguration;
+  featuredPlacementPage: FeaturedPlacementConnection;
   featuredPlacements: Array<FeaturedPlacement>;
   moderationCase?: Maybe<ModerationCase>;
   moderationCases: ModerationCaseConnection;
@@ -684,7 +713,10 @@ export type Query = {
 export type QueryAdminDirectoryArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   type: DirectoryEntityType;
 };
 
@@ -692,6 +724,17 @@ export type QueryAdminDirectoryArgs = {
 export type QueryAdminNotificationsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type QueryAdminTemplatePageArgs = {
+  activeOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
+  type?: InputMaybe<AdminTemplateType>;
 };
 
 
@@ -708,7 +751,11 @@ export type QueryAuditEventsArgs = {
   caseId?: InputMaybe<Scalars['ID']['input']>;
   from?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   result?: InputMaybe<AuditResult>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   targetType?: InputMaybe<ContentType>;
   to?: InputMaybe<Scalars['DateTime']['input']>;
 };
@@ -723,7 +770,11 @@ export type QueryContentRiskAnalysesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   level?: InputMaybe<RiskLevel>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   reviewerVerdict?: InputMaybe<RiskReviewVerdict>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<RiskAnalysisStatus>;
 };
 
@@ -731,9 +782,23 @@ export type QueryContentRiskAnalysesArgs = {
 export type QueryEmailDeliveriesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<EmailDeliveryStatus>;
   templateKey?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryFeaturedPlacementPageArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
+  status?: InputMaybe<PlacementStatus>;
 };
 
 
@@ -752,8 +817,11 @@ export type QueryModerationCasesArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   priority?: InputMaybe<ModerationPriority>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<ModerationCaseStatus>;
 };
 
@@ -772,7 +840,10 @@ export type QueryVerificationSubmissionsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
   status?: InputMaybe<VerificationReviewStatus>;
 };
 
@@ -894,6 +965,7 @@ export type VerificationSubmissionConnection = {
   edges: Array<VerificationSubmission>;
   endCursor?: Maybe<Scalars['String']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export const VerificationTier = {
@@ -997,8 +1069,10 @@ export type ResolversTypes = ResolversObject<{
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   AdminNotification: ResolverTypeWrapper<AdminNotification>;
   AdminNotificationType: AdminNotificationType;
+  AdminSortDirection: AdminSortDirection;
   AdminSystemHealth: ResolverTypeWrapper<AdminSystemHealth>;
   AdminTemplate: ResolverTypeWrapper<AdminTemplate>;
+  AdminTemplateConnection: ResolverTypeWrapper<AdminTemplateConnection>;
   AdminTemplateType: AdminTemplateType;
   AuditAction: AuditAction;
   AuditEvent: ResolverTypeWrapper<AuditEvent>;
@@ -1023,6 +1097,7 @@ export type ResolversTypes = ResolversObject<{
   EventActionScope: EventActionScope;
   EventAdminAction: EventAdminAction;
   FeaturedPlacement: ResolverTypeWrapper<FeaturedPlacement>;
+  FeaturedPlacementConnection: ResolverTypeWrapper<FeaturedPlacementConnection>;
   FeaturedPlacementInput: FeaturedPlacementInput;
   ModerationAction: ModerationAction;
   ModerationCase: ResolverTypeWrapper<ModerationCase>;
@@ -1062,6 +1137,7 @@ export type ResolversParentTypes = ResolversObject<{
   AdminNotification: AdminNotification;
   AdminSystemHealth: AdminSystemHealth;
   AdminTemplate: AdminTemplate;
+  AdminTemplateConnection: AdminTemplateConnection;
   AuditEvent: AuditEvent;
   AuditEventConnection: AuditEventConnection;
   AuditExport: AuditExport;
@@ -1077,6 +1153,7 @@ export type ResolversParentTypes = ResolversObject<{
   EmailDeliveryConnection: EmailDeliveryConnection;
   EmailDeliveryEvent: EmailDeliveryEvent;
   FeaturedPlacement: FeaturedPlacement;
+  FeaturedPlacementConnection: FeaturedPlacementConnection;
   FeaturedPlacementInput: FeaturedPlacementInput;
   ModerationCase: ModerationCase;
   ModerationCaseConnection: ModerationCaseConnection;
@@ -1102,6 +1179,7 @@ export type AdminDirectoryConnectionResolvers<ContextType = GraphQLContext, Pare
   edges?: Resolver<Array<ResolversTypes['AdminDirectoryItem']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1160,6 +1238,14 @@ export type AdminTemplateResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type AdminTemplateConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AdminTemplateConnection'] = ResolversParentTypes['AdminTemplateConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['AdminTemplate']>, ParentType, ContextType>;
+  endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type AuditEventResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['AuditEvent'] = ResolversParentTypes['AuditEvent']> = ResolversObject<{
   __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['AuditEvent']>, { __typename: 'AuditEvent' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
   action?: Resolver<ResolversTypes['AuditAction'], ParentType, ContextType>;
@@ -1184,6 +1270,7 @@ export type AuditEventConnectionResolvers<ContextType = GraphQLContext, ParentTy
   edges?: Resolver<Array<ResolversTypes['AuditEvent']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1251,6 +1338,7 @@ export type ContentRiskAnalysisConnectionResolvers<ContextType = GraphQLContext,
   edges?: Resolver<Array<ResolversTypes['ContentRiskAnalysis']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1298,6 +1386,7 @@ export type EmailDeliveryConnectionResolvers<ContextType = GraphQLContext, Paren
   edges?: Resolver<Array<ResolversTypes['EmailDelivery']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1328,6 +1417,14 @@ export type FeaturedPlacementResolvers<ContextType = GraphQLContext, ParentType 
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedByFirebaseUid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type FeaturedPlacementConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['FeaturedPlacementConnection'] = ResolversParentTypes['FeaturedPlacementConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType>;
+  endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1364,6 +1461,7 @@ export type ModerationCaseConnectionResolvers<ContextType = GraphQLContext, Pare
   edges?: Resolver<Array<ResolversTypes['ModerationCase']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1411,6 +1509,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   adminNotificationUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   adminNotifications?: Resolver<Array<ResolversTypes['AdminNotification']>, ParentType, ContextType, Partial<QueryAdminNotificationsArgs>>;
   adminSystemHealth?: Resolver<ResolversTypes['AdminSystemHealth'], ParentType, ContextType>;
+  adminTemplatePage?: Resolver<ResolversTypes['AdminTemplateConnection'], ParentType, ContextType, Partial<QueryAdminTemplatePageArgs>>;
   adminTemplates?: Resolver<Array<ResolversTypes['AdminTemplate']>, ParentType, ContextType, Partial<QueryAdminTemplatesArgs>>;
   auditEvents?: Resolver<ResolversTypes['AuditEventConnection'], ParentType, ContextType, Partial<QueryAuditEventsArgs>>;
   auditExportContent?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<QueryAuditExportContentArgs, 'id'>>;
@@ -1419,6 +1518,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   contentRiskAnalysisConfiguration?: Resolver<ResolversTypes['ContentRiskAnalysisConfiguration'], ParentType, ContextType>;
   emailDeliveries?: Resolver<ResolversTypes['EmailDeliveryConnection'], ParentType, ContextType, Partial<QueryEmailDeliveriesArgs>>;
   emailDeliveryConfiguration?: Resolver<ResolversTypes['EmailDeliveryConfiguration'], ParentType, ContextType>;
+  featuredPlacementPage?: Resolver<ResolversTypes['FeaturedPlacementConnection'], ParentType, ContextType, Partial<QueryFeaturedPlacementPageArgs>>;
   featuredPlacements?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType, Partial<QueryFeaturedPlacementsArgs>>;
   moderationCase?: Resolver<Maybe<ResolversTypes['ModerationCase']>, ParentType, ContextType, RequireFields<QueryModerationCaseArgs, 'id'>>;
   moderationCases?: Resolver<ResolversTypes['ModerationCaseConnection'], ParentType, ContextType, Partial<QueryModerationCasesArgs>>;
@@ -1482,6 +1582,7 @@ export type VerificationSubmissionConnectionResolvers<ContextType = GraphQLConte
   edges?: Resolver<Array<ResolversTypes['VerificationSubmission']>, ParentType, ContextType>;
   endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1492,6 +1593,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   AdminNotification?: AdminNotificationResolvers<ContextType>;
   AdminSystemHealth?: AdminSystemHealthResolvers<ContextType>;
   AdminTemplate?: AdminTemplateResolvers<ContextType>;
+  AdminTemplateConnection?: AdminTemplateConnectionResolvers<ContextType>;
   AuditEvent?: AuditEventResolvers<ContextType>;
   AuditEventConnection?: AuditEventConnectionResolvers<ContextType>;
   AuditExport?: AuditExportResolvers<ContextType>;
@@ -1506,6 +1608,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   EmailDeliveryConnection?: EmailDeliveryConnectionResolvers<ContextType>;
   EmailDeliveryEvent?: EmailDeliveryEventResolvers<ContextType>;
   FeaturedPlacement?: FeaturedPlacementResolvers<ContextType>;
+  FeaturedPlacementConnection?: FeaturedPlacementConnectionResolvers<ContextType>;
   ModerationCase?: ModerationCaseResolvers<ContextType>;
   ModerationCaseConnection?: ModerationCaseConnectionResolvers<ContextType>;
   ModerationReport?: ModerationReportResolvers<ContextType>;
