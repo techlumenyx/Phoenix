@@ -11,6 +11,7 @@ import { useToast } from '../../components/ui/ToastProvider';
 import DirectoryState from '../../components/ui/DirectoryState';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
 import { uploadMedia } from '../../lib/mediaUpload';
+import { contentInitials } from '../../components/media/ContentPlaceholder';
 import { useOrganisationPermissions } from '../../hooks/useOrganisationPermissions';
 
 interface SocialLinks {
@@ -225,7 +226,7 @@ export default function OrgSettingsPage() {
               {logoCanPreview ? (
                 <img src={logoUrl} alt={`${name} logo preview`} onError={() => setLogoPreviewFailed(true)} className="h-full w-full object-cover" />
               ) : (
-                name.charAt(0).toUpperCase()
+                contentInitials(name || 'Organisation')
               )}
             </div>
             <div className="flex-1">

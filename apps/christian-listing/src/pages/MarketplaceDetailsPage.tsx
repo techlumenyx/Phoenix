@@ -6,6 +6,9 @@ import { formatPrice } from '../lib/discovery';
 import { useAuthStore } from '../store/authStore';
 import ReportListingModal from '../components/marketplace/ReportListingModal';
 import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '../components/trust/OrganisationVerification';
+import ContentPlaceholder from '../components/media/ContentPlaceholder';
+import NameAvatar from '../components/media/NameAvatar';
+import ResilientImage from '../components/media/ResilientImage';
 
 const MARKETPLACE_DETAILS = gql`
   query MarketplaceDetails($id: ID!, $region: String, $category: MarketplaceCategory) {
@@ -85,7 +88,7 @@ export default function MarketplaceDetailsPage() {
   if (error) return <PageMessage title="We couldn’t load this listing" detail="Please try again in a moment." />;
   if (!item) return <PageMessage title="Listing not found" detail="This listing may have been removed or sold." />;
 
-  const images = item.imageUrls.length ? item.imageUrls : ['/assets/car-ford.png'];
+  const images = item.imageUrls;
   const related = (data?.marketplaceItems.edges ?? []).filter((listing) => listing.id !== item.id).slice(0, 4);
   const price = item.isDonation ? 'Free donation' : formatPrice(item.price, item.currency);
 
@@ -99,11 +102,11 @@ export default function MarketplaceDetailsPage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(310px,0.85fr)] lg:gap-12">
           <section>
             <div className="relative aspect-[16/11] overflow-hidden rounded-xl bg-gray-100 shadow-sm">
-              <img src={images[selectedImage]} alt={item.title} className="h-full w-full object-cover" />
+              <ResilientImage src={images[selectedImage]} alt={item.title} className="h-full w-full object-cover" fallback={<ContentPlaceholder variant="marketplace" title={item.title} />} />
               <span className="absolute left-4 top-4 rounded-full bg-[#c84c64] px-3 py-1 text-[10px] font-bold uppercase text-white">{item.isDonation ? 'Community Gives' : item.status.replaceAll('_', ' ')}</span>
               {(item.organisation?.isVerified ?? item.seller.isVerified) && <span className="absolute right-4 top-4 rounded-full bg-[#83d34c] px-3 py-1 text-[10px] font-bold uppercase text-[#17310b]">✓ Verified</span>}
             </div>
-            <div className="mt-2 grid grid-cols-5 gap-2">{images.slice(0, 5).map((image, index) => <button key={`${image}-${index}`} onClick={() => setSelectedImage(index)} className={`aspect-[4/3] overflow-hidden rounded-lg border-2 ${selectedImage === index ? 'border-[#4b143f]' : 'border-transparent'}`}><img src={image} alt={`${item.title} view ${index + 1}`} className="h-full w-full object-cover" /></button>)}</div>
+            {images.length > 1 && <div className="mt-2 grid grid-cols-5 gap-2">{images.slice(0, 5).map((image, index) => <button key={`${image}-${index}`} onClick={() => setSelectedImage(index)} className={`aspect-[4/3] overflow-hidden rounded-lg border-2 ${selectedImage === index ? 'border-[#4b143f]' : 'border-transparent'}`}><ResilientImage src={image} alt={`${item.title} view ${index + 1}`} className="h-full w-full object-cover" fallback={<ContentPlaceholder variant="marketplace" title={item.title} />} /></button>)}</div>}
             {item.videoUrl && <video src={item.videoUrl} poster={item.videoPosterUrl ?? undefined} controls preload="metadata" className="mt-4 aspect-video w-full rounded-xl bg-black object-contain" aria-label={`${item.title} video`} />}
 
             <section className="mt-9"><h2 className="font-serif text-2xl font-bold">Product Description</h2>{item.description.split(/\n\n+/).map((paragraph, index) => <p key={index} className="mt-3 text-sm leading-6 text-gray-600">{paragraph}</p>)}</section>
@@ -139,6 +142,6 @@ function SellerCard({ seller, organisation }: { seller: NonNullable<MarketplaceD
   const imageUrl = organisation?.logoUrl ?? seller.avatarUrl;
   const description = organisation?.description ?? seller.bio;
   const region = organisation?.region ?? seller.region;
-  return <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[#ede5db] font-serif text-xl font-bold">{imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : profile.name.charAt(0)}</div><div><h3 className="font-serif text-lg font-bold">{profile.name}</h3>{region && <p className="text-xs text-gray-500">{region}</p>}</div></div>{description && <p className="mt-4 text-xs leading-5 text-gray-500">“{description}”</p>}<div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-gray-600">{organisation ? <><span>◉ {organisation.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span><span aria-hidden="true">·</span><OrganisationVerificationStatus organisationName={organisation.name} isVerified={organisation.isVerified} context="listing" /></> : <><span>◉ Community Seller</span>{seller.isVerified && <><span aria-hidden="true">·</span><span className="font-semibold text-green-700">✓ Verified Poster</span></>}</>}</div></section>;
+  return <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><NameAvatar name={profile.name} src={imageUrl} className="h-12 w-12 rounded-full text-xl" /><div><h3 className="font-serif text-lg font-bold">{profile.name}</h3>{region && <p className="text-xs text-gray-500">{region}</p>}</div></div>{description && <p className="mt-4 text-xs leading-5 text-gray-500">“{description}”</p>}<div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-gray-600">{organisation ? <><span>◉ {organisation.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span><span aria-hidden="true">·</span><OrganisationVerificationStatus organisationName={organisation.name} isVerified={organisation.isVerified} context="listing" /></> : <><span>◉ Community Seller</span>{seller.isVerified && <><span aria-hidden="true">·</span><span className="font-semibold text-green-700">✓ Verified Poster</span></>}</>}</div></section>;
 }
 function PageMessage({ title, detail }: { title: string; detail?: string }) { return <main className="flex min-h-[65vh] items-center justify-center px-6 text-center"><div><h1 className="font-serif text-3xl font-bold">{title}</h1>{detail && <p className="mt-3 text-sm text-gray-500">{detail}</p>}<Link to="/marketplace" className="mt-6 inline-block rounded-full bg-[#004b3d] px-5 py-2.5 text-sm text-white">Browse marketplace</Link></div></main>; }

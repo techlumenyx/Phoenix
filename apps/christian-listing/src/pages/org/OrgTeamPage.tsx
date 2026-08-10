@@ -2,6 +2,7 @@ import { gql, useMutation, useQuery } from '@apollo/client';
 import { useState } from 'react';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
 import { useToast } from '../../components/ui/ToastProvider';
+import NameAvatar from '../../components/media/NameAvatar';
 
 interface TeamMember {
   user: { id: string; name: string; email: string; avatarUrl?: string | null };
@@ -224,13 +225,7 @@ export default function OrgTeamPage() {
             className="flex flex-col gap-4 border-b p-5 last:border-0 md:flex-row md:items-center"
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#eee6ef] font-bold">
-                {member.user.avatarUrl ? (
-                  <img src={member.user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  member.user.name.charAt(0)
-                )}
-              </div>
+              <NameAvatar name={member.user.name} src={member.user.avatarUrl} className="h-11 w-11 rounded-full" />
               <div>
                 <strong>{member.user.name}</strong>
                 <p className="text-xs text-gray-500">{member.user.email}</p>

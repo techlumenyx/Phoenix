@@ -275,7 +275,7 @@ export default function AllEventsPage() {
                         event.region
                       }
                       invites={`${event.rsvpCount} RSVPs`}
-                      imageSrc={event.imageUrls[0] || '/assets/event-theology.png'}
+                      imageSrc={event.imageUrls[0]}
                       href={`/events/${event.id}`}
                       className="h-[330px]"
                     />

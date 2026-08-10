@@ -2,6 +2,7 @@ import { gql, useMutation, useQuery } from '@apollo/client';
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import NameAvatar from '../components/media/NameAvatar';
 
 const THREADS = gql`query MessagingThreads($role: MessageParticipantRole) { myMessageThreads(role: $role, limit: 50) { edges { id status lastMessage lastMessageAt unreadCount buyer { id firebaseUid name avatarUrl } seller { id firebaseUid name avatarUrl } listing { id title imageUrls status } } } unreadMessageCount }`;
 const THREAD = gql`query MessagingThread($id: ID!) { messageThread(id: $id) { id status buyer { id firebaseUid name avatarUrl } seller { id firebaseUid name avatarUrl } listing { id title imageUrls status price currency } messages(limit: 100) { edges { id type body readAt createdAt sender { id firebaseUid name avatarUrl } } } } }`;
@@ -33,4 +34,4 @@ export default function MessagingPage({ sellerMode = false }: { sellerMode?: boo
       <form onSubmit={submit} className="flex gap-3 border-t p-4"><textarea value={body} onChange={(event) => setBody(event.target.value)} disabled={thread.status !== 'ACTIVE'} rows={2} maxLength={2000} placeholder={thread.status === 'ACTIVE' ? 'Write a message...' : 'This conversation is archived'} className="min-w-0 flex-1 resize-none rounded-xl bg-[#f2edf2] px-4 py-3 text-sm outline-none"/><button disabled={sending || !body.trim() || thread.status !== 'ACTIVE'} className="rounded-xl bg-[#292929] px-5 text-sm font-semibold text-white disabled:opacity-40">Send</button></form></>}</section>
   </div>;
 }
-function Avatar({ person }: { person: Person }) { return <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9dfd2] font-serif font-bold">{person.avatarUrl ? <img src={person.avatarUrl} alt="" className="h-full w-full object-cover"/> : person.name.charAt(0)}</div>; }
+function Avatar({ person }: { person: Person }) { return <NameAvatar name={person.name} src={person.avatarUrl} className="h-10 w-10 rounded-full" />; }

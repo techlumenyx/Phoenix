@@ -1,6 +1,8 @@
 import { LocationMarkerIcon, ClockIcon, UsersIcon, HeartIcon, ArrowRightIcon } from '../layout/icons';
 import { Link } from 'react-router-dom';
 import { useContentImpression } from '../../hooks/useContentImpression';
+import ContentPlaceholder from '../media/ContentPlaceholder';
+import ResilientImage from '../media/ResilientImage';
 
 export interface EventCardProps {
   badge?: string;
@@ -36,14 +38,15 @@ export default function EventCard({
   const analyticsRef = useContentImpression('EVENT', href);
   const cardClassName = `group relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${href ? 'cursor-pointer transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A460A5]' : ''} ${className}`;
   const content = <>
-      {imageSrc && (
-        <img
+      <div className="absolute inset-0">
+        <ResilientImage
           src={imageSrc}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
+          className="h-full w-full object-cover object-center opacity-60"
+          fallback={<ContentPlaceholder variant="event" title={title} />}
         />
-      )}
+      </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
       {verified && (

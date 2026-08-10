@@ -5,6 +5,9 @@ import { useAuthStore } from '../store/authStore';
 import RegistrationSuccessModal from '../components/events/RegistrationSuccessModal';
 import EventCard from '../components/cards/EventCard';
 import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '../components/trust/OrganisationVerification';
+import ContentPlaceholder from '../components/media/ContentPlaceholder';
+import NameAvatar from '../components/media/NameAvatar';
+import ResilientImage from '../components/media/ResilientImage';
 
 const EVENT_DETAILS = gql`
   query EventDetails($id: ID!) {
@@ -150,7 +153,7 @@ export default function EventDetailsPage() {
       <div className="mx-auto max-w-7xl grid gap-8 lg:grid-cols-[minmax(0,1.75fr)_minmax(310px,0.85fr)] lg:gap-12">
         <section>
           <div className="relative overflow-hidden rounded-xl bg-[#2a241e] aspect-[16/10] shadow-sm">
-            <img src={event.imageUrls[0] || '/assets/event-theology.png'} alt={event.title} className="h-full w-full object-cover" />
+            <ResilientImage src={event.imageUrls[0]} alt={event.title} className="h-full w-full object-cover" fallback={<ContentPlaceholder variant="event" title={event.title} />} />
             <span className="absolute left-4 top-4 rounded-full bg-[#8c3f86] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{event.category.replaceAll('_', '/')}</span>
             {event.isRecurring && <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#42113f]">Recurring series · #{event.occurrenceNumber}</span>}
             {host?.isVerified && <span className="absolute right-4 top-4 rounded-full bg-[#7acb37] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#17310b]">✓ Verified</span>}
@@ -196,7 +199,7 @@ export default function EventDetailsPage() {
 
           {host && <section className="mt-7 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#ede5db] font-serif text-xl font-bold">{host.logoUrl ? <img src={host.logoUrl} alt="" className="h-full w-full object-cover" /> : host.name.charAt(0)}</div>
+              <NameAvatar name={host.name} src={host.logoUrl} className="h-12 w-12 rounded-full text-xl" />
               <div className="min-w-0 flex-1"><h3 className="font-serif text-lg font-bold leading-tight">{host.name}</h3>{host.region && <p className="text-xs text-gray-500">{host.region}</p>}</div>
               <Link to={`/organisations/${host.id}`} className="rounded-full border px-3 py-1.5 text-[10px] hover:bg-gray-50">View Profile →</Link>
             </div>
@@ -216,7 +219,7 @@ export default function EventDetailsPage() {
           </div>
         </aside>
       </div>
-      <section className="mx-auto mt-14 max-w-7xl"><div className="mb-6 flex items-end justify-between"><h2 className="font-serif text-3xl font-bold">Related Events</h2><Link to={`/events/all?category=${event.category}`} className="text-xs font-semibold uppercase tracking-wider text-gray-500">View all events</Link></div>{relatedEvents.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{relatedEvents.map((related) => <EventCard key={related.id} badge={related.category.replaceAll('_', ' ')} date={new Date(related.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} title={related.title} description={related.description} location={[related.location.city, related.location.country].filter(Boolean).join(', ') || related.region} invites={`${related.rsvpCount} RSVPs`} imageSrc={related.imageUrls[0] || '/assets/event-theology.png'} href={`/events/${related.id}`} className="h-[330px]" />)}</div> : <p className="text-sm text-gray-500">No related events are available right now.</p>}</section>
+      <section className="mx-auto mt-14 max-w-7xl"><div className="mb-6 flex items-end justify-between"><h2 className="font-serif text-3xl font-bold">Related Events</h2><Link to={`/events/all?category=${event.category}`} className="text-xs font-semibold uppercase tracking-wider text-gray-500">View all events</Link></div>{relatedEvents.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{relatedEvents.map((related) => <EventCard key={related.id} badge={related.category.replaceAll('_', ' ')} date={new Date(related.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} title={related.title} description={related.description} location={[related.location.city, related.location.country].filter(Boolean).join(', ') || related.region} invites={`${related.rsvpCount} RSVPs`} imageSrc={related.imageUrls[0]} href={`/events/${related.id}`} className="h-[330px]" />)}</div> : <p className="text-sm text-gray-500">No related events are available right now.</p>}</section>
     </main>
   );
 }

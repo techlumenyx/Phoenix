@@ -57,7 +57,7 @@ export default function FeaturedEventsSection() {
             description={event.description}
             location={[event.location.city, event.location.country].filter(Boolean).join(', ') || event.region}
             invites={`${event.rsvpCount} RSVPs`}
-            imageSrc={event.imageUrls[0] || '/assets/event-theology.png'}
+            imageSrc={event.imageUrls[0]}
             href={`/events/${event.id}`}
             className="h-[300px]"
           />

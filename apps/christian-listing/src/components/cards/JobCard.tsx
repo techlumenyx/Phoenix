@@ -38,6 +38,7 @@ export default function JobCard({
 
   const cardClassName = `group relative rounded-2xl bg-white border border-gray-100 shadow-sm p-5 flex flex-col gap-3 min-h-[320px] ${href ? 'cursor-pointer transition duration-200 hover:-translate-y-1 hover:border-gray-200 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4F46E5]' : ''} ${className}`;
   const content = <>
+      <BriefcaseIcon className="pointer-events-none absolute -right-5 top-12 h-32 w-32 text-[#405D51]/[0.07]" />
       {verified && (
         <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
       )}

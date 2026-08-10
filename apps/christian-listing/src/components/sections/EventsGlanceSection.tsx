@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { LocationMarkerIcon, ClockIcon, UsersIcon, ArrowRightIcon } from '../layout/icons';
 import { HomepageEvent } from '../../lib/homepage-selection';
+import ContentPlaceholder from '../media/ContentPlaceholder';
+import ResilientImage from '../media/ResilientImage';
 
 interface Props { events?: HomepageEvent[]; loading: boolean; error?: Error }
 
@@ -9,15 +11,39 @@ function eventDate(event: HomepageEvent) { return new Date(event.date).toLocaleD
 function eventTime(event: HomepageEvent) {
   const start = new Date(event.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   if (!event.endDate) return start;
-  return `${start} – ${new Date(event.endDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+  return `${start} - ${new Date(event.endDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function EventArtwork({ event, className }: { event: HomepageEvent; className: string }) {
+  return <ResilientImage src={event.imageUrls[0]} alt="" aria-hidden="true" className={className} fallback={<ContentPlaceholder variant="event" title={event.title} />} />;
 }
 
 function LightEventCard({ event }: { event: HomepageEvent }) {
-  return <Link to={`/events/${event.id}`} aria-label={`RSVP Now: ${event.title}`} className="group flex h-full cursor-pointer overflow-hidden rounded-2xl bg-[#F5EAFF] transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A460A5]"><div className="relative w-[45%] shrink-0"><img src={event.imageUrls[0] || '/assets/event-theology.png'} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" /></div><div className="flex min-w-0 flex-1 flex-col gap-3 p-5"><div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-[#A460A5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{event.category.replaceAll('_', ' ')}</span><span className="shrink-0 text-xs font-medium text-dark/60">{eventDate(event)}</span></div><h3 className="line-clamp-3 font-serif text-xl font-bold leading-snug text-dark">{event.title}</h3><p className="line-clamp-2 text-xs text-dark/60">{event.description}</p><div className="mt-auto flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-xs text-dark/60"><LocationMarkerIcon className="h-3.5 w-3.5 shrink-0" />{eventLocation(event)}</span><span className="flex items-center gap-1.5 text-xs text-dark/60"><ClockIcon className="h-3.5 w-3.5 shrink-0" />{eventTime(event)}</span></div><hr className="border-dark/10" /><div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-dark/50"><UsersIcon className="h-3.5 w-3.5" />{event.rsvpCount} RSVPs</span><span className="flex items-center gap-1 text-xs font-semibold text-dark transition-transform group-hover:translate-x-0.5">RSVP Now <ArrowRightIcon className="h-3.5 w-3.5" /></span></div></div></Link>;
+  return (
+    <Link to={`/events/${event.id}`} aria-label={`RSVP Now: ${event.title}`} className="group flex h-full cursor-pointer overflow-hidden rounded-2xl bg-[#F5EAFF] transition duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A460A5]">
+      <div className="relative w-[45%] shrink-0"><EventArtwork event={event} className="absolute inset-0 h-full w-full object-cover object-center" /></div>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-[#A460A5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{event.category.replaceAll('_', ' ')}</span><span className="shrink-0 text-xs font-medium text-dark/60">{eventDate(event)}</span></div>
+        <h3 className="line-clamp-3 font-serif text-xl font-bold leading-snug text-dark">{event.title}</h3>
+        <p className="line-clamp-2 text-xs text-dark/60">{event.description}</p>
+        <div className="mt-auto flex flex-col gap-1.5"><span className="flex items-center gap-1.5 text-xs text-dark/60"><LocationMarkerIcon className="h-3.5 w-3.5 shrink-0" />{eventLocation(event)}</span><span className="flex items-center gap-1.5 text-xs text-dark/60"><ClockIcon className="h-3.5 w-3.5 shrink-0" />{eventTime(event)}</span></div>
+        <hr className="border-dark/10" />
+        <div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-dark/50"><UsersIcon className="h-3.5 w-3.5" />{event.rsvpCount} RSVPs</span><span className="flex items-center gap-1 text-xs font-semibold text-dark transition-transform group-hover:translate-x-0.5">RSVP Now <ArrowRightIcon className="h-3.5 w-3.5" /></span></div>
+      </div>
+    </Link>
+  );
 }
 
 function DarkEventCard({ event }: { event: HomepageEvent }) {
-  return <Link to={`/events/${event.id}`} aria-label={`RSVP Now: ${event.title}`} className="group relative block h-full cursor-pointer overflow-hidden rounded-2xl bg-[#1A1A1A] transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A460A5]"><img src={event.imageUrls[0] || '/assets/event-theology.png'} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center opacity-60" /><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />{event.hosts.some((host) => host.isVerified) && <span className="absolute right-4 top-4 z-10 h-2.5 w-2.5 rounded-full bg-[#22C55E]" />}<span className="absolute left-4 top-4 z-10 rounded-full bg-[#A460A5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{event.category.replaceAll('_', ' ')}</span><div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-3 p-5"><p className="text-xs font-medium text-white/70">{eventDate(event)} · {eventLocation(event)}</p><h3 className="font-serif text-xl font-bold leading-snug text-white">{event.title}</h3><div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-white/60"><UsersIcon className="h-3.5 w-3.5" />{event.rsvpCount} RSVPs</span><span className="flex items-center gap-1 text-xs font-semibold text-white transition-transform group-hover:translate-x-0.5">RSVP Now <ArrowRightIcon className="h-3.5 w-3.5" /></span></div></div></Link>;
+  return (
+    <Link to={`/events/${event.id}`} aria-label={`RSVP Now: ${event.title}`} className="group relative block h-full cursor-pointer overflow-hidden rounded-2xl bg-[#1A1A1A] transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A460A5]">
+      <div className="absolute inset-0"><EventArtwork event={event} className="h-full w-full object-cover object-center opacity-60" /></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+      {event.hosts.some((host) => host.isVerified) && <span className="absolute right-4 top-4 z-10 h-2.5 w-2.5 rounded-full bg-[#22C55E]" />}
+      <span className="absolute left-4 top-4 z-10 rounded-full bg-[#A460A5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{event.category.replaceAll('_', ' ')}</span>
+      <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-3 p-5"><p className="text-xs font-medium text-white/70">{eventDate(event)} · {eventLocation(event)}</p><h3 className="font-serif text-xl font-bold leading-snug text-white">{event.title}</h3><div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-white/60"><UsersIcon className="h-3.5 w-3.5" />{event.rsvpCount} RSVPs</span><span className="flex items-center gap-1 text-xs font-semibold text-white transition-transform group-hover:translate-x-0.5">RSVP Now <ArrowRightIcon className="h-3.5 w-3.5" /></span></div></div>
+    </Link>
+  );
 }
 
 export default function EventsGlanceSection({ events = [], loading, error }: Props) {

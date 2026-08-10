@@ -6,6 +6,7 @@ import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LIS
 import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
 import { deleteUploadedMedia, uploadMedia, type UploadedMedia } from '../../lib/mediaUpload';
 import { AnalyticsSummaryCards } from '../../components/analytics/OrganisationAnalytics';
+import NameAvatar from '../../components/media/NameAvatar';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -61,15 +62,6 @@ function formatCount(n: number): string {
   return n.toString();
 }
 
-function OrgAvatarInitials({ name }: { name: string }) {
-  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-  return (
-    <div className="w-full h-full bg-[#C9A96E] flex items-center justify-center text-white text-4xl font-bold">
-      {initials || '?'}
-    </div>
-  );
-}
-
 function socialHref(key: keyof OrgSocialLinks, value: string) {
   if (/^https?:\/\//i.test(value)) return value;
   if (key === 'whatsapp') return `https://wa.me/${value.replace(/\D/g, '')}`;
@@ -100,13 +92,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
 
       {/* Left Column: Avatar */}
       <div className="relative shrink-0">
-        <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-200">
-          {org.logoUrl ? (
-            <img src={org.logoUrl} alt={org.name ?? 'Organisation'} className="w-full h-full object-cover" />
-          ) : (
-            <OrgAvatarInitials name={org.name ?? 'O'} />
-          )}
-        </div>
+        <NameAvatar name={org.name ?? 'Organisation'} src={org.logoUrl} className="h-40 w-40 rounded-full text-4xl" />
         {org.isVerified && (
           <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#FDF8EE]">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -419,11 +405,7 @@ function MarketplaceMessagesPanel() {
           to={`/org/messages/${thread.id}`}
           className="flex items-center gap-4 border-b border-gray-100 px-6 py-4 last:border-0 hover:bg-gray-50"
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#EAEAF5] font-serif font-bold">
-            {thread.buyer.avatarUrl
-              ? <img src={thread.buyer.avatarUrl} alt="" className="h-full w-full object-cover" />
-              : thread.buyer.name.charAt(0).toUpperCase()}
-          </div>
+          <NameAvatar name={thread.buyer.name} src={thread.buyer.avatarUrl} className="h-11 w-11 rounded-full" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
               <strong className="truncate text-sm text-[#1B1B1B]">{thread.buyer.name}</strong>

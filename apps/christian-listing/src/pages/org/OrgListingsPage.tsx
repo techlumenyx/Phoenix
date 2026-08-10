@@ -8,6 +8,8 @@ import {
   UPDATE_MARKETPLACE_ITEM_STATUS,
 } from '../../graphql/mutations';
 import { CreateListingForm, type ManagedFormMode, type ManagedListingFormItem } from './OrgOverviewPage';
+import ContentPlaceholder from '../../components/media/ContentPlaceholder';
+import ResilientImage from '../../components/media/ResilientImage';
 
 type ListingStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD' | 'PENDING_REVIEW';
 
@@ -308,7 +310,7 @@ export default function OrgListingsPage() {
               {paginated.map((item) => (
                 <div key={item.id} className="relative grid gap-3 border-b border-gray-100 px-5 py-4 last:border-b-0 md:grid-cols-[2.4fr_1fr_1fr_1fr_1fr_52px] md:items-center md:gap-4 md:px-6">
                   <div className="flex min-w-0 items-center gap-4">
-                    {item.imageUrls[0] ? <img src={item.imageUrls[0]} alt="" className="h-12 w-12 rounded-lg object-cover" /> : <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#EAEAF5] text-lg">□</div>}
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg"><ResilientImage src={item.imageUrls[0]} alt="" aria-hidden="true" className="h-full w-full object-cover" fallback={<ContentPlaceholder variant="marketplace" title={item.title} />} /></div>
                     <div className="min-w-0">
                       <Link to={`/marketplace/${item.id}`} className="block truncate text-sm font-bold text-[#1B1B1B] hover:underline">{item.title}</Link>
                       <p className="mt-0.5 truncate text-xs text-gray-500">{item.region} · Updated {formatDate(item.updatedAt)}</p>

@@ -1,6 +1,8 @@
 import { LocationMarkerIcon, ArrowRightIcon } from '../layout/icons';
 import { Link } from 'react-router-dom';
 import { useContentImpression } from '../../hooks/useContentImpression';
+import ContentPlaceholder from '../media/ContentPlaceholder';
+import ResilientImage from '../media/ResilientImage';
 
 export interface MarketplaceCardProps {
   badge?: string;
@@ -33,13 +35,12 @@ export default function MarketplaceCard({
       )}
 
       <div className="relative h-44 shrink-0 overflow-hidden bg-gray-100">
-        {imageSrc ? (
-          <img src={imageSrc} alt={title} className="block h-full w-full object-cover object-center" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-            <span className="text-gray-400 text-sm">No image</span>
-          </div>
-        )}
+        <ResilientImage
+          src={imageSrc}
+          alt={title}
+          className="block h-full w-full object-cover object-center"
+          fallback={<ContentPlaceholder variant="marketplace" title={title} />}
+        />
         <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/90 text-white">
           {badge}
         </span>

@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/ToastProvider';
 import DirectoryState from '../components/ui/DirectoryState';
 import { uploadMedia } from '../lib/mediaUpload';
+import { contentInitials } from '../components/media/ContentPlaceholder';
 
 const PROFILE = gql`
   query EditableMemberProfile {
@@ -151,7 +152,7 @@ export default function ProfilePage() {
           <div className="mt-5 flex flex-col gap-7 sm:flex-row">
             <div className="shrink-0">
               <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#eee6ef] font-serif text-3xl font-bold">
-                {avatarCanPreview ? <img src={avatarUrl} alt="Avatar preview" onError={() => setAvatarPreviewFailed(true)} className="h-full w-full object-cover" /> : (name || 'M').charAt(0).toUpperCase()}
+                {avatarCanPreview ? <img src={avatarUrl} alt="Avatar preview" onError={() => setAvatarPreviewFailed(true)} className="h-full w-full object-cover" /> : contentInitials(name || 'Member')}
               </div>
             </div>
             <div className="grid flex-1 gap-5 sm:grid-cols-2">

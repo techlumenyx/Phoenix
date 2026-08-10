@@ -2,6 +2,7 @@ import { gql, useMutation, useQuery } from '@apollo/client';
 import { getAuth } from 'firebase/auth';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import NameAvatar from '../components/media/NameAvatar';
 
 const INVITE = gql`
   query OrganisationInvitation($token: String!) {
@@ -53,13 +54,7 @@ export default function OrganisationInvitePage() {
   return (
     <main className="mx-auto max-w-xl px-5 py-20">
       <div className="rounded-3xl border bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#eee6ef] font-serif text-3xl font-bold">
-          {invite.organisation.logoUrl ? (
-            <img src={invite.organisation.logoUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            invite.organisation.name.charAt(0)
-          )}
-        </div>
+        <NameAvatar name={invite.organisation.name} src={invite.organisation.logoUrl} className="mx-auto h-20 w-20 rounded-full text-3xl" />
         <h1 className="mt-5 font-serif text-3xl font-bold">Join {invite.organisation.name}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-500">
           This invitation is for <strong>{invite.email}</strong>. Sign in or create an account using

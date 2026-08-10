@@ -33,7 +33,7 @@ function eventTime(event: HomepageEvent) {
 }
 
 function EventSpotlightCard({ event, className = '' }: { event: HomepageEvent; className?: string }) {
-  return <EventCard badge={event.isPromoted ? 'FEATURED EVENT' : event.category.replaceAll('_', ' ')} date={eventDate(event)} title={event.title} description={event.description} location={eventLocation(event)} time={eventTime(event)} invites={`${event.rsvpCount} RSVPs`} verified={event.hosts.some((host) => host.isVerified)} imageSrc={event.imageUrls[0] || '/assets/event-theology.png'} href={`/events/${event.id}`} className={className} />;
+  return <EventCard badge={event.isPromoted ? 'FEATURED EVENT' : event.category.replaceAll('_', ' ')} date={eventDate(event)} title={event.title} description={event.description} location={eventLocation(event)} time={eventTime(event)} invites={`${event.rsvpCount} RSVPs`} verified={event.hosts.some((host) => host.isVerified)} imageSrc={event.imageUrls[0]} href={`/events/${event.id}`} className={className} />;
 }
 
 function JobSpotlightCard({ job, className = '' }: { job: HomepageJob; className?: string }) {

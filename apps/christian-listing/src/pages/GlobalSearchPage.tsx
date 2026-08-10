@@ -7,6 +7,7 @@ import MarketplaceCard from '../components/cards/MarketplaceCard';
 import { SearchIcon } from '../components/layout/icons';
 import LoadMoreButton from '../components/ui/LoadMoreButton';
 import LocationCombobox from '../components/location/LocationCombobox';
+import NameAvatar from '../components/media/NameAvatar';
 import {
   DiscoveryData,
   GLOBAL_SEARCH_QUERY,
@@ -537,17 +538,7 @@ export default function GlobalSearchPage() {
                   className="group flex min-h-48 flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="flex items-start gap-4">
-                    {organisation.logoUrl ? (
-                      <img
-                        src={organisation.logoUrl}
-                        alt=""
-                        className="h-14 w-14 rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#F0E5CE] font-serif text-xl font-bold text-[#6F542B]">
-                        {organisation.name.charAt(0)}
-                      </div>
-                    )}
+                    <NameAvatar name={organisation.name} src={organisation.logoUrl} className="h-14 w-14 rounded-xl text-xl" />
                     <div className="min-w-0">
                       <h3 className="font-serif text-xl font-bold text-[#1B1B1B] group-hover:underline">
                         {organisation.name}
