@@ -3,6 +3,7 @@ import { gql, useQuery } from '@apollo/client';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MY_ORGANISATIONS } from '../../graphql/mutations';
 import { useAuthStore } from '../../store/authStore';
+import { useOrganisationPermissions } from '../../hooks/useOrganisationPermissions';
 import {
   BellIcon,
   BriefcaseIcon,
@@ -135,6 +136,7 @@ export default function OrgLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { canManageSettings, loading: permissionsLoading } = useOrganisationPermissions();
 
   const { data: orgData } = useQuery<{ myOrganisations: { id: string; name: string | null }[] }>(MY_ORGANISATIONS);
   const orgName = orgData?.myOrganisations?.[0]?.name ?? 'Organisation';
@@ -179,7 +181,9 @@ export default function OrgLayout() {
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
+          {NAV_ITEMS.filter(({ path }) => (
+            path !== '/org/settings' || (!permissionsLoading && canManageSettings)
+          )).map(({ label, icon: Icon, path }) => {
             const isActive = pathname === path;
             return (
               <button

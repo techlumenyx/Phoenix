@@ -39,6 +39,7 @@ import OrgJobsPage from '../pages/org/OrgJobsPage';
 import OrgSettingsPage from '../pages/org/OrgSettingsPage';
 import OrgNotificationsPage from '../pages/org/OrgNotificationsPage';
 import OrgAnalyticsPage from '../pages/org/OrgAnalyticsPage';
+import OrgSettingsAccess from '../components/routing/OrgSettingsAccess';
 
 const router = createBrowserRouter([
   {
@@ -98,7 +99,7 @@ const router = createBrowserRouter([
       { path: 'messages',   element: <MessagingPage sellerMode /> },
       { path: 'messages/:threadId', element: <MessagingPage sellerMode /> },
       { path: 'notifications', element: <OrgNotificationsPage /> },
-      { path: 'settings',   element: <OrgSettingsPage /> },
+      { path: 'settings',   element: <OrgSettingsAccess><OrgSettingsPage /></OrgSettingsAccess> },
       { path: 'team',       element: <OrgTeamPage /> },
       { path: 'analytics',  element: <OrgAnalyticsPage /> },
     ],

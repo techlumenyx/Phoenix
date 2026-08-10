@@ -11,6 +11,7 @@ import { useToast } from '../../components/ui/ToastProvider';
 import DirectoryState from '../../components/ui/DirectoryState';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
 import { uploadMedia } from '../../lib/mediaUpload';
+import { useOrganisationPermissions } from '../../hooks/useOrganisationPermissions';
 
 interface SocialLinks {
   whatsapp?: string | null;
@@ -39,6 +40,7 @@ const fieldClass =
 
 export default function OrgSettingsPage() {
   const { showToast } = useToast();
+  const { canManageLifecycle } = useOrganisationPermissions();
   const signedInEmail = useAuthStore((state) => state.user?.email);
   const { data, loading, error, refetch } = useQuery(MY_ORGANISATIONS);
   const org: OrgData | null = data?.myOrganisations?.[0] ?? null;
@@ -311,10 +313,16 @@ export default function OrgSettingsPage() {
               {org.isActive
                 ? 'Hide the public organisation profile and directory entry while retaining its data, settings, and team access.'
                 : 'Restore the organisation profile and make it discoverable to members again.'}
+              {!canManageLifecycle && ' Only the organisation owner can change this status.'}
             </p>
           </div>
-          <button type="button" onClick={() => setShowLifecycleDialog(true)} className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold ${org.isActive ? 'border border-red-300 text-red-700 hover:bg-red-50' : 'bg-[#302D2E] text-white hover:bg-black'}`}>
-            {org.isActive ? 'Deactivate' : 'Reactivate'}
+          <button
+            type="button"
+            disabled={!canManageLifecycle}
+            onClick={() => setShowLifecycleDialog(true)}
+            className={`shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${org.isActive ? 'border border-red-300 text-red-700 hover:bg-red-50' : 'bg-[#302D2E] text-white hover:bg-black'}`}
+          >
+            {canManageLifecycle ? (org.isActive ? 'Deactivate' : 'Reactivate') : 'Owner only'}
           </button>
         </div>
       </section>
