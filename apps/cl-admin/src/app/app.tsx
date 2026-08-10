@@ -16,6 +16,7 @@ import CurationPage from '../pages/curation/CurationPage';
 import SystemHealthPage from '../pages/SystemHealthPage';
 import EmailDeliveriesPage from '../pages/EmailDeliveriesPage';
 import RiskSignalsPage from '../pages/RiskSignalsPage';
+import AnnouncementsPage from '../pages/announcements/AnnouncementsPage';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="system" element={<SystemHealthPage />} />
           <Route path="email-deliveries" element={<EmailDeliveriesPage />} />
           <Route path="risk-signals" element={<RiskSignalsPage />} />
+          <Route path="announcements" element={<AnnouncementsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

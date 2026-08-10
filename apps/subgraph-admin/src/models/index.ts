@@ -17,6 +17,8 @@ import { ContentRiskAnalysisSchema, type IContentRiskAnalysis } from './content-
 import { ReportConversationSchema, type IReportConversation } from './report-conversation.model';
 import { ReportMessageSchema, type IReportMessage } from './report-message.model';
 import { ReportAppealSchema, type IReportAppeal } from './report-appeal.model';
+import { ProductAnnouncementSchema, type IProductAnnouncement } from './product-announcement.model';
+import { AnnouncementReceiptSchema, type IAnnouncementReceipt } from './announcement-receipt.model';
 
 export let ModerationReportModel: mongoose.Model<IModerationReport>;
 export let ModerationCaseModel: mongoose.Model<IModerationCase>;
@@ -36,6 +38,8 @@ export let ContentRiskAnalysisModel: mongoose.Model<IContentRiskAnalysis>;
 export let ReportConversationModel: mongoose.Model<IReportConversation>;
 export let ReportMessageModel: mongoose.Model<IReportMessage>;
 export let ReportAppealModel: mongoose.Model<IReportAppeal>;
+export let ProductAnnouncementModel: mongoose.Model<IProductAnnouncement>;
+export let AnnouncementReceiptModel: mongoose.Model<IAnnouncementReceipt>;
 
 export function setupModels(connection: Connection) {
   ModerationReportModel = connection.model<IModerationReport>('ModerationReport', ModerationReportSchema);
@@ -56,4 +60,6 @@ export function setupModels(connection: Connection) {
   ReportConversationModel = connection.model<IReportConversation>('ReportConversation', ReportConversationSchema);
   ReportMessageModel = connection.model<IReportMessage>('ReportMessage', ReportMessageSchema);
   ReportAppealModel = connection.model<IReportAppeal>('ReportAppeal', ReportAppealSchema);
+  ProductAnnouncementModel = connection.model<IProductAnnouncement>('ProductAnnouncement', ProductAnnouncementSchema);
+  AnnouncementReceiptModel = connection.model<IAnnouncementReceipt>('AnnouncementReceipt', AnnouncementReceiptSchema);
 }

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAdminAuth, type AdminRole } from '../auth/authStore';
 import AdminNotifications from './AdminNotifications';
+import AdminWhatsNewPopover from './AdminWhatsNewPopover';
 
-type IconName = 'overview' | 'shield' | 'check' | 'users' | 'building' | 'content' | 'chart' | 'audit' | 'star' | 'system' | 'mail';
+type IconName = 'overview' | 'shield' | 'check' | 'users' | 'building' | 'content' | 'chart' | 'audit' | 'star' | 'system' | 'mail' | 'megaphone';
 
 const navigation: Array<{ label: string; items: Array<{ label: string; to: string; icon: IconName; roles?: AdminRole[] }> }> = [
   { label: 'Work', items: [
@@ -23,6 +24,7 @@ const navigation: Array<{ label: string; items: Array<{ label: string; to: strin
     { label: 'Templates', to: '/templates', icon: 'content', roles: ['TRUST_SAFETY', 'VERIFICATION_REVIEWER', 'CONTENT_MANAGER', 'SUPPORT_AGENT', 'AUDITOR'] },
     { label: 'Email delivery', to: '/email-deliveries', icon: 'mail', roles: ['SUPPORT_AGENT', 'AUDITOR'] },
     { label: 'Highlights', to: '/curation', icon: 'star', roles: ['CONTENT_MANAGER'] },
+    { label: 'What’s New', to: '/announcements', icon: 'megaphone', roles: ['CONTENT_MANAGER'] },
     { label: 'System health', to: '/system', icon: 'system', roles: ['AUDITOR'] },
   ] },
 ];
@@ -46,6 +48,7 @@ export default function AdminShell() {
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] text-[#172B4D]">
+      <AdminWhatsNewPopover />
       <a href="#admin-main" className="skip-link">Skip to main content</a>
       {mobileNavOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden" onClick={() => setMobileNavOpen(false)} />}
       <aside id="admin-navigation" aria-label="Primary" className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-[#172B4D] text-white transition-transform lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -122,6 +125,7 @@ function Icon({ name }: { name: IconName }) {
     star: <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3z" />,
     system: <><path d="M12 3v8M8 5a8 8 0 108 0" /></>,
     mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M4 7l8 6 8-6" /></>,
+    megaphone: <><path d="M3 11v3h4l9 4V7l-9 4H3zM7 14l2 6h3l-2-5" /><path d="M19 9a4 4 0 010 7" /></>,
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0 fill-none stroke-current stroke-[1.8]" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }

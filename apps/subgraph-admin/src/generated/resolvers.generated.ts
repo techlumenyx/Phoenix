@@ -127,6 +127,21 @@ export const AdminTemplateType = {
 } as const;
 
 export type AdminTemplateType = typeof AdminTemplateType[keyof typeof AdminTemplateType];
+export const AnnouncementAudience = {
+  Admin: 'ADMIN',
+  Member: 'MEMBER',
+  Organisation: 'ORGANISATION'
+} as const;
+
+export type AnnouncementAudience = typeof AnnouncementAudience[keyof typeof AnnouncementAudience];
+export const AnnouncementStatus = {
+  Archived: 'ARCHIVED',
+  Draft: 'DRAFT',
+  Published: 'PUBLISHED',
+  Scheduled: 'SCHEDULED'
+} as const;
+
+export type AnnouncementStatus = typeof AnnouncementStatus[keyof typeof AnnouncementStatus];
 export const AuditAction = {
   AccessDocument: 'ACCESS_DOCUMENT',
   AccessPrivateData: 'ACCESS_PRIVATE_DATA',
@@ -136,6 +151,10 @@ export const AuditAction = {
   AddNote: 'ADD_NOTE',
   AiRiskRetry: 'AI_RISK_RETRY',
   AiRiskReview: 'AI_RISK_REVIEW',
+  AnnouncementArchive: 'ANNOUNCEMENT_ARCHIVE',
+  AnnouncementCreate: 'ANNOUNCEMENT_CREATE',
+  AnnouncementPublish: 'ANNOUNCEMENT_PUBLISH',
+  AnnouncementUpdate: 'ANNOUNCEMENT_UPDATE',
   AppealNeedsInformation: 'APPEAL_NEEDS_INFORMATION',
   AppealOverturn: 'APPEAL_OVERTURN',
   AppealSubmit: 'APPEAL_SUBMIT',
@@ -293,6 +312,7 @@ export type ContentRiskSignal = {
 };
 
 export const ContentType = {
+  Announcement: 'ANNOUNCEMENT',
   AuditExport: 'AUDIT_EXPORT',
   EmailDelivery: 'EMAIL_DELIVERY',
   Event: 'EVENT',
@@ -510,18 +530,22 @@ export type Mutation = {
   addModerationCaseNote: CaseNote;
   applyAccountAction: AdminDirectoryItem;
   applyEventAction: Scalars['Boolean']['output'];
+  archiveProductAnnouncement: ProductAnnouncement;
   assignModerationCase: ModerationCase;
   assignVerificationSubmission: VerificationSubmission;
   createAdminTemplate: AdminTemplate;
   createFeaturedPlacement: FeaturedPlacement;
+  createProductAnnouncement: ProductAnnouncement;
   decideReportAppeal: ReportAppeal;
   decideVerificationSubmission: VerificationSubmission;
   deleteSavedAdminView: Scalars['Boolean']['output'];
   duplicateFeaturedPlacement: FeaturedPlacement;
   markAdminNotificationRead: AdminNotification;
   markAllAdminNotificationsRead: Scalars['Boolean']['output'];
+  markProductAnnouncementSeen: Scalars['Boolean']['output'];
   markReportConversationRead: Scalars['Boolean']['output'];
   pauseFeaturedPlacement: FeaturedPlacement;
+  publishProductAnnouncement: ProductAnnouncement;
   reorderFeaturedPlacement: FeaturedPlacement;
   requestAuditExport: AuditExport;
   resolveModerationCase: ModerationCase;
@@ -536,6 +560,7 @@ export type Mutation = {
   submitContentReport: ReportConversation;
   submitReportAppeal: ReportAppeal;
   updateFeaturedPlacement: FeaturedPlacement;
+  updateProductAnnouncement: ProductAnnouncement;
 };
 
 
@@ -579,6 +604,11 @@ export type MutationApplyEventActionArgs = {
 };
 
 
+export type MutationArchiveProductAnnouncementArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationAssignModerationCaseArgs = {
   assigneeFirebaseUid?: InputMaybe<Scalars['String']['input']>;
   expectedVersion: Scalars['Int']['input'];
@@ -604,6 +634,11 @@ export type MutationCreateAdminTemplateArgs = {
 
 export type MutationCreateFeaturedPlacementArgs = {
   input: FeaturedPlacementInput;
+};
+
+
+export type MutationCreateProductAnnouncementArgs = {
+  input: ProductAnnouncementInput;
 };
 
 
@@ -640,6 +675,11 @@ export type MutationMarkAdminNotificationReadArgs = {
 };
 
 
+export type MutationMarkProductAnnouncementSeenArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationMarkReportConversationReadArgs = {
   conversationId: Scalars['ID']['input'];
 };
@@ -648,6 +688,12 @@ export type MutationMarkReportConversationReadArgs = {
 export type MutationPauseFeaturedPlacementArgs = {
   id: Scalars['ID']['input'];
   paused: Scalars['Boolean']['input'];
+};
+
+
+export type MutationPublishProductAnnouncementArgs = {
+  id: Scalars['ID']['input'];
+  publishAt?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
 
@@ -742,6 +788,12 @@ export type MutationUpdateFeaturedPlacementArgs = {
   input: FeaturedPlacementInput;
 };
 
+
+export type MutationUpdateProductAnnouncementArgs = {
+  id: Scalars['ID']['input'];
+  input: ProductAnnouncementInput;
+};
+
 export const PlacementSource = {
   Editorial: 'EDITORIAL',
   Promotion: 'PROMOTION'
@@ -765,6 +817,49 @@ export const PlacementTargetType = {
 } as const;
 
 export type PlacementTargetType = typeof PlacementTargetType[keyof typeof PlacementTargetType];
+export type ProductAnnouncement = {
+  __typename?: 'ProductAnnouncement';
+  archivedAt?: Maybe<Scalars['DateTime']['output']>;
+  audiences: Array<AnnouncementAudience>;
+  body: Scalars['String']['output'];
+  buttonLabel?: Maybe<Scalars['String']['output']>;
+  buttonUrl?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  imageAlt?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  publishAt?: Maybe<Scalars['DateTime']['output']>;
+  publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  releaseKey: Scalars['String']['output'];
+  seen: Scalars['Boolean']['output'];
+  status: AnnouncementStatus;
+  summary?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  videoUrl?: Maybe<Scalars['String']['output']>;
+};
+
+export type ProductAnnouncementConnection = {
+  __typename?: 'ProductAnnouncementConnection';
+  edges: Array<ProductAnnouncement>;
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  totalCount: Scalars['Int']['output'];
+};
+
+export type ProductAnnouncementInput = {
+  audiences: Array<AnnouncementAudience>;
+  body: Scalars['String']['input'];
+  buttonLabel?: InputMaybe<Scalars['String']['input']>;
+  buttonUrl?: InputMaybe<Scalars['String']['input']>;
+  imageAlt?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  releaseKey: Scalars['String']['input'];
+  summary?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+  videoUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   adminDashboardStats: AdminDashboardStats;
@@ -779,16 +874,19 @@ export type Query = {
   auditExports: Array<AuditExport>;
   contentRiskAnalyses: ContentRiskAnalysisConnection;
   contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration;
+  currentProductAnnouncement?: Maybe<ProductAnnouncement>;
   emailDeliveries: EmailDeliveryConnection;
   emailDeliveryConfiguration: EmailDeliveryConfiguration;
   featuredPlacementPage: FeaturedPlacementConnection;
   featuredPlacements: Array<FeaturedPlacement>;
   moderationCase?: Maybe<ModerationCase>;
   moderationCases: ModerationCaseConnection;
+  myProductAnnouncements: ProductAnnouncementConnection;
   myReportConversations: Array<ReportConversation>;
   myReportUnreadCount: Scalars['Int']['output'];
   organisationReportConversations: Array<ReportConversation>;
   organisationReportUnreadCount: Scalars['Int']['output'];
+  productAnnouncementPage: ProductAnnouncementConnection;
   reportConversation?: Maybe<ReportConversation>;
   savedAdminViews: Array<SavedAdminView>;
   verificationSubmission?: Maybe<VerificationSubmission>;
@@ -912,6 +1010,12 @@ export type QueryModerationCasesArgs = {
 };
 
 
+export type QueryMyProductAnnouncementsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
 export type QueryOrganisationReportConversationsArgs = {
   organisationId: Scalars['ID']['input'];
 };
@@ -919,6 +1023,17 @@ export type QueryOrganisationReportConversationsArgs = {
 
 export type QueryOrganisationReportUnreadCountArgs = {
   organisationId: Scalars['ID']['input'];
+};
+
+
+export type QueryProductAnnouncementPageArgs = {
+  audience?: InputMaybe<AnnouncementAudience>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortDirection?: InputMaybe<AdminSortDirection>;
+  status?: InputMaybe<AnnouncementStatus>;
 };
 
 
@@ -1248,6 +1363,8 @@ export type ResolversTypes = ResolversObject<{
   AdminTemplate: ResolverTypeWrapper<AdminTemplate>;
   AdminTemplateConnection: ResolverTypeWrapper<AdminTemplateConnection>;
   AdminTemplateType: AdminTemplateType;
+  AnnouncementAudience: AnnouncementAudience;
+  AnnouncementStatus: AnnouncementStatus;
   AuditAction: AuditAction;
   AuditEvent: ResolverTypeWrapper<AuditEvent>;
   AuditEventConnection: ResolverTypeWrapper<AuditEventConnection>;
@@ -1283,6 +1400,9 @@ export type ResolversTypes = ResolversObject<{
   PlacementSource: PlacementSource;
   PlacementStatus: PlacementStatus;
   PlacementTargetType: PlacementTargetType;
+  ProductAnnouncement: ResolverTypeWrapper<ProductAnnouncement>;
+  ProductAnnouncementConnection: ResolverTypeWrapper<ProductAnnouncementConnection>;
+  ProductAnnouncementInput: ProductAnnouncementInput;
   Query: ResolverTypeWrapper<{}>;
   ReportAppeal: ResolverTypeWrapper<ReportAppeal>;
   ReportAppealDecision: ReportAppealDecision;
@@ -1341,6 +1461,9 @@ export type ResolversParentTypes = ResolversObject<{
   ModerationCaseConnection: ModerationCaseConnection;
   ModerationReport: ModerationReport;
   Mutation: {};
+  ProductAnnouncement: ProductAnnouncement;
+  ProductAnnouncementConnection: ProductAnnouncementConnection;
+  ProductAnnouncementInput: ProductAnnouncementInput;
   Query: {};
   ReportAppeal: ReportAppeal;
   ReportConversation: ReportConversation;
@@ -1670,18 +1793,22 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   addModerationCaseNote?: Resolver<ResolversTypes['CaseNote'], ParentType, ContextType, RequireFields<MutationAddModerationCaseNoteArgs, 'body' | 'caseId'>>;
   applyAccountAction?: Resolver<ResolversTypes['AdminDirectoryItem'], ParentType, ContextType, RequireFields<MutationApplyAccountActionArgs, 'action' | 'id' | 'reason' | 'type'>>;
   applyEventAction?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationApplyEventActionArgs, 'action' | 'id' | 'reason' | 'scope'>>;
+  archiveProductAnnouncement?: Resolver<ResolversTypes['ProductAnnouncement'], ParentType, ContextType, RequireFields<MutationArchiveProductAnnouncementArgs, 'id'>>;
   assignModerationCase?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationAssignModerationCaseArgs, 'expectedVersion' | 'id'>>;
   assignVerificationSubmission?: Resolver<ResolversTypes['VerificationSubmission'], ParentType, ContextType, RequireFields<MutationAssignVerificationSubmissionArgs, 'id'>>;
   createAdminTemplate?: Resolver<ResolversTypes['AdminTemplate'], ParentType, ContextType, RequireFields<MutationCreateAdminTemplateArgs, 'key' | 'publicMessage' | 'title' | 'type'>>;
   createFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationCreateFeaturedPlacementArgs, 'input'>>;
+  createProductAnnouncement?: Resolver<ResolversTypes['ProductAnnouncement'], ParentType, ContextType, RequireFields<MutationCreateProductAnnouncementArgs, 'input'>>;
   decideReportAppeal?: Resolver<ResolversTypes['ReportAppeal'], ParentType, ContextType, RequireFields<MutationDecideReportAppealArgs, 'appealId' | 'decision' | 'reason'>>;
   decideVerificationSubmission?: Resolver<ResolversTypes['VerificationSubmission'], ParentType, ContextType, RequireFields<MutationDecideVerificationSubmissionArgs, 'action' | 'id' | 'reason'>>;
   deleteSavedAdminView?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteSavedAdminViewArgs, 'id'>>;
   duplicateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationDuplicateFeaturedPlacementArgs, 'endsAt' | 'id' | 'rank' | 'startsAt'>>;
   markAdminNotificationRead?: Resolver<ResolversTypes['AdminNotification'], ParentType, ContextType, RequireFields<MutationMarkAdminNotificationReadArgs, 'id'>>;
   markAllAdminNotificationsRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  markProductAnnouncementSeen?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkProductAnnouncementSeenArgs, 'id'>>;
   markReportConversationRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkReportConversationReadArgs, 'conversationId'>>;
   pauseFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationPauseFeaturedPlacementArgs, 'id' | 'paused'>>;
+  publishProductAnnouncement?: Resolver<ResolversTypes['ProductAnnouncement'], ParentType, ContextType, RequireFields<MutationPublishProductAnnouncementArgs, 'id'>>;
   reorderFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationReorderFeaturedPlacementArgs, 'id' | 'rank'>>;
   requestAuditExport?: Resolver<ResolversTypes['AuditExport'], ParentType, ContextType, RequireFields<MutationRequestAuditExportArgs, 'from' | 'to'>>;
   resolveModerationCase?: Resolver<ResolversTypes['ModerationCase'], ParentType, ContextType, RequireFields<MutationResolveModerationCaseArgs, 'action' | 'expectedVersion' | 'id' | 'reason'>>;
@@ -1696,6 +1823,38 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   submitContentReport?: Resolver<ResolversTypes['ReportConversation'], ParentType, ContextType, RequireFields<MutationSubmitContentReportArgs, 'reason' | 'targetId' | 'targetType'>>;
   submitReportAppeal?: Resolver<ResolversTypes['ReportAppeal'], ParentType, ContextType, RequireFields<MutationSubmitReportAppealArgs, 'body' | 'conversationId'>>;
   updateFeaturedPlacement?: Resolver<ResolversTypes['FeaturedPlacement'], ParentType, ContextType, RequireFields<MutationUpdateFeaturedPlacementArgs, 'id' | 'input'>>;
+  updateProductAnnouncement?: Resolver<ResolversTypes['ProductAnnouncement'], ParentType, ContextType, RequireFields<MutationUpdateProductAnnouncementArgs, 'id' | 'input'>>;
+}>;
+
+export type ProductAnnouncementResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ProductAnnouncement'] = ResolversParentTypes['ProductAnnouncement']> = ResolversObject<{
+  __resolveReference?: ReferenceResolver<Maybe<ResolversTypes['ProductAnnouncement']>, { __typename: 'ProductAnnouncement' } & GraphQLRecursivePick<ParentType, {"id":true}>, ContextType>;
+  archivedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  audiences?: Resolver<Array<ResolversTypes['AnnouncementAudience']>, ParentType, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  buttonLabel?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  buttonUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  imageAlt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  imageUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  publishAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  publishedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  releaseKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  seen?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['AnnouncementStatus'], ParentType, ContextType>;
+  summary?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
+  videoUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ProductAnnouncementConnectionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ProductAnnouncementConnection'] = ResolversParentTypes['ProductAnnouncementConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['ProductAnnouncement']>, ParentType, ContextType>;
+  endCursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hasNextPage?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
@@ -1711,16 +1870,19 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   auditExports?: Resolver<Array<ResolversTypes['AuditExport']>, ParentType, ContextType>;
   contentRiskAnalyses?: Resolver<ResolversTypes['ContentRiskAnalysisConnection'], ParentType, ContextType, Partial<QueryContentRiskAnalysesArgs>>;
   contentRiskAnalysisConfiguration?: Resolver<ResolversTypes['ContentRiskAnalysisConfiguration'], ParentType, ContextType>;
+  currentProductAnnouncement?: Resolver<Maybe<ResolversTypes['ProductAnnouncement']>, ParentType, ContextType>;
   emailDeliveries?: Resolver<ResolversTypes['EmailDeliveryConnection'], ParentType, ContextType, Partial<QueryEmailDeliveriesArgs>>;
   emailDeliveryConfiguration?: Resolver<ResolversTypes['EmailDeliveryConfiguration'], ParentType, ContextType>;
   featuredPlacementPage?: Resolver<ResolversTypes['FeaturedPlacementConnection'], ParentType, ContextType, Partial<QueryFeaturedPlacementPageArgs>>;
   featuredPlacements?: Resolver<Array<ResolversTypes['FeaturedPlacement']>, ParentType, ContextType, Partial<QueryFeaturedPlacementsArgs>>;
   moderationCase?: Resolver<Maybe<ResolversTypes['ModerationCase']>, ParentType, ContextType, RequireFields<QueryModerationCaseArgs, 'id'>>;
   moderationCases?: Resolver<ResolversTypes['ModerationCaseConnection'], ParentType, ContextType, Partial<QueryModerationCasesArgs>>;
+  myProductAnnouncements?: Resolver<ResolversTypes['ProductAnnouncementConnection'], ParentType, ContextType, Partial<QueryMyProductAnnouncementsArgs>>;
   myReportConversations?: Resolver<Array<ResolversTypes['ReportConversation']>, ParentType, ContextType>;
   myReportUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   organisationReportConversations?: Resolver<Array<ResolversTypes['ReportConversation']>, ParentType, ContextType, RequireFields<QueryOrganisationReportConversationsArgs, 'organisationId'>>;
   organisationReportUnreadCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryOrganisationReportUnreadCountArgs, 'organisationId'>>;
+  productAnnouncementPage?: Resolver<ResolversTypes['ProductAnnouncementConnection'], ParentType, ContextType, Partial<QueryProductAnnouncementPageArgs>>;
   reportConversation?: Resolver<Maybe<ResolversTypes['ReportConversation']>, ParentType, ContextType, RequireFields<QueryReportConversationArgs, 'id'>>;
   savedAdminViews?: Resolver<Array<ResolversTypes['SavedAdminView']>, ParentType, ContextType, Partial<QuerySavedAdminViewsArgs>>;
   verificationSubmission?: Resolver<Maybe<ResolversTypes['VerificationSubmission']>, ParentType, ContextType, RequireFields<QueryVerificationSubmissionArgs, 'id'>>;
@@ -1854,6 +2016,8 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   ModerationCaseConnection?: ModerationCaseConnectionResolvers<ContextType>;
   ModerationReport?: ModerationReportResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  ProductAnnouncement?: ProductAnnouncementResolvers<ContextType>;
+  ProductAnnouncementConnection?: ProductAnnouncementConnectionResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   ReportAppeal?: ReportAppealResolvers<ContextType>;
   ReportConversation?: ReportConversationResolvers<ContextType>;

@@ -41,6 +41,7 @@ import OrgNotificationsPage from '../pages/org/OrgNotificationsPage';
 import OrgAnalyticsPage from '../pages/org/OrgAnalyticsPage';
 import OrgSettingsAccess from '../components/routing/OrgSettingsAccess';
 import ReportConversationsPage from '../pages/ReportConversationsPage';
+import WhatsNewPage from '../pages/WhatsNewPage';
 
 const router = createBrowserRouter([
   {
@@ -81,6 +82,7 @@ const router = createBrowserRouter([
           { path: 'dashboard/messages/:threadId', element: <MessagingPage /> },
           { path: 'dashboard/reports', element: <ReportConversationsPage /> },
           { path: 'profile',   element: <ProfilePage /> },
+          { path: 'whats-new', element: <WhatsNewPage /> },
           { path: 'jobs/:id/apply', element: <JobApplicationPage /> },
         ],
       },

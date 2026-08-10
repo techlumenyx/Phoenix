@@ -7,7 +7,7 @@ export const MEDIA_PURPOSES = [
   'MEMBER_AVATAR', 'ORGANISATION_LOGO', 'ORGANISATION_GALLERY',
   'VERIFICATION_DOCUMENT', 'EVENT_IMAGE', 'EVENT_VIDEO',
   'MARKETPLACE_IMAGE', 'MARKETPLACE_VIDEO', 'JOB_CV',
-  'FEATURED_PLACEMENT_IMAGE',
+  'FEATURED_PLACEMENT_IMAGE', 'ANNOUNCEMENT_IMAGE', 'ANNOUNCEMENT_VIDEO',
 ] as const;
 export type MediaPurpose = (typeof MEDIA_PURPOSES)[number];
 export const MAX_VIDEO_BYTES = 20_000_000;
@@ -24,6 +24,8 @@ export const MEDIA_POLICIES: Record<MediaPurpose, Policy> = {
   MARKETPLACE_VIDEO: { maxBytes: MAX_VIDEO_BYTES, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
   JOB_CV: { maxBytes: 10e6, mimeTypes: ['application/pdf'], resourceType: 'raw', private: true },
   FEATURED_PLACEMENT_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
+  ANNOUNCEMENT_IMAGE: { maxBytes: 8e6, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], resourceType: 'image', private: false },
+  ANNOUNCEMENT_VIDEO: { maxBytes: MAX_VIDEO_BYTES, mimeTypes: ['video/mp4', 'video/quicktime', 'video/webm'], resourceType: 'video', private: false },
 };
 
 export interface MediaUploadResult {

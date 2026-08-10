@@ -151,6 +151,7 @@ function UserMenu({
           >
             View Profile
           </button>
+          <button onClick={() => { setOpen(false); navigate('/whats-new'); }} className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors">What’s New</button>
           <div className="h-px bg-white/10" />
           <button
             onClick={handleSignOut}
@@ -289,6 +290,7 @@ export default function Navbar() {
                   >
                     Saved Items
                   </button>
+                  <button onClick={() => { setMenuOpen(false); navigate('/whats-new'); }} className="self-start text-sm font-medium text-white/70 hover:text-white transition-colors">What’s New</button>
                   <button
                     onClick={handleMobileSignOut}
                     className="self-start text-sm font-medium text-red-400 hover:text-red-300 transition-colors"

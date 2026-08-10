@@ -5,7 +5,7 @@ export interface IAuditEvent {
   adminFirebaseUid: string;
   action: string;
   targetId: string;
-  targetType: 'MARKETPLACE_ITEM' | 'ORGANISATION_VERIFICATION' | 'USER' | 'ORGANISATION' | 'EVENT' | 'JOB' | 'AUDIT_EXPORT' | 'TEMPLATE' | 'FEATURED_PLACEMENT' | 'SAVED_VIEW' | 'EMAIL_DELIVERY';
+  targetType: 'MARKETPLACE_ITEM' | 'ORGANISATION_VERIFICATION' | 'USER' | 'ORGANISATION' | 'EVENT' | 'JOB' | 'AUDIT_EXPORT' | 'TEMPLATE' | 'FEATURED_PLACEMENT' | 'SAVED_VIEW' | 'EMAIL_DELIVERY' | 'ANNOUNCEMENT';
   caseId: mongoose.Types.ObjectId | null;
   reason: string;
   beforeStatus: string | null;
@@ -26,7 +26,7 @@ export const AuditEventSchema = new Schema<IAuditEvent>(
     adminFirebaseUid: { type: String, required: true, index: true },
     action: { type: String, required: true },
     targetId: { type: String, required: true },
-    targetType: { type: String, enum: ['MARKETPLACE_ITEM', 'ORGANISATION_VERIFICATION', 'USER', 'ORGANISATION', 'EVENT', 'JOB', 'AUDIT_EXPORT', 'TEMPLATE', 'FEATURED_PLACEMENT', 'SAVED_VIEW', 'EMAIL_DELIVERY'], required: true },
+    targetType: { type: String, enum: ['MARKETPLACE_ITEM', 'ORGANISATION_VERIFICATION', 'USER', 'ORGANISATION', 'EVENT', 'JOB', 'AUDIT_EXPORT', 'TEMPLATE', 'FEATURED_PLACEMENT', 'SAVED_VIEW', 'EMAIL_DELIVERY', 'ANNOUNCEMENT'], required: true },
     caseId: { type: Schema.Types.ObjectId, default: null, index: true },
     reason: { type: String, required: true, maxlength: 1000 },
     beforeStatus: { type: String, default: null },

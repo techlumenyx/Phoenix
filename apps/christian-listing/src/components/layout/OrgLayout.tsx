@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MY_ORGANISATIONS } from '../../graphql/mutations';
 import { useAuthStore } from '../../store/authStore';
 import { useOrganisationPermissions } from '../../hooks/useOrganisationPermissions';
+import WhatsNewPopover from '../announcements/WhatsNewPopover';
 import {
   BellIcon,
   BriefcaseIcon,
@@ -85,6 +86,7 @@ function OrgUserMenu() {
           >
             View Profile
           </button>
+          <button onClick={() => { setOpen(false); navigate('/whats-new'); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors">What’s New</button>
           <div className="h-px bg-gray-100" />
           <button
             onClick={handleSignOut}
@@ -149,6 +151,7 @@ export default function OrgLayout() {
 
   return (
     <div className="min-h-screen bg-[#FEF7E9]">
+      <WhatsNewPopover />
       <OrgTopBar />
 
       {/* Light sidebar — starts below top bar */}

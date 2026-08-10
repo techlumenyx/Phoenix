@@ -63,6 +63,10 @@ enum AuditAction {
   EMAIL_TEST
   AI_RISK_RETRY
   AI_RISK_REVIEW
+  ANNOUNCEMENT_CREATE
+  ANNOUNCEMENT_UPDATE
+  ANNOUNCEMENT_PUBLISH
+  ANNOUNCEMENT_ARCHIVE
 }
 
 enum ContentType {
@@ -77,6 +81,7 @@ enum ContentType {
   FEATURED_PLACEMENT
   SAVED_VIEW
   EMAIL_DELIVERY
+  ANNOUNCEMENT
 }
 
 enum AuditResult { SUCCESS FAILED }
@@ -93,6 +98,8 @@ enum RiskAnalysisStatus { PENDING PROCESSING COMPLETED FAILED SKIPPED }
 enum RiskLevel { LOW MEDIUM HIGH }
 enum RiskRecommendedAction { NONE REVIEW PENDING_REVIEW }
 enum RiskReviewVerdict { ACCURATE FALSE_POSITIVE NEEDS_MORE_INFO }
+enum AnnouncementAudience { MEMBER ORGANISATION ADMIN }
+enum AnnouncementStatus { DRAFT SCHEDULED PUBLISHED ARCHIVED }
 
 enum VerificationReviewStatus { PENDING_REVIEW NEEDS_INFORMATION APPROVED REJECTED }
 enum VerificationDecision { APPROVE REJECT NEEDS_INFORMATION }
@@ -357,6 +364,39 @@ type ContentRiskAnalysis {
 }
 type ContentRiskAnalysisConnection { edges: [ContentRiskAnalysis!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
 type ContentRiskAnalysisConfiguration { enabled: Boolean! provider: String! model: String! mode: String! }
+type ProductAnnouncement @key(fields: "id") {
+  id: ID!
+  releaseKey: String!
+  title: String!
+  summary: String
+  body: String!
+  audiences: [AnnouncementAudience!]!
+  status: AnnouncementStatus!
+  imageUrl: String
+  imageAlt: String
+  videoUrl: String
+  buttonLabel: String
+  buttonUrl: String
+  publishAt: DateTime
+  publishedAt: DateTime
+  archivedAt: DateTime
+  seen: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+type ProductAnnouncementConnection { edges: [ProductAnnouncement!]! totalCount: Int! hasNextPage: Boolean! endCursor: String }
+input ProductAnnouncementInput {
+  releaseKey: String!
+  title: String!
+  summary: String
+  body: String!
+  audiences: [AnnouncementAudience!]!
+  imageUrl: String
+  imageAlt: String
+  videoUrl: String
+  buttonLabel: String
+  buttonUrl: String
+}
 
 type Query {
   myReportConversations: [ReportConversation!]!
@@ -395,6 +435,9 @@ type Query {
   emailDeliveryConfiguration: EmailDeliveryConfiguration!
   contentRiskAnalyses(status: RiskAnalysisStatus, level: RiskLevel, reviewerVerdict: RiskReviewVerdict, search: String, limit: Int, after: String, offset: Int, sortBy: String, sortDirection: AdminSortDirection): ContentRiskAnalysisConnection!
   contentRiskAnalysisConfiguration: ContentRiskAnalysisConfiguration!
+  currentProductAnnouncement: ProductAnnouncement
+  myProductAnnouncements(limit: Int, offset: Int): ProductAnnouncementConnection!
+  productAnnouncementPage(status: AnnouncementStatus, audience: AnnouncementAudience, search: String, limit: Int, offset: Int, sortBy: String, sortDirection: AdminSortDirection): ProductAnnouncementConnection!
 }
 
 type Mutation {
@@ -436,6 +479,11 @@ type Mutation {
     sendTestEmail(to: String!): EmailDelivery!
     retryContentRiskAnalysis(id: ID!): ContentRiskAnalysis!
     reviewContentRiskAnalysis(id: ID!, verdict: RiskReviewVerdict!, note: String): ContentRiskAnalysis!
+    markProductAnnouncementSeen(id: ID!): Boolean!
+    createProductAnnouncement(input: ProductAnnouncementInput!): ProductAnnouncement!
+    updateProductAnnouncement(id: ID!, input: ProductAnnouncementInput!): ProductAnnouncement!
+    publishProductAnnouncement(id: ID!, publishAt: DateTime): ProductAnnouncement!
+    archiveProductAnnouncement(id: ID!): ProductAnnouncement!
 }
 
 input FeaturedPlacementInput { targetType: PlacementTargetType! targetId: String regions: [String!]! rank: Int! label: String! title: String! imageUrl: String imageAlt: String destinationUrl: String! startsAt: DateTime! endsAt: DateTime! placementSource: PlacementSource = EDITORIAL }

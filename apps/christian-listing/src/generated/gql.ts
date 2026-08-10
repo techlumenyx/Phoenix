@@ -15,6 +15,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 type Documents = {
     "\n  query OrganisationPerformanceAnalytics($organisationId: ID!, $from: DateTime, $to: DateTime) {\n    eventOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      impressions uniqueReach detailViews outcomes activeContent\n      daily { date impressions uniqueReach detailViews }\n      topContent { id title impressions uniqueReach detailViews }\n    }\n    classifiedOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      jobs { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n      marketplace { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n    }\n  }\n": typeof types.OrganisationPerformanceAnalyticsDocument,
+    "query CurrentProductAnnouncement { currentProductAnnouncement { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt } }": typeof types.CurrentProductAnnouncementDocument,
+    "mutation MarkProductAnnouncementSeen($id: ID!) { markProductAnnouncementSeen(id: $id) }": typeof types.MarkProductAnnouncementSeenDocument,
     "\n  mutation UpdateNavbarRegion($input: UpdateProfileInput!) {\n    updateProfile(input: $input) { id region regionCode }\n  }\n": typeof types.UpdateNavbarRegionDocument,
     "query OrganisationSidebarNotificationCounts($organisationId: ID!) { identityOrganisationUnreadCount(organisationId: $organisationId) eventOrganisationUnreadCount(organisationId: $organisationId) classifiedOrganisationUnreadCount(organisationId: $organisationId) organisationReportUnreadCount(organisationId: $organisationId) }": typeof types.OrganisationSidebarNotificationCountsDocument,
     "\n  query LocationSuggestions($query: String!, $countryCode: String, $limit: Int) {\n    locationSuggestions(query: $query, countryCode: $countryCode, limit: $limit) {\n      id\n      name\n      displayName\n      countryCode\n      countryName\n      admin1Name\n    }\n  }\n": typeof types.LocationSuggestionsDocument,
@@ -94,6 +96,7 @@ type Documents = {
     "mutation RemoveSavedEvent($id: ID!) { cancelRsvp(eventId: $id) }": typeof types.RemoveSavedEventDocument,
     "mutation RemoveSavedJob($id: ID!) { unsaveJob(id: $id) }": typeof types.RemoveSavedJobDocument,
     "mutation RemoveSavedMarketplace($id: ID!) { unsaveMarketplaceItem(id: $id) }": typeof types.RemoveSavedMarketplaceDocument,
+    "query MyProductAnnouncements($limit: Int, $offset: Int) { myProductAnnouncements(limit: $limit, offset: $offset) { edges { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt seen } totalCount hasNextPage } }": typeof types.MyProductAnnouncementsDocument,
     "\n  mutation UpdatePreferencesProfile($input: UpdateProfileInput!) {\n    updateProfile(input: $input) {\n      id\n      preferences\n      onboardingCompleted\n    }\n  }\n": typeof types.UpdatePreferencesProfileDocument,
     "\n  mutation UpdateRegionProfile($input: UpdateProfileInput!) {\n    updateProfile(input: $input) {\n      id\n      name\n      email\n      avatarUrl\n      isVerified\n      onboardingCompleted\n      region\n      regionCode\n      preferences\n      roles\n      orgId\n    }\n  }\n": typeof types.UpdateRegionProfileDocument,
     "\n  mutation SubmitVerification($organisationId: ID!, $documentUrls: [String!]!, $details: VerificationDetailsInput) {\n    submitVerification(organisationId: $organisationId, documentUrls: $documentUrls, details: $details) {\n      id\n      status\n    }\n  }\n": typeof types.SubmitVerificationDocument,
@@ -118,6 +121,8 @@ type Documents = {
 };
 const documents: Documents = {
     "\n  query OrganisationPerformanceAnalytics($organisationId: ID!, $from: DateTime, $to: DateTime) {\n    eventOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      impressions uniqueReach detailViews outcomes activeContent\n      daily { date impressions uniqueReach detailViews }\n      topContent { id title impressions uniqueReach detailViews }\n    }\n    classifiedOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      jobs { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n      marketplace { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n    }\n  }\n": types.OrganisationPerformanceAnalyticsDocument,
+    "query CurrentProductAnnouncement { currentProductAnnouncement { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt } }": types.CurrentProductAnnouncementDocument,
+    "mutation MarkProductAnnouncementSeen($id: ID!) { markProductAnnouncementSeen(id: $id) }": types.MarkProductAnnouncementSeenDocument,
     "\n  mutation UpdateNavbarRegion($input: UpdateProfileInput!) {\n    updateProfile(input: $input) { id region regionCode }\n  }\n": types.UpdateNavbarRegionDocument,
     "query OrganisationSidebarNotificationCounts($organisationId: ID!) { identityOrganisationUnreadCount(organisationId: $organisationId) eventOrganisationUnreadCount(organisationId: $organisationId) classifiedOrganisationUnreadCount(organisationId: $organisationId) organisationReportUnreadCount(organisationId: $organisationId) }": types.OrganisationSidebarNotificationCountsDocument,
     "\n  query LocationSuggestions($query: String!, $countryCode: String, $limit: Int) {\n    locationSuggestions(query: $query, countryCode: $countryCode, limit: $limit) {\n      id\n      name\n      displayName\n      countryCode\n      countryName\n      admin1Name\n    }\n  }\n": types.LocationSuggestionsDocument,
@@ -197,6 +202,7 @@ const documents: Documents = {
     "mutation RemoveSavedEvent($id: ID!) { cancelRsvp(eventId: $id) }": types.RemoveSavedEventDocument,
     "mutation RemoveSavedJob($id: ID!) { unsaveJob(id: $id) }": types.RemoveSavedJobDocument,
     "mutation RemoveSavedMarketplace($id: ID!) { unsaveMarketplaceItem(id: $id) }": types.RemoveSavedMarketplaceDocument,
+    "query MyProductAnnouncements($limit: Int, $offset: Int) { myProductAnnouncements(limit: $limit, offset: $offset) { edges { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt seen } totalCount hasNextPage } }": types.MyProductAnnouncementsDocument,
     "\n  mutation UpdatePreferencesProfile($input: UpdateProfileInput!) {\n    updateProfile(input: $input) {\n      id\n      preferences\n      onboardingCompleted\n    }\n  }\n": types.UpdatePreferencesProfileDocument,
     "\n  mutation UpdateRegionProfile($input: UpdateProfileInput!) {\n    updateProfile(input: $input) {\n      id\n      name\n      email\n      avatarUrl\n      isVerified\n      onboardingCompleted\n      region\n      regionCode\n      preferences\n      roles\n      orgId\n    }\n  }\n": types.UpdateRegionProfileDocument,
     "\n  mutation SubmitVerification($organisationId: ID!, $documentUrls: [String!]!, $details: VerificationDetailsInput) {\n    submitVerification(organisationId: $organisationId, documentUrls: $documentUrls, details: $details) {\n      id\n      status\n    }\n  }\n": types.SubmitVerificationDocument,
@@ -238,6 +244,14 @@ export function gql(source: string): unknown;
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "\n  query OrganisationPerformanceAnalytics($organisationId: ID!, $from: DateTime, $to: DateTime) {\n    eventOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      impressions uniqueReach detailViews outcomes activeContent\n      daily { date impressions uniqueReach detailViews }\n      topContent { id title impressions uniqueReach detailViews }\n    }\n    classifiedOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      jobs { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n      marketplace { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n    }\n  }\n"): (typeof documents)["\n  query OrganisationPerformanceAnalytics($organisationId: ID!, $from: DateTime, $to: DateTime) {\n    eventOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      impressions uniqueReach detailViews outcomes activeContent\n      daily { date impressions uniqueReach detailViews }\n      topContent { id title impressions uniqueReach detailViews }\n    }\n    classifiedOrganisationAnalytics(organisationId: $organisationId, from: $from, to: $to) {\n      jobs { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n      marketplace { impressions uniqueReach detailViews outcomes activeContent daily { date impressions uniqueReach detailViews } topContent { id title impressions uniqueReach detailViews } }\n    }\n  }\n"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "query CurrentProductAnnouncement { currentProductAnnouncement { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt } }"): (typeof documents)["query CurrentProductAnnouncement { currentProductAnnouncement { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt } }"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "mutation MarkProductAnnouncementSeen($id: ID!) { markProductAnnouncementSeen(id: $id) }"): (typeof documents)["mutation MarkProductAnnouncementSeen($id: ID!) { markProductAnnouncementSeen(id: $id) }"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -554,6 +568,10 @@ export function gql(source: "mutation RemoveSavedJob($id: ID!) { unsaveJob(id: $
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "mutation RemoveSavedMarketplace($id: ID!) { unsaveMarketplaceItem(id: $id) }"): (typeof documents)["mutation RemoveSavedMarketplace($id: ID!) { unsaveMarketplaceItem(id: $id) }"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "query MyProductAnnouncements($limit: Int, $offset: Int) { myProductAnnouncements(limit: $limit, offset: $offset) { edges { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt seen } totalCount hasNextPage } }"): (typeof documents)["query MyProductAnnouncements($limit: Int, $offset: Int) { myProductAnnouncements(limit: $limit, offset: $offset) { edges { id releaseKey title summary body imageUrl imageAlt videoUrl buttonLabel buttonUrl publishedAt seen } totalCount hasNextPage } }"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

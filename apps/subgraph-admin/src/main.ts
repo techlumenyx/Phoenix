@@ -87,8 +87,10 @@ async function bootstrap() {
   });
 
   registerMediaUploadRoutes(fastify, {
-    service: 'admin', purposes: ['FEATURED_PLACEMENT_IMAGE'],
-    authorize: (request) => Boolean(request.firebaseUser),
+    service: 'admin', purposes: ['FEATURED_PLACEMENT_IMAGE', 'ANNOUNCEMENT_IMAGE', 'ANNOUNCEMENT_VIDEO'],
+    authorize: (request) => request.firebaseUser?.['accountType'] === 'admin' && (
+      (request.firebaseUser?.['roles'] as unknown[] | undefined)?.some((role) => role === 'SUPER_ADMIN' || role === 'CONTENT_MANAGER') ?? false
+    ),
     onUploaded: async (request, purpose, ownerId, result) => { await MediaAssetModel.create({ ...result, cloudinaryAssetId: result.assetId, purpose, ownerId, uploadedBy: request.firebaseUser?.uid ?? 'unknown', status: 'ACTIVE' }); },
     onDeleted: async (publicId) => { await MediaAssetModel.updateOne({ publicId }, { $set: { status: 'DELETED' } }); },
   });
