@@ -3,6 +3,8 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import EventCard from '../components/cards/EventCard';
 import { ArrowRightIcon, SearchIcon } from '../components/layout/icons';
+import ContentPlaceholder from '../components/media/ContentPlaceholder';
+import ResilientImage from '../components/media/ResilientImage';
 import { usePreferredRegion } from '../lib/discovery';
 import { mergeUniqueById } from '../lib/homepage-selection';
 import { useAuthStore } from '../store/authStore';
@@ -24,8 +26,14 @@ interface HomeEvent { id: string; title: string; description: string; category: 
 interface HomeData { regionalTrending?: { edges: HomeEvent[] }; globalTrending: { edges: HomeEvent[] }; regionalUpcoming?: { edges: HomeEvent[] }; globalUpcoming: { edges: HomeEvent[] } }
 
 const CATEGORIES = [
-  ['WORSHIP', 'Study / Worship', '🙏'], ['MUSIC', 'Music', '♫'], ['COMMUNITY', 'Community', '♧'], ['CULTURAL', 'Culture', '◇'],
-  ['CHARITY', 'Charity', '♡'], ['CONFERENCE', 'Conferences', '⌁'], ['YOUTH', 'Family & Youth', '☆'], ['BIBLE_STUDY', 'Bible Study', '✦'],
+  { value: 'WORSHIP', label: 'Study / Worship', image: 'https://images.unsplash.com/photo-1638371948514-0e6c1a35ba95?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'MUSIC', label: 'Music', image: 'https://images.unsplash.com/photo-1587522601914-d4737f52d1f9?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'COMMUNITY', label: 'Community', image: 'https://images.unsplash.com/photo-1763570645098-371723617ee9?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'CULTURAL', label: 'Culture', image: 'https://images.unsplash.com/photo-1768212565424-efa3a3852b81?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'CHARITY', label: 'Charity', image: 'https://images.unsplash.com/photo-1783227610905-fda5920a9eab?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'CONFERENCE', label: 'Conferences', image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'YOUTH', label: 'Family & Youth', image: 'https://images.unsplash.com/photo-1777351395894-1816d45577d0?auto=format&fit=crop&w=720&h=480&q=78' },
+  { value: 'BIBLE_STUDY', label: 'Bible Study', image: 'https://images.unsplash.com/photo-1663162550932-f67b561e656f?auto=format&fit=crop&w=720&h=480&q=78' },
 ] as const;
 
 const EMPTY_PREFERENCES: string[] = [];
@@ -63,7 +71,30 @@ export default function EventsPage() {
     <EventSection title="Trending Events" events={trending} loading={loading} featured />
     <EventSection title="Based on your Interests" events={interestEvents} loading={loading} />
 
-    <section className="bg-white px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Based on your Interests</h2><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{CATEGORIES.map(([value, label, icon]) => <Link key={value} to={`/events/all?category=${value}`} className="relative flex h-28 flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br from-[#20162a] to-[#785a75] p-4 text-left text-white transition hover:scale-[1.02]"><span className="absolute right-4 top-3 text-3xl">{icon}</span><strong className="text-sm">{label}</strong></Link>)}</div></section>
+    <section className="bg-white px-6 py-12 md:px-10 lg:px-16">
+      <h2 className="mb-6 font-serif text-3xl font-bold">Based on your Interests</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {CATEGORIES.map(({ value, label, image }) => (
+          <Link
+            key={value}
+            to={`/events/all?category=${value}`}
+            className="group relative flex h-32 flex-col justify-end overflow-hidden rounded-2xl bg-[#332c31] text-left text-white shadow-sm outline-none transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[#75406d] focus-visible:ring-offset-2 sm:h-40"
+          >
+            <ResilientImage
+              src={image}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+              fallback={<ContentPlaceholder variant="event" title={label} className="absolute inset-0" />}
+            />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" aria-hidden="true" />
+            <strong className="relative p-4 text-sm drop-shadow-sm sm:text-base">{label}</strong>
+          </Link>
+        ))}
+      </div>
+    </section>
 
     <EventSection title="Religion & Theology" events={upcoming.filter((event) => ['WORSHIP', 'BIBLE_STUDY', 'CONFERENCE'].includes(event.category)).slice(0, 4)} loading={loading} />
     <section className="relative overflow-hidden bg-[#272018] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“Let us be grateful for a space and hands to the Lord.<br />And He will repay him for his good deed.”</p><Link to="/events/all" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">View all events</Link></div></section>
