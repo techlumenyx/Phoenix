@@ -159,6 +159,7 @@ type MarketplaceItem @key(fields: "id") {
   title: String!
   description: String!
   seller: User!
+  organisation: Organisation
   price: Float!
   currency: String!
   condition: ItemCondition!

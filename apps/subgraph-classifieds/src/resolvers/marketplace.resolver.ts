@@ -16,6 +16,7 @@ export function mapItem(doc: ItemDocument) {
     title:       doc.title,
     description: doc.description,
     seller:      { firebaseUid: doc.createdBy },
+    organisation: doc.organisationId ? { id: doc.organisationId.toString() } : null,
     price:       doc.sellingPrice,
     currency:    doc.currency,
     condition:   doc.condition,
@@ -281,6 +282,7 @@ export const marketplaceResolvers = {
       return doc ? mapItem(doc) : null;
     },
     seller: (item: { seller: { firebaseUid: string } }) => item.seller,
+    organisation: (item: { organisation: { id: string } | null }) => item.organisation,
   },
 
   User: {

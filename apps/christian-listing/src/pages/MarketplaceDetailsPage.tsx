@@ -5,6 +5,7 @@ import MarketplaceCard from '../components/cards/MarketplaceCard';
 import { formatPrice } from '../lib/discovery';
 import { useAuthStore } from '../store/authStore';
 import ReportListingModal from '../components/marketplace/ReportListingModal';
+import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '../components/trust/OrganisationVerification';
 
 const MARKETPLACE_DETAILS = gql`
   query MarketplaceDetails($id: ID!, $region: String, $category: MarketplaceCategory) {
@@ -13,6 +14,7 @@ const MARKETPLACE_DETAILS = gql`
       isDonation isPromoted flagCount subCategory dimensions otherAttributes maxRetailPrice
       contactInfo showContactOnOffer createdAt
       seller { id name avatarUrl bio isVerified region socialLinks { whatsapp instagram facebook website } }
+      organisation { id name description logoUrl region isVerified verificationTier }
     }
     marketplaceItems(region: $region, category: $category, status: AVAILABLE, limit: 5) {
       edges { id title description price currency condition region imageUrls isDonation seller { id isVerified } }
@@ -36,6 +38,7 @@ interface MarketplaceDetailsData {
     imageUrls: string[]; videoUrl?: string | null; videoPosterUrl?: string | null; status: string; isDonation: boolean; isPromoted: boolean; flagCount: number; subCategory?: string | null;
     dimensions?: string | null; otherAttributes?: string | null; maxRetailPrice?: number | null; contactInfo?: string | null; showContactOnOffer: boolean; createdAt: string;
     seller: { id: string; name: string; avatarUrl?: string | null; bio?: string | null; isVerified: boolean; region: string; socialLinks?: { whatsapp?: string | null; instagram?: string | null; facebook?: string | null; website?: string | null } | null };
+    organisation?: { id: string; name: string; description?: string | null; logoUrl?: string | null; region?: string | null; isVerified: boolean; verificationTier: string } | null;
   };
   marketplaceItems: { edges: Array<{ id: string; title: string; description: string; price: number; currency: string; condition: string; region: string; imageUrls: string[]; isDonation: boolean; seller: { id: string; isVerified: boolean } }> };
 }
@@ -98,7 +101,7 @@ export default function MarketplaceDetailsPage() {
             <div className="relative aspect-[16/11] overflow-hidden rounded-xl bg-gray-100 shadow-sm">
               <img src={images[selectedImage]} alt={item.title} className="h-full w-full object-cover" />
               <span className="absolute left-4 top-4 rounded-full bg-[#c84c64] px-3 py-1 text-[10px] font-bold uppercase text-white">{item.isDonation ? 'Community Gives' : item.status.replaceAll('_', ' ')}</span>
-              {item.seller.isVerified && <span className="absolute right-4 top-4 rounded-full bg-[#83d34c] px-3 py-1 text-[10px] font-bold uppercase text-[#17310b]">✓ Verified</span>}
+              {(item.organisation?.isVerified ?? item.seller.isVerified) && <span className="absolute right-4 top-4 rounded-full bg-[#83d34c] px-3 py-1 text-[10px] font-bold uppercase text-[#17310b]">✓ Verified</span>}
             </div>
             <div className="mt-2 grid grid-cols-5 gap-2">{images.slice(0, 5).map((image, index) => <button key={`${image}-${index}`} onClick={() => setSelectedImage(index)} className={`aspect-[4/3] overflow-hidden rounded-lg border-2 ${selectedImage === index ? 'border-[#4b143f]' : 'border-transparent'}`}><img src={image} alt={`${item.title} view ${index + 1}`} className="h-full w-full object-cover" /></button>)}</div>
             {item.videoUrl && <video src={item.videoUrl} poster={item.videoPosterUrl ?? undefined} controls preload="metadata" className="mt-4 aspect-video w-full rounded-xl bg-black object-contain" aria-label={`${item.title} video`} />}
@@ -110,6 +113,7 @@ export default function MarketplaceDetailsPage() {
           <aside>
             <h1 className="font-serif text-3xl font-bold">{item.title}</h1><p className="mt-2 text-3xl font-bold">{price}</p>{item.maxRetailPrice && !item.isDonation && <p className="mt-1 text-xs text-gray-400 line-through">Retail {formatPrice(item.maxRetailPrice, item.currency)}</p>}
             <section className="mt-7 rounded-xl bg-white p-5 shadow-[0_10px_35px_rgba(0,0,0,0.05)]">
+              {item.organisation && !item.organisation.isVerified && <div className="mb-4"><OrganisationVerificationNotice organisationName={item.organisation.name} isVerified={false} context="listing" /></div>}
               <button onClick={openMessage} className="block w-full rounded-lg bg-[#004b3d] px-4 py-3 text-center text-sm font-semibold text-white hover:bg-[#00614f]">✉ Contact Seller</button>
               <button disabled title="Offer negotiation is planned for Phase 2" className="mt-3 w-full rounded-lg border border-gray-400 px-4 py-3 text-sm text-gray-500">Make an Offer · Coming Soon</button>
               <button disabled={saving} onClick={toggleSaved} className="mt-4 w-full py-2 text-xs text-gray-600 disabled:opacity-50">{saved ? '♥ Saved' : '♡ Save Listing'}</button>
@@ -117,7 +121,7 @@ export default function MarketplaceDetailsPage() {
               {notice && <p role="status" className="mt-2 text-center text-xs text-green-700">{notice}</p>}
             </section>
 
-            <SellerCard seller={item.seller} />
+            <SellerCard seller={item.seller} organisation={item.organisation} />
             <section className="mt-5 rounded-xl border border-gray-200 bg-[#eef3fd] p-5 shadow-sm"><h3 className="text-sm font-bold text-[#1e3714]">◉ Sanctuary Trust Guarantee</h3><p className="mt-2 pl-5 text-xs leading-4 text-gray-600">Check item condition and meet safely. Verified seller information helps protect the community.</p><p className="mt-3 text-right text-[10px] font-bold underline">Learn about safe meetups →</p></section>
             <div className="mt-7 flex items-center justify-between"><span className="text-[10px] uppercase tracking-widest text-gray-500">Share this listing:</span><button onClick={share} className="rounded-full bg-[#dfe8f7] px-4 py-2 text-xs font-semibold">Share / Copy Link</button></div>
           </aside>
@@ -130,5 +134,11 @@ export default function MarketplaceDetailsPage() {
 }
 
 function Detail({ label, value }: { label: string; value: string }) { return <div><dt className="text-[9px] uppercase tracking-wider text-gray-500">{label}</dt><dd className="mt-1 font-semibold capitalize text-gray-900">{value}</dd></div>; }
-function SellerCard({ seller }: { seller: NonNullable<MarketplaceDetailsData['marketplaceItem']>['seller'] }) { return <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[#ede5db] font-serif text-xl font-bold">{seller.avatarUrl ? <img src={seller.avatarUrl} alt="" className="h-full w-full object-cover" /> : seller.name.charAt(0)}</div><div><h3 className="font-serif text-lg font-bold">{seller.name}</h3><p className="text-xs text-gray-500">{seller.region}</p></div></div>{seller.bio && <p className="mt-4 text-xs leading-5 text-gray-500">“{seller.bio}”</p>}<div className="mt-4 flex gap-5 text-[10px] text-gray-600"><span>◉ Community Seller</span>{seller.isVerified && <span>✓ Verified Poster</span>}</div></section>; }
+function SellerCard({ seller, organisation }: { seller: NonNullable<MarketplaceDetailsData['marketplaceItem']>['seller']; organisation: NonNullable<MarketplaceDetailsData['marketplaceItem']>['organisation'] }) {
+  const profile = organisation ?? seller;
+  const imageUrl = organisation?.logoUrl ?? seller.avatarUrl;
+  const description = organisation?.description ?? seller.bio;
+  const region = organisation?.region ?? seller.region;
+  return <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[#ede5db] font-serif text-xl font-bold">{imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : profile.name.charAt(0)}</div><div><h3 className="font-serif text-lg font-bold">{profile.name}</h3>{region && <p className="text-xs text-gray-500">{region}</p>}</div></div>{description && <p className="mt-4 text-xs leading-5 text-gray-500">“{description}”</p>}<div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-gray-600">{organisation ? <><span>◉ {organisation.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span><span aria-hidden="true">·</span><OrganisationVerificationStatus organisationName={organisation.name} isVerified={organisation.isVerified} context="listing" /></> : <><span>◉ Community Seller</span>{seller.isVerified && <><span aria-hidden="true">·</span><span className="font-semibold text-green-700">✓ Verified Poster</span></>}</>}</div></section>;
+}
 function PageMessage({ title, detail }: { title: string; detail?: string }) { return <main className="flex min-h-[65vh] items-center justify-center px-6 text-center"><div><h1 className="font-serif text-3xl font-bold">{title}</h1>{detail && <p className="mt-3 text-sm text-gray-500">{detail}</p>}<Link to="/marketplace" className="mt-6 inline-block rounded-full bg-[#004b3d] px-5 py-2.5 text-sm text-white">Browse marketplace</Link></div></main>; }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { formatPrice } from '../lib/discovery';
 import { useAuthStore } from '../store/authStore';
+import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '../components/trust/OrganisationVerification';
 
 const JOB_DETAILS = gql`
   query JobDetails($id: ID!) {
@@ -127,6 +128,7 @@ export default function JobDetailsPage() {
 
             <div className="my-6 flex justify-between border-t border-gray-200 pt-4 text-[10px] text-gray-500"><span>Posted {daysAgo === 0 ? 'Today' : `${daysAgo} Day${daysAgo === 1 ? '' : 's'} Ago`}</span><strong className="text-gray-900">{job.applicationCount}+ Applications</strong></div>
 
+            {!organisation.isVerified && <div className="mb-4"><OrganisationVerificationNotice organisationName={organisation.name} isVerified={false} context="job" /></div>}
             {isActive && user && applicationLoading ? <button disabled className="w-full rounded-lg bg-gray-200 px-4 py-3 text-sm font-medium text-gray-600">Checking application…</button> : hasApplied ? <div><button disabled className="w-full rounded-lg bg-green-100 px-4 py-3 text-sm font-semibold text-green-800">Application Submitted ✓</button><Link to="/dashboard/applications" className="mt-2 block text-center text-xs font-medium text-[#11167b] hover:underline">View application</Link></div> : isActive ? <Link to={`/jobs/${job.id}/apply`} className="block w-full rounded-lg bg-[#11167b] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#181e96]">Apply Now →</Link> : <button disabled className="w-full rounded-lg bg-gray-300 px-4 py-3 text-sm font-medium text-gray-600">Applications Closed</button>}
             <button disabled={saving} onClick={toggleSaved} className="mt-4 w-full py-2 text-xs text-gray-600 hover:text-gray-900 disabled:opacity-50">{saved ? '♥ Saved' : '♡ Save Job'}</button>
             <button className="w-full py-2 text-xs text-gray-600 hover:text-gray-900">◈ Report the listing</button>
@@ -164,7 +166,7 @@ function MetaRow({ icon, value }: { icon: string; value: string }) {
 }
 
 function OrganisationCard({ organisation }: { organisation: NonNullable<JobDetailsData['jobListing']>['organisation'] }) {
-  return <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#ede5db] font-serif text-xl font-bold">{organisation.logoUrl ? <img src={organisation.logoUrl} alt="" className="h-full w-full object-cover" /> : organisation.name.charAt(0)}</div><div className="min-w-0 flex-1"><h3 className="font-serif text-lg font-bold leading-tight">{organisation.name}</h3>{organisation.region && <p className="text-xs text-gray-500">{organisation.region}</p>}</div><Link to={`/organisations/${organisation.id}`} className="rounded-full border px-3 py-1.5 text-[10px] hover:bg-gray-50">View Profile →</Link></div>{organisation.description && <p className="mt-4 text-xs leading-5 text-gray-500">“{organisation.description}”</p>}<div className="mt-4 flex gap-5 text-[10px] text-gray-600"><span>◉ {organisation.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span>{organisation.isVerified && <span>✓ Verified Poster</span>}</div></section>;
+  return <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#ede5db] font-serif text-xl font-bold">{organisation.logoUrl ? <img src={organisation.logoUrl} alt="" className="h-full w-full object-cover" /> : organisation.name.charAt(0)}</div><div className="min-w-0 flex-1"><h3 className="font-serif text-lg font-bold leading-tight">{organisation.name}</h3>{organisation.region && <p className="text-xs text-gray-500">{organisation.region}</p>}</div><Link to={`/organisations/${organisation.id}`} className="rounded-full border px-3 py-1.5 text-[10px] hover:bg-gray-50">View Profile →</Link></div>{organisation.description && <p className="mt-4 text-xs leading-5 text-gray-500">“{organisation.description}”</p>}<div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-gray-600"><span>◉ {organisation.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span><span aria-hidden="true">·</span><OrganisationVerificationStatus organisationName={organisation.name} isVerified={organisation.isVerified} context="job" /></div></section>;
 }
 
 function PageMessage({ title, detail }: { title: string; detail?: string }) {

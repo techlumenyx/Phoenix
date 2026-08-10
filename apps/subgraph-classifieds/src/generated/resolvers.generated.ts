@@ -283,6 +283,7 @@ export type MarketplaceItem = {
   isDonation: Scalars['Boolean']['output'];
   isPromoted: Scalars['Boolean']['output'];
   maxRetailPrice?: Maybe<Scalars['Float']['output']>;
+  organisation?: Maybe<Organisation>;
   otherAttributes?: Maybe<Scalars['String']['output']>;
   price: Scalars['Float']['output'];
   region: Scalars['String']['output'];
@@ -1047,6 +1048,7 @@ export type MarketplaceItemResolvers<ContextType = GraphQLContext, ParentType ex
   isDonation?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isPromoted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   maxRetailPrice?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  organisation?: Resolver<Maybe<ResolversTypes['Organisation']>, ParentType, ContextType>;
   otherAttributes?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   price?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   region?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

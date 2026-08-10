@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import RegistrationSuccessModal from '../components/events/RegistrationSuccessModal';
 import EventCard from '../components/cards/EventCard';
+import { OrganisationVerificationNotice, OrganisationVerificationStatus } from '../components/trust/OrganisationVerification';
 
 const EVENT_DETAILS = gql`
   query EventDetails($id: ID!) {
@@ -180,6 +181,7 @@ export default function EventDetailsPage() {
           </div>
 
           <div className="space-y-3">
+            {host && <OrganisationVerificationNotice organisationName={host.name} isVerified={host.isVerified} context="event" />}
             <button disabled={rsvpLoading || currentStage === 'CONFIRMED' || currentStage === 'WAITLISTED'} onClick={() => setStage('CONFIRMED')} className="w-full rounded-lg bg-[#42113f] px-4 py-3 text-sm font-medium text-white hover:bg-[#5a1956] disabled:opacity-60">{currentStage === 'CONFIRMED' ? 'RSVP Confirmed' : currentStage === 'WAITLISTED' ? 'On Waitlist' : remaining === 0 ? 'Join Waitlist' : 'Confirm RSVP'}</button>
             <div className="grid grid-cols-2 gap-3">
               <button disabled={rsvpLoading} onClick={() => setStage('INTERESTED')} className={`rounded-lg border px-4 py-3 text-sm ${currentStage === 'INTERESTED' ? 'border-[#42113f] bg-[#f8eff7]' : 'border-gray-400 bg-white'}`}>Interested</button>
@@ -199,7 +201,7 @@ export default function EventDetailsPage() {
               <Link to={`/organisations/${host.id}`} className="rounded-full border px-3 py-1.5 text-[10px] hover:bg-gray-50">View Profile →</Link>
             </div>
             {host.description && <p className="mt-4 text-xs leading-5 text-gray-500">“{host.description}”</p>}
-            <div className="mt-4 flex gap-5 text-[10px] text-gray-600"><span>◉ {host.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span>{host.isVerified && <span>✓ Verified Poster</span>}</div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-gray-600"><span>◉ {host.verificationTier === 'CHARITY' ? 'Registered Charity' : 'Community Organisation'}</span><span aria-hidden="true">·</span><OrganisationVerificationStatus organisationName={host.name} isVerified={host.isVerified} context="event" /></div>
           </section>}
 
           <section className="mt-4 rounded-xl border border-gray-200 bg-[#eef3fd] p-5 shadow-sm">
