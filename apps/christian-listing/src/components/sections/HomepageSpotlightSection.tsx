@@ -46,14 +46,14 @@ function ListingSpotlightCard({ listing, className = '' }: { listing: HomepageLi
 
 function ScriptureCard({ className = '' }: { className?: string }) {
   return (
-    <div className={`relative flex flex-col overflow-hidden rounded-2xl bg-[#1A1A1A] ${className}`}>
+    <Link to="/events" aria-label="Explore the community" className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-[#1A1A1A] transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${className}`}>
       <img src="/assets/spotlight-ad.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center opacity-50" />
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative z-10 flex h-full flex-col justify-end gap-4 p-5">
         <p className="font-serif text-lg leading-snug text-white">“A generous person will prosper; whoever refreshes others will be refreshed.”</p>
-        <Link to="/events" className="flex self-start items-center gap-1 rounded-full border border-white/30 px-4 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:text-white">Explore the community <ArrowRightIcon className="h-3.5 w-3.5" /></Link>
+        <span className="flex self-start items-center gap-1 rounded-full border border-white/30 px-4 py-1.5 text-xs font-semibold text-white/80 transition group-hover:translate-x-0.5 group-hover:text-white">Explore the community <ArrowRightIcon className="h-3.5 w-3.5" /></span>
       </div>
-    </div>
+    </Link>
   );
 }
 

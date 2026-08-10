@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { analyticsSurface, trackContentEvent, type AnalyticsEntityType } from '../lib/contentAnalytics';
 
 export function entityIdFromHref(href: string | undefined, entityType: AnalyticsEntityType) {
@@ -8,11 +8,12 @@ export function entityIdFromHref(href: string | undefined, entityType: Analytics
 }
 
 export function useContentImpression(entityType: AnalyticsEntityType, href?: string, surface?: string, position?: number) {
-  const ref = useRef<HTMLDivElement>(null);
+  const nodeRef = useRef<HTMLElement | null>(null);
+  const ref = useCallback((node: HTMLElement | null) => { nodeRef.current = node; }, []);
   const entityId = entityIdFromHref(href, entityType);
 
   useEffect(() => {
-    const node = ref.current;
+    const node = nodeRef.current;
     if (!node || !entityId || typeof IntersectionObserver === 'undefined') return;
     let visibleSince: ReturnType<typeof setTimeout> | null = null;
     let recorded = false;

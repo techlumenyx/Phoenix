@@ -26,8 +26,8 @@ export default function MarketplaceCard({
   href,
 }: MarketplaceCardProps) {
   const analyticsRef = useContentImpression('MARKETPLACE', href);
-  return (
-    <div ref={analyticsRef} className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[320px] ${className}`}>
+  const cardClassName = `group relative rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[320px] ${href ? 'cursor-pointer transition duration-200 hover:-translate-y-1 hover:border-gray-200 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#004B3D]' : ''} ${className}`;
+  const content = <>
       {verified && (
         <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E] z-10" />
       )}
@@ -58,9 +58,12 @@ export default function MarketplaceCard({
         )}
         <div className="flex items-center justify-between mt-1">
           <span className="text-sm font-bold text-dark">{price}</span>
-          {href ? <Link to={href} className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black transition-colors">View <ArrowRightIcon className="w-3.5 h-3.5" /></Link> : <button className="flex items-center gap-1 text-xs font-semibold text-gray-700 hover:text-black transition-colors">View <ArrowRightIcon className="w-3.5 h-3.5" /></button>}
+          <span className="flex items-center gap-1 text-xs font-semibold text-gray-700 transition-transform group-hover:translate-x-0.5">View <ArrowRightIcon className="w-3.5 h-3.5" /></span>
         </div>
       </div>
-    </div>
-  );
+    </>;
+
+  return href
+    ? <Link ref={analyticsRef} to={href} aria-label={`View: ${title}`} className={cardClassName}>{content}</Link>
+    : <div ref={analyticsRef} className={cardClassName}>{content}</div>;
 }

@@ -34,8 +34,8 @@ export default function EventCard({
   href,
 }: EventCardProps) {
   const analyticsRef = useContentImpression('EVENT', href);
-  return (
-    <div ref={analyticsRef} className={`relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${className}`}>
+  const cardClassName = `group relative rounded-2xl overflow-hidden bg-[#1A1A1A] text-white flex flex-col min-h-[320px] ${href ? 'cursor-pointer transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A460A5]' : ''} ${className}`;
+  const content = <>
       {imageSrc && (
         <img
           src={imageSrc}
@@ -93,17 +93,14 @@ export default function EventCard({
               </span>
             )}
           </div>
-          {href ? (
-            <Link to={href} className="flex items-center gap-1 text-xs font-semibold text-white hover:text-white/80 transition-colors">
-              {ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" />
-            </Link>
-          ) : (
-            <button className="flex items-center gap-1 text-xs font-semibold text-white hover:text-white/80 transition-colors">
-              {ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <span className="flex items-center gap-1 text-xs font-semibold text-white transition-transform group-hover:translate-x-0.5">
+            {ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" />
+          </span>
         </div>
       </div>
-    </div>
-  );
+    </>;
+
+  return href
+    ? <Link ref={analyticsRef} to={href} aria-label={`${ctaLabel}: ${title}`} className={cardClassName}>{content}</Link>
+    : <div ref={analyticsRef} className={cardClassName}>{content}</div>;
 }

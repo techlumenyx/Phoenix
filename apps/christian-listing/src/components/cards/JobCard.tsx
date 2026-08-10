@@ -36,8 +36,8 @@ export default function JobCard({
     purple: 'bg-[#F5EAFF] text-[#A460A5]',
   };
 
-  return (
-    <div ref={analyticsRef} className={`relative rounded-2xl bg-white border border-gray-100 shadow-sm p-5 flex flex-col gap-3 min-h-[320px] ${className}`}>
+  const cardClassName = `group relative rounded-2xl bg-white border border-gray-100 shadow-sm p-5 flex flex-col gap-3 min-h-[320px] ${href ? 'cursor-pointer transition duration-200 hover:-translate-y-1 hover:border-gray-200 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4F46E5]' : ''} ${className}`;
+  const content = <>
       {verified && (
         <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
       )}
@@ -68,7 +68,10 @@ export default function JobCard({
         )}
       </div>
 
-      {href ? <Link to={href} className="mt-2 flex items-center gap-1 text-xs font-semibold text-dark hover:text-black transition-colors self-start">{ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" /></Link> : <button className="mt-2 flex items-center gap-1 text-xs font-semibold text-dark hover:text-black transition-colors self-start">{ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" /></button>}
-    </div>
-  );
+      <span className="mt-2 flex items-center gap-1 self-start text-xs font-semibold text-dark transition-transform group-hover:translate-x-0.5">{ctaLabel}<ArrowRightIcon className="w-3.5 h-3.5" /></span>
+    </>;
+
+  return href
+    ? <Link ref={analyticsRef} to={href} aria-label={`${ctaLabel}: ${title}`} className={cardClassName}>{content}</Link>
+    : <div ref={analyticsRef} className={cardClassName}>{content}</div>;
 }
