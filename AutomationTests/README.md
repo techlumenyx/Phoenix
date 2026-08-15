@@ -2,7 +2,7 @@
 
 Configurable Playwright/pytest automation for both Christian Listings surfaces:
 
-- Public website: `https://christian-listing.web.app/`
+- Public website: `https://christianlistings.com/`
 - Administration website: `https://christian-listings-admin.firebaseapp.com/`
 
 ## Structure
@@ -36,7 +36,7 @@ automatically; real shell or CI variables take precedence. `.env` is gitignored,
 so credentials are not committed.
 
 ```powershell
-$env:PUBLIC_URL = "https://christian-listing.web.app/"
+$env:PUBLIC_URL = "https://christianlistings.com/"
 $env:ADMIN_URL = "https://christian-listings-admin.firebaseapp.com/"
 $env:ADMIN_EMAIL = "automation-account@example.com"
 $env:ADMIN_PASSWORD = "secret-from-your-vault"

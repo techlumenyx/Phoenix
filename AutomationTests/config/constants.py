@@ -1,6 +1,6 @@
 """Stable framework defaults. Override environment-specific values in .env."""
 
-DEFAULT_PUBLIC_URL = "https://christian-listing.web.app/"
+DEFAULT_PUBLIC_URL = "https://christianlistings.com/"
 DEFAULT_ADMIN_URL = "https://christian-listings-admin.firebaseapp.com/"
 
 DEFAULT_NAVIGATION_TIMEOUT_MS = 30_000

@@ -19,6 +19,7 @@ health_check:
 cors:
   policies:
     - origins:
+        - https://christianlistings.com
         - https://christian-listing.web.app
         - https://christian-listing.firebaseapp.com
         - https://christian-listings-admin.web.app
