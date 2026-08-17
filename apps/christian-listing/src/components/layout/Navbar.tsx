@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronDownIcon, ChurchLogo, MapPinIcon } from './icons';
+import { ChevronDownIcon, BrandLogo, MapPinIcon } from './icons';
 import SignInModal from './SignInModal';
 import { useAuthStore } from '../../store/authStore';
 import { getDashboardRoute } from '../../lib/dashboard-route';
@@ -196,13 +196,8 @@ export default function Navbar() {
         style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
       >
         {/* Logo */}
-        <a href="/" className="flex items-center gap-3 shrink-0">
-          <ChurchLogo color="white" />
-          <span className="text-white font-semibold text-sm tracking-widest uppercase leading-tight">
-            Christian
-            <br />
-            Listings
-          </span>
+        <a href="/" className="flex items-center shrink-0">
+          <BrandLogo variant="white" className="h-9 w-auto" />
         </a>
 
         {/* Desktop nav links */}

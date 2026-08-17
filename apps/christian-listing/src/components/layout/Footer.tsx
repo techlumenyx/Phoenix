@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChurchLogo } from './icons';
+import { BrandLogo } from './icons';
 
 const LINKS = {
   Platform: [
@@ -29,13 +29,8 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
-            <Link to="/" className="flex items-center gap-2.5 w-fit">
-              <ChurchLogo color="white" className="w-7 h-[34px]" />
-              <span className="text-white font-semibold text-xs tracking-widest uppercase leading-tight">
-                Christian
-                <br />
-                Listings
-              </span>
+            <Link to="/" className="flex items-center w-fit">
+              <BrandLogo variant="white" className="h-9 w-auto" />
             </Link>
             <p className="text-xs text-white/40 leading-relaxed max-w-[200px]">
               A curated ecosystem of faith-led ministries, community events, and grace-centered marketplaces.

@@ -162,7 +162,7 @@ export default function AllJobsPage() {
 
   return (
     <>
-      <main className="bg-white px-5 py-9 md:px-10 lg:px-16">
+      <main className="bg-white px-5 pb-9 pt-28 md:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>

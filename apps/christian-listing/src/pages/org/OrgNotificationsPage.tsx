@@ -288,7 +288,7 @@ export default function OrgNotificationsPage() {
               </span>
               {!item.readAt && (
                 <span
-                  className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#C9A96E]"
+                  className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#A65F4D]"
                   aria-label="Unread"
                 />
               )}

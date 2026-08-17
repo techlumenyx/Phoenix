@@ -58,8 +58,8 @@ type SortKey = 'title' | 'roleType' | 'workLocation' | 'region' | 'applicationDe
 function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   return (
     <span className={`ml-1 inline-flex flex-col leading-none ${active ? 'text-[#1B1B1B]' : 'text-gray-300'}`}>
-      <span className={`text-[8px] leading-none ${active && dir === 'asc' ? 'text-[#C9A96E]' : ''}`}>▲</span>
-      <span className={`text-[8px] leading-none ${active && dir === 'desc' ? 'text-[#C9A96E]' : ''}`}>▼</span>
+      <span className={`text-[8px] leading-none ${active && dir === 'asc' ? 'text-[#A65F4D]' : ''}`}>▲</span>
+      <span className={`text-[8px] leading-none ${active && dir === 'desc' ? 'text-[#A65F4D]' : ''}`}>▼</span>
     </span>
   );
 }
@@ -179,7 +179,7 @@ export default function OrgJobsPage() {
         {activeTab === 'Applications' && (
           <div>
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3"><p className="text-sm text-gray-500">{applications.length} application{applications.length === 1 ? '' : 's'}</p><button type="button" disabled={applications.length === 0} onClick={downloadApplicationsCsv} className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-40">Download CSV</button></div>
-            <div className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-gray-200 bg-[#FAF6ED] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500"><span>Candidate</span><span>Job</span><span>Email</span><span>Applied</span><span>Status</span><span>Details</span></div>
+            <div className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-gray-200 bg-[#F2E5DE] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500"><span>Candidate</span><span>Job</span><span>Email</span><span>Applied</span><span>Status</span><span>Details</span></div>
             {applicationsLoading && <div className="py-16 text-center text-sm text-gray-400">Loading applications…</div>}
             {applicationsError && <div className="py-16 text-center text-sm text-red-500">We couldn’t load job applications. Please try again.</div>}
             {!applicationsLoading && !applicationsError && applications.length === 0 && <div className="py-16 text-center"><p className="text-sm font-semibold text-gray-600">No applications yet</p><p className="mt-1 text-xs text-gray-400">New candidate applications will appear here.</p></div>}
@@ -191,7 +191,7 @@ export default function OrgJobsPage() {
         {activeTab !== 'Applications' && (
           <>
             {/* Table Header */}
-            <div className="bg-[#FAF6ED] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+            <div className="bg-[#F2E5DE] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
               <ColHeader label="Job Title"   sortable="title" />
               <ColHeader label="Role Type"   sortable="roleType" />
               <ColHeader label="Location"    sortable="workLocation" />
@@ -227,7 +227,7 @@ export default function OrgJobsPage() {
                       </div>
                       <div>
                         <h4 className="font-bold text-[#1B1B1B] text-[14px] leading-snug">{item.title}</h4>
-                        {item.isPromoted && <span className="text-[11px] text-[#C9A96E] font-medium">Promoted</span>}
+                        {item.isPromoted && <span className="text-[11px] text-[#A65F4D] font-medium">Promoted</span>}
                       </div>
                     </div>
                     <div className="text-[13px] text-gray-500">{ROLE_LABEL[item.roleType] ?? item.roleType}</div>

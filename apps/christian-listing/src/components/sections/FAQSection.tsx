@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 
 const FAQS = [
   {
@@ -79,18 +78,18 @@ export default function FAQSection() {
             Can't find the answer you're looking for? Reach out to our team.
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link
-              to="/contact"
+            <a
+              href="mailto:christianlistingsinfo@gmail.com"
               className="px-5 py-2 rounded-full bg-[#1B1B1B] text-white text-sm font-semibold hover:bg-[#333] transition-colors"
             >
               Contact Support
-            </Link>
-            <Link
-              to="/contact"
+            </a>
+            <a
+              href="mailto:christianlistingsinfo@gmail.com"
               className="px-5 py-2 rounded-full border border-dark/20 text-dark text-sm font-medium hover:border-dark/40 transition-colors"
             >
               Get in Touch
-            </Link>
+            </a>
           </div>
         </div>
       </div>

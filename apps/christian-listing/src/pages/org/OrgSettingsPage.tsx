@@ -37,7 +37,7 @@ interface OrgData {
 }
 
 const fieldClass =
-  'mt-2 w-full rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none focus:ring-2 focus:ring-[#C9A96E]/40';
+  'mt-2 w-full rounded-lg bg-[#F4F0F5] px-4 py-3 font-normal outline-none focus:ring-2 focus:ring-[#A65F4D]/40';
 
 export default function OrgSettingsPage() {
   const { showToast } = useToast();

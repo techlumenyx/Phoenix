@@ -47,8 +47,8 @@ type SortKey = 'title' | 'category' | 'date' | 'capacityLimit' | 'rsvpCount';
 function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   return (
     <span className={`ml-1 inline-flex flex-col leading-none ${active ? 'text-[#1B1B1B]' : 'text-gray-300'}`}>
-      <span className={`text-[8px] leading-none ${active && dir === 'asc' ? 'text-[#C9A96E]' : ''}`}>▲</span>
-      <span className={`text-[8px] leading-none ${active && dir === 'desc' ? 'text-[#C9A96E]' : ''}`}>▼</span>
+      <span className={`text-[8px] leading-none ${active && dir === 'asc' ? 'text-[#A65F4D]' : ''}`}>▲</span>
+      <span className={`text-[8px] leading-none ${active && dir === 'desc' ? 'text-[#A65F4D]' : ''}`}>▼</span>
     </span>
   );
 }
@@ -158,7 +158,7 @@ export default function OrgEventsPage() {
         </div>
 
         {/* Table Header */}
-        <div className="bg-[#FAF6ED] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+        <div className="bg-[#F2E5DE] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
           <ColHeader label="Listing Details" sortable="title" />
           <ColHeader label="Category"        sortable="category" />
           <ColHeader label="Frequency" />
@@ -258,7 +258,7 @@ export default function OrgEventsPage() {
       </div>
       <section id="create-event" className="mt-8 scroll-mt-24 overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="flex items-start justify-between border-b border-gray-100 px-6 py-5"><div><h2 className="font-serif text-2xl font-bold text-[#1B1B1B]">{formState?.mode === 'view' ? 'View Event' : formState?.mode === 'edit' ? 'Edit Event' : 'Create an Event'}</h2><p className="mt-1 text-sm text-gray-500">{formState ? 'Review the complete event record using the same publishing form.' : 'Publish a one-time event or manage a recurring series.'}</p></div>{formState && <div className="flex gap-2">{formState.mode === 'view' && <button type="button" onClick={() => setFormState((current) => current ? { ...current, mode: 'edit' } : current)} className="rounded-lg bg-[#1B1B1B] px-4 py-2 text-sm font-semibold text-white">Edit</button>}<button type="button" onClick={() => setFormState(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold">Close</button></div>}</div>
-        {formState?.mode === 'edit' && formState.event.isRecurring && <div className="border-b border-gray-100 bg-[#FAF6ED] px-6 py-4"><label className="text-sm font-semibold text-gray-700">Apply changes to <select value={formState.scope} onChange={(event) => setFormState((current) => current ? { ...current, scope: event.target.value as typeof current.scope } : current)} className="ml-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"><option value="THIS_OCCURRENCE">This occurrence</option><option value="THIS_AND_FUTURE">This and future occurrences</option><option value="ENTIRE_SERIES">Entire series</option></select></label></div>}
+        {formState?.mode === 'edit' && formState.event.isRecurring && <div className="border-b border-gray-100 bg-[#F2E5DE] px-6 py-4"><label className="text-sm font-semibold text-gray-700">Apply changes to <select value={formState.scope} onChange={(event) => setFormState((current) => current ? { ...current, scope: event.target.value as typeof current.scope } : current)} className="ml-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"><option value="THIS_OCCURRENCE">This occurrence</option><option value="THIS_AND_FUTURE">This and future occurrences</option><option value="ENTIRE_SERIES">Entire series</option></select></label></div>}
         <div className="px-6 py-6"><CreateEventForm key={`${formState?.mode ?? 'create'}:${formState?.event.id ?? 'new'}`} orgId={organisationId} mode={formState?.mode ?? 'create'} item={formState?.event} updateScope={formState?.scope} onCreated={() => { void refetch(); }} onSaved={() => { void refetch(); showToast('Event details updated.', 'success'); setFormState(null); }} /></div>
       </section>
       <ConfirmationDialog open={Boolean(cancelTarget)} title={cancelTarget?.scope === 'THIS_OCCURRENCE' ? 'Cancel this occurrence?' : cancelTarget?.scope === 'THIS_AND_FUTURE' ? 'Cancel this and future occurrences?' : 'Cancel the entire series?'} description="Cancelled occurrences remain in the event history and existing RSVP records are retained." confirmLabel="Cancel event" tone="danger" busy={cancelling} onClose={() => setCancelTarget(null)} onConfirm={confirmCancel} />

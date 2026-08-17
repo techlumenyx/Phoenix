@@ -148,10 +148,10 @@ function ListingModal({
           <form onSubmit={submit} className="max-h-[75vh] space-y-4 overflow-y-auto px-6 py-6">
             {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
             <label className="block text-sm font-semibold text-gray-700">Title
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-[#C9A96E]" />
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-[#A65F4D]" />
             </label>
             <label className="block text-sm font-semibold text-gray-700">Description
-              <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1.5 w-full resize-none rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-[#C9A96E]" />
+              <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1.5 w-full resize-none rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-[#A65F4D]" />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-semibold text-gray-700">Category
@@ -166,7 +166,7 @@ function ListingModal({
               </label>
             </div>
             <label className="block text-sm font-semibold text-gray-700">Region
-              <input value={region} onChange={(e) => setRegion(e.target.value)} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-[#C9A96E]" />
+              <input value={region} onChange={(e) => setRegion(e.target.value)} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2.5 font-normal outline-none focus:border-[#A65F4D]" />
             </label>
             <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700">
               <input type="checkbox" checked={isDonation} onChange={(e) => setIsDonation(e.target.checked)} className="h-4 w-4 accent-[#1B1B1B]" />
@@ -295,7 +295,7 @@ export default function OrgListingsPage() {
         {error && <div className="m-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">We couldn’t load your listings. <button onClick={() => refetch()} className="ml-2 font-semibold underline">Try again</button></div>}
         {!loading && !error && filtered.length === 0 && (
           <div className="flex flex-col items-center px-6 py-16 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FAF6ED] text-xl">◇</div>
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F2E5DE] text-xl">◇</div>
             <p className="font-semibold text-gray-800">No {activeTab.toLowerCase()} listings</p>
             <p className="mt-1 text-sm text-gray-500">Listings in this state will appear here.</p>
           </div>
@@ -303,7 +303,7 @@ export default function OrgListingsPage() {
 
         {!error && paginated.length > 0 && (
           <>
-            <div className="hidden grid-cols-[2.4fr_1fr_1fr_1fr_1fr_52px] gap-4 border-b border-gray-200 bg-[#FAF6ED] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500 md:grid">
+            <div className="hidden grid-cols-[2.4fr_1fr_1fr_1fr_1fr_52px] gap-4 border-b border-gray-200 bg-[#F2E5DE] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500 md:grid">
               <span>Listing details</span><span>Category</span><span>Price</span><span>Condition</span><span>Status</span><span />
             </div>
             <div>

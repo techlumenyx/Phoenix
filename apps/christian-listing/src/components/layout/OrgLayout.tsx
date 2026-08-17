@@ -13,7 +13,7 @@ import {
   ChatBubbleIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
-  ChurchLogo,
+  BrandLogo,
   CogIcon,
   GridIcon,
   ListBulletIcon,
@@ -70,7 +70,7 @@ function OrgUserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#C9A96E] text-white text-xs font-semibold hover:bg-[#b8965e] transition-colors"
+        className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#A65F4D] text-white text-xs font-semibold hover:bg-[#934F3E] transition-colors"
         aria-haspopup="true"
         aria-expanded={open}
       >
@@ -103,13 +103,8 @@ function OrgUserMenu() {
 function OrgTopBar() {
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 z-50 flex items-center px-6 gap-8">
-      <a href="/" className="flex items-center gap-2.5 shrink-0">
-        <ChurchLogo color="#1B1B1B" className="w-7 h-[34px]" />
-        <span className="text-[#1B1B1B] font-semibold text-xs tracking-widest uppercase leading-tight">
-          Christian
-          <br />
-          Listings
-        </span>
+      <a href="/" className="flex items-center shrink-0">
+        <BrandLogo className="h-[34px] w-auto" />
       </a>
 
       <nav className="hidden md:flex items-center gap-6 flex-1">
@@ -150,7 +145,7 @@ export default function OrgLayout() {
   const orgInitials = orgName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FEF7E9]">
+    <div className="min-h-screen bg-[#FAF4F0]">
       <WhatsNewPopover />
       <OrgTopBar />
 
@@ -178,7 +173,7 @@ export default function OrgLayout() {
               </p>
             </>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#C9A96E] flex items-center justify-center text-white text-xs font-bold mx-auto">
+            <div className="w-8 h-8 rounded-full bg-[#A65F4D] flex items-center justify-center text-white text-xs font-bold mx-auto">
               {orgInitials}
             </div>
           )}
@@ -197,7 +192,7 @@ export default function OrgLayout() {
                 title={collapsed ? label : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? 'bg-[#FEF7E9] text-[#1B1B1B] font-medium'
+                    ? 'bg-[#FAF4F0] text-[#1B1B1B] font-medium'
                     : 'text-gray-500 hover:text-[#1B1B1B] hover:bg-gray-50'
                 }`}
               >

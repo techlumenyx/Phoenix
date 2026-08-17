@@ -88,16 +88,16 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
     : null;
 
   return (
-    <div className="flex min-w-0 items-start gap-8 bg-[#FDF8EE] px-6 py-12 font-sans md:px-10">
+    <div className="flex min-w-0 items-start gap-8 bg-[#F2E4DD] px-6 py-12 font-sans md:px-10">
 
       {/* Left Column: Avatar */}
       <div className="relative shrink-0">
         <NameAvatar name={org.name ?? 'Organisation'} src={org.logoUrl} className="h-40 w-40 rounded-full text-4xl" />
         {org.isVerified && (
-          <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#FDF8EE]">
+          <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#F2E4DD]">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l2.4 2.4 3.2-.8.8 3.2 2.4 2.4-2.4 2.4-.8 3.2-3.2-.8L12 22l-2.4-2.4-3.2.8-.8-3.2-2.4-2.4 2.4-2.4.8-3.2 3.2.8L12 2z" />
-              <path fill="#FDF8EE" d="M10.5 15.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
+              <path fill="#F2E4DD" d="M10.5 15.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
             </svg>
           </div>
         )}
@@ -163,7 +163,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
             </h3>
             <div className="flex flex-col items-start gap-3">
               {socialEntries.length > 0 ? socialEntries.map(({ key, handle }) => (
-                <a key={key} href={socialHref(key, handle)} target="_blank" rel="noreferrer" className="bg-[#FCEBBB] hover:bg-[#F9DF9F] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+                <a key={key} href={socialHref(key, handle)} target="_blank" rel="noreferrer" className="bg-[#ECD6CC] hover:bg-[#E9CBAD] transition-colors text-[#1B1B1B] px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
                   <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
                   </svg>
@@ -325,7 +325,7 @@ function NotificationCentre() {
         {notifications.map((notification, index) => (
           <div key={index} className="flex gap-4 items-start">
             {/* Icon Circle */}
-            <div className="w-10 h-10 rounded-full bg-[#FCEBBB] flex items-center justify-center shrink-0 text-[#1B1B1B]">
+            <div className="w-10 h-10 rounded-full bg-[#ECD6CC] flex items-center justify-center shrink-0 text-[#1B1B1B]">
               <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
                 <path d="M16 7h-1.5v1.5h-1.5V7H11.5V5.5H13V4h1.5v1.5H16V7z" />
@@ -354,10 +354,10 @@ function NotificationCentre() {
 
       {/* Promo Box */}
       <div className="bg-[#41331C] rounded-xl p-6 mt-2">
-        <h3 className="font-serif text-lg font-medium text-[#FDF8EE] mb-1.5">
+        <h3 className="font-serif text-lg font-medium text-[#F2E4DD] mb-1.5">
           Reach more people.
         </h3>
-        <p className="text-[13px] text-[#FDF8EE]/80 leading-snug mb-5 pr-4">
+        <p className="text-[13px] text-[#F2E4DD]/80 leading-snug mb-5 pr-4">
           Boost your listings to appear at the top of community searches.
         </p>
         <button className="w-full bg-white text-[#1B1B1B] font-bold py-2.5 rounded-lg text-[13px] hover:bg-gray-100 transition-colors shadow-sm">
@@ -592,7 +592,7 @@ function MarketplaceTab() {
               <h4 className="font-bold text-[#1B1B1B] text-[15px] leading-snug">
                 {item.title}
                 {item.isDonation && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#C9A96E]/20 text-[#92400E] uppercase tracking-wide">Donation</span>
+                  <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#A65F4D]/20 text-[#934F3E] uppercase tracking-wide">Donation</span>
                 )}
               </h4>
               <p className="text-[13px] text-gray-500 mt-0.5">{item.location}</p>
@@ -645,7 +645,7 @@ function ListingsManager() {
       </div>
 
       {/* Table Header */}
-      <div className="bg-[#FAF6ED] px-6 py-3 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 text-[11px] font-bold text-gray-600 tracking-wider uppercase">
+      <div className="bg-[#F2E5DE] px-6 py-3 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 text-[11px] font-bold text-gray-600 tracking-wider uppercase">
         <div>Listing Details</div>
         <div>{TAB_HEADER_LABELS[activeTab]}</div>
         <div>Metrics</div>
@@ -663,7 +663,7 @@ function ListingsManager() {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50/50">
-        <button className="text-[13px] font-semibold text-[#1B1B1B] hover:text-[#C9A96E] transition-colors flex items-center gap-1">
+        <button className="text-[13px] font-semibold text-[#1B1B1B] hover:text-[#A65F4D] transition-colors flex items-center gap-1">
           View all
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -933,7 +933,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           </svg>
         </div>
         <p className="text-base font-semibold text-[#1B1B1B]">{mode === 'edit' ? 'Event updated!' : 'Event published!'}</p>
-        <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">
+        <button onClick={() => setSuccess(false)} className="text-sm text-[#A65F4D] underline">
           Create another
         </button>
       </div>
@@ -956,7 +956,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Give your event a clear, welcoming name..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
         />
       </div>
 
@@ -990,7 +990,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           value={description}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Share the event description, for users to understand the vision and purpose behind the gathering..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D] resize-none"
         />
       </div>
 
@@ -1010,7 +1010,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
                 setRecurrenceDays([calendarWeekday(nextDate)]);
               }
             }}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
         </div>
         <div>
@@ -1020,7 +1020,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
             min={minimumTime}
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
         </div>
         <div>
@@ -1045,7 +1045,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Street address or venue name"
-              className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
           )}
           {eventType !== 'PHYSICAL' && (
@@ -1054,13 +1054,13 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
               value={virtualLink}
               onChange={(e) => setVirtual(e.target.value)}
               placeholder="Online meeting link"
-              className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
           )}
         </div>
       </div>
 
-      <section className={`rounded-xl border border-gray-200 bg-[#FAF6ED] p-4 ${mode !== 'create' ? 'pointer-events-none' : ''}`}>
+      <section className={`rounded-xl border border-gray-200 bg-[#F2E5DE] p-4 ${mode !== 'create' ? 'pointer-events-none' : ''}`}>
         <label className="flex cursor-pointer items-center justify-between gap-4">
           <span><span className="block text-sm font-semibold text-[#1B1B1B]">Recurring event</span><span className="mt-1 block text-xs text-gray-500">Create a managed weekly or monthly series.</span></span>
           <input type="checkbox" checked={isRecurring} onChange={(event) => {
@@ -1092,7 +1092,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           value={region}
           onChange={(e) => setRegion(e.target.value)}
           placeholder="e.g. United Kingdom, Nigeria..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
         />
       </div>
 
@@ -1101,8 +1101,8 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">
           Media Gallery <span className="text-gray-400 font-normal">(up to 10)</span>
         </label>
-        <label className="block cursor-pointer border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#C9A96E]/50">
-          <p className="text-xs text-gray-500">Choose images or videos</p><p className="mt-1 text-[11px] text-gray-400">10 items total, up to 3 videos · 20 MB per video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#8b6a2f]">{mediaProgress}</p>}
+        <label className="block cursor-pointer border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#A65F4D]/50">
+          <p className="text-xs text-gray-500">Choose images or videos</p><p className="mt-1 text-[11px] text-gray-400">10 items total, up to 3 videos · 20 MB per video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#934F3E]">{mediaProgress}</p>}
           <input className="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" onChange={async (event) => { const files = Array.from(event.target.files ?? []); let images = [...eventImages]; let videos = [...eventVideos]; for (const file of files) { if (images.length + videos.length >= 10) break; const isVideo = file.type.startsWith('video/'); if (isVideo && videos.length >= 3) continue; try { setMediaProgress(`Uploading ${file.name}…`); const uploaded = await uploadMedia(file, isVideo ? 'EVENT_VIDEO' : 'EVENT_IMAGE', orgId, (value) => setMediaProgress(`Uploading ${file.name}: ${value}%`)); if (isVideo) videos = [...videos, uploaded]; else images = [...images, uploaded]; setEventImages(images); setEventVideos(videos); } catch (value) { setError(value instanceof Error ? value.message : 'Media upload failed.'); break; } } setMediaProgress(''); event.target.value = ''; }} />
         </label>
         {(eventImages.length > 0 || eventVideos.length > 0) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{eventImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { deleteNewUpload(item, 'EVENT_IMAGE', orgId); setEventImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{eventVideos.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { deleteNewUpload(item, 'EVENT_VIDEO', orgId); setEventVideos((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}</div>}
@@ -1120,12 +1120,12 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               placeholder="Leave blank for unlimited"
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
           </div>
           <div className="flex items-end pb-0.5">
             <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-              <input type="checkbox" className="rounded border-gray-300 accent-[#C9A96E]" />
+              <input type="checkbox" className="rounded border-gray-300 accent-[#A65F4D]" />
               Enable automatic waitlist
             </label>
           </div>
@@ -1135,7 +1135,7 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
           {['Interested', 'Saved', 'Confirmed'].map((stage, i) => (
             <div key={stage} className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1B1B1B] text-white text-xs font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C9A96E]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A65F4D]" />
                 {stage}
               </div>
               {i < 2 && <span className="text-gray-300 text-sm">→</span>}
@@ -1149,15 +1149,15 @@ export function CreateEventForm({ orgId, onCreated, onSaved, mode = 'create', it
               type="checkbox"
               checked={isTicketed}
               onChange={(e) => setIsTicketed(e.target.checked)}
-              className="rounded border-gray-300 accent-[#C9A96E]"
+              className="rounded border-gray-300 accent-[#A65F4D]"
             />
             This is a Ticket Event
           </label>
-          {isTicketed && <input type="url" value={ticketUrl} onChange={(event) => setTicketUrl(event.target.value)} placeholder="https://tickets.example.com/event" className="ml-6 w-full max-w-xl rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#C9A96E]" />}
+          {isTicketed && <input type="url" value={ticketUrl} onChange={(event) => setTicketUrl(event.target.value)} placeholder="https://tickets.example.com/event" className="ml-6 w-full max-w-xl rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#A65F4D]" />}
           <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-            <input type="checkbox" className="rounded border-gray-300 accent-[#C9A96E]" />
+            <input type="checkbox" className="rounded border-gray-300 accent-[#A65F4D]" />
             Send Email Notifications to users
-            <span className="px-1.5 py-0.5 rounded bg-[#C9A96E]/20 text-[#C9A96E] text-[10px] font-semibold">Pro</span>
+            <span className="px-1.5 py-0.5 rounded bg-[#A65F4D]/20 text-[#A65F4D] text-[10px] font-semibold">Pro</span>
           </label>
         </div>
       </div>
@@ -1268,7 +1268,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
           </svg>
         </div>
         <p className="text-base font-semibold text-[#1B1B1B]">{mode === 'edit' ? 'Listing updated!' : 'Listing published!'}</p>
-        <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">Create another</button>
+        <button onClick={() => setSuccess(false)} className="text-sm text-[#A65F4D] underline">Create another</button>
       </div>
     );
   }
@@ -1285,7 +1285,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What are you selling or giving away?"
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
         />
       </div>
 
@@ -1337,7 +1337,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
           value={description}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Describe the item — condition details, size, age, reason for selling..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D] resize-none"
         />
       </div>
 
@@ -1353,7 +1353,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
               aria-checked={isDonation}
               onClick={() => setIsDonation((v) => !v)}
               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                isDonation ? 'bg-[#C9A96E]' : 'bg-gray-200'
+                isDonation ? 'bg-[#A65F4D]' : 'bg-gray-200'
               }`}
             >
               <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${isDonation ? 'translate-x-4' : 'translate-x-1'}`} />
@@ -1362,8 +1362,8 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
         </div>
 
         {isDonation ? (
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-dashed border-[#C9A96E]/50 bg-[#C9A96E]/5">
-            <span className="text-sm text-[#92400E] font-medium">Listed as Free — Community Donation</span>
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-dashed border-[#A65F4D]/50 bg-[#A65F4D]/5">
+            <span className="text-sm text-[#934F3E] font-medium">Listed as Free — Community Donation</span>
           </div>
         ) : (
           <div className="flex gap-2">
@@ -1387,7 +1387,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
                       type="button"
                       onClick={() => { setCurrency(c); setShowCurrencyMenu(false); }}
                       className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
-                        currency === c ? 'bg-[#FAF6ED] font-semibold text-[#1B1B1B]' : 'text-gray-600 hover:bg-gray-50'
+                        currency === c ? 'bg-[#F2E5DE] font-semibold text-[#1B1B1B]' : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
                       {c}
@@ -1403,7 +1403,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="0.00"
-              className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
           </div>
         )}
@@ -1418,7 +1418,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
             value={area}
             onChange={(e) => setArea(e.target.value)}
             placeholder="Area or neighbourhood (e.g. Peckham, Lagos Island)"
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
           <p className="text-[11px] text-gray-400 mt-1">Don't share your precise address</p>
         </div>
@@ -1429,7 +1429,7 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
             value={region}
             onChange={(e) => setRegion(e.target.value)}
             placeholder="e.g. United Kingdom, Nigeria..."
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
         </div>
       </div>
@@ -1439,12 +1439,12 @@ export function CreateListingForm({ orgId, onCreated, onSaved, mode = 'create', 
         <label className="block text-xs font-semibold text-gray-600 mb-1.5">
           Photos <span className="text-gray-400 font-normal">(up to 8)</span>
         </label>
-        <label className="block border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#C9A96E]/50 transition-colors cursor-pointer">
+        <label className="block border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-[#A65F4D]/50 transition-colors cursor-pointer">
           <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5M21 3.75H3M12 3v9m0 0l-3-3m3 3l3-3" />
           </svg>
           <p className="text-xs text-gray-400">Click to upload photos or one short video</p>
-          <p className="text-[11px] text-gray-300 mt-0.5">Up to 8 images and one video · 20 MB per video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#8b6a2f]">{mediaProgress}</p>}
+          <p className="text-[11px] text-gray-300 mt-0.5">Up to 8 images and one video · 20 MB per video</p>{mediaProgress && <p className="mt-2 text-xs font-semibold text-[#934F3E]">{mediaProgress}</p>}
           <input className="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" onChange={async (event) => { const files = Array.from(event.target.files ?? []); let images = [...listingImages]; let video = listingVideo; for (const file of files) { const isVideo = file.type.startsWith('video/'); if ((!isVideo && images.length >= 8) || (isVideo && video)) continue; try { setMediaProgress(`Uploading ${file.name}…`); const uploaded = await uploadMedia(file, isVideo ? 'MARKETPLACE_VIDEO' : 'MARKETPLACE_IMAGE', orgId, (value) => setMediaProgress(`Uploading ${file.name}: ${value}%`)); if (isVideo) video = uploaded; else images = [...images, uploaded]; setListingImages(images); setListingVideo(video); } catch (value) { setError(value instanceof Error ? value.message : 'Media upload failed.'); break; } } setMediaProgress(''); event.target.value = ''; }} />
         </label>
         {(listingImages.length > 0 || listingVideo) && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{listingImages.map((item) => <MediaPreview key={item.assetId} item={item} onRemove={() => { deleteNewUpload(item, 'MARKETPLACE_IMAGE', orgId); setListingImages((items) => items.filter((value) => value.assetId !== item.assetId)); }} />)}{listingVideo && <MediaPreview item={listingVideo} onRemove={() => { deleteNewUpload(listingVideo, 'MARKETPLACE_VIDEO', orgId); setListingVideo(null); }} />}</div>}
@@ -1570,7 +1570,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
           </svg>
         </div>
         <p className="text-base font-semibold text-[#1B1B1B]">{mode === 'edit' ? 'Job updated!' : 'Job posted!'}</p>
-        <button onClick={() => setSuccess(false)} className="text-sm text-[#C9A96E] underline">Post another</button>
+        <button onClick={() => setSuccess(false)} className="text-sm text-[#A65F4D] underline">Post another</button>
       </div>
     );
   }
@@ -1587,7 +1587,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Community Outreach Coordinator, Finance Volunteer..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
         />
       </div>
 
@@ -1626,7 +1626,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
             <input
               type="text"
               placeholder="City or address"
-              className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="w-full mt-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
           )}
         </div>
@@ -1640,7 +1640,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
           value={description}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Describe the role, its purpose, and what makes it meaningful..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D] resize-none"
         />
       </div>
 
@@ -1652,7 +1652,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
           value={responsibilities}
           onChange={(event) => setResponsibilities(event.target.value)}
           placeholder="List the main duties and day-to-day responsibilities..."
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E] resize-none"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D] resize-none"
         />
       </div>
 
@@ -1696,7 +1696,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
             onChange={(e) => setCustomSkill(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomSkill())}
             placeholder="Add a custom skill and press Enter..."
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
           <button
             type="button"
@@ -1716,7 +1716,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
         </div>
         <div>
@@ -1726,7 +1726,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
             value={region}
             onChange={(e) => setRegion(e.target.value)}
             placeholder="e.g. United Kingdom, Nigeria..."
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
           />
         </div>
       </div>
@@ -1742,7 +1742,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
               role="switch"
               aria-checked={showSalary}
               onClick={() => setShowSalary((v) => !v)}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showSalary ? 'bg-[#C9A96E]' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showSalary ? 'bg-[#A65F4D]' : 'bg-gray-200'}`}
             >
               <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${showSalary ? 'translate-x-4' : 'translate-x-1'}`} />
             </button>
@@ -1756,7 +1756,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
               value={salaryMin}
               onChange={(e) => setSalaryMin(e.target.value)}
               placeholder="Min (e.g. 25000)"
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
             <input
               type="number"
@@ -1764,7 +1764,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
               value={salaryMax}
               onChange={(e) => setSalaryMax(e.target.value)}
               placeholder="Max (e.g. 35000)"
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
             />
           </div>
         ) : (
@@ -1780,7 +1780,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
           value={externalUrl}
           onChange={(e) => setExternalUrl(e.target.value)}
           placeholder="https://yourorganisation.org/apply or mailto:jobs@org.com"
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/40 focus:border-[#C9A96E]"
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A65F4D]/40 focus:border-[#A65F4D]"
         />
         <p className="text-[11px] text-gray-400 mt-1">Candidates will be redirected here when they click Apply</p>
       </div>
@@ -1800,7 +1800,7 @@ export function CreateJobsForm({ orgId, onCreated, onSaved, mode = 'create', ite
                   : 'border-gray-200 text-gray-500 hover:border-gray-400'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${faithTag === tag ? 'bg-[#C9A96E]' : 'bg-gray-300'}`} />
+              <span className={`w-2 h-2 rounded-full ${faithTag === tag ? 'bg-[#A65F4D]' : 'bg-gray-300'}`} />
               {tag}
             </button>
           ))}
@@ -1873,15 +1873,15 @@ export default function OrgOverviewPage() {
   return (
     <div className="min-h-screen bg-white">
       {loading ? (
-        <div className="bg-[#FDF8EE] h-64 flex items-center justify-center">
-          <span className="w-8 h-8 border-4 border-[#C9A96E] border-t-transparent rounded-full animate-spin" />
+        <div className="bg-[#F2E4DD] h-64 flex items-center justify-center">
+          <span className="w-8 h-8 border-4 border-[#A65F4D] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : org ? (
         <OrgProfileHeader org={org} />
       ) : (
-        <div className="bg-[#FDF8EE] px-10 py-16 text-center">
+        <div className="bg-[#F2E4DD] px-10 py-16 text-center">
           <p className="text-gray-500 text-sm mb-3">No organisation found.</p>
-          <a href="/org/signup" className="text-sm font-semibold text-[#C9A96E] underline">
+          <a href="/org/signup" className="text-sm font-semibold text-[#A65F4D] underline">
             Set one up →
           </a>
         </div>
