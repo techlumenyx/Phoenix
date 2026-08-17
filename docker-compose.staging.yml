@@ -1,14 +1,16 @@
-version: "3.9"
+name: christian-listings-staging
 
-# Production compose — pulls pre-built images from GHCR.
-# Never runs `docker build`. The server only downloads and runs.
-# Images are built and pushed by GitHub Actions on every push to main.
+# Staging compose — mirrors docker-compose.prod.yml exactly, except:
+#   - distinct project name (isolated network + volume namespace, coexists with prod)
+#   - :staging image tags (built from the `staging` branch, never :latest)
+#   - host ports shifted to 5000-5004 so they don't collide with prod's 4000-4004
+# Never runs `docker build`. Only pulls and runs, same as prod.
 
 services:
   gateway:
-    image: ghcr.io/techlumenyx/phoenix/gateway:latest
+    image: ghcr.io/techlumenyx/phoenix/gateway:staging
     ports:
-      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:5000:4000"
     environment:
       - NODE_ENV=production
       - PORT=4000
@@ -31,16 +33,16 @@ services:
       admin:
         condition: service_healthy
     restart: unless-stopped
+    mem_limit: 128m
 
   identity:
-    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
+    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:staging
     ports:
-      - "127.0.0.1:4001:4001"
+      - "127.0.0.1:5001:4001"
     environment:
       - NODE_ENV=production
       - PORT=4001
       - MONGO_URI=${MONGO_URI}
-      - MONGO_DB_SUFFIX=_prod
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
@@ -57,16 +59,16 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    mem_limit: 256m
 
   events:
-    image: ghcr.io/techlumenyx/phoenix/subgraph-events:latest
+    image: ghcr.io/techlumenyx/phoenix/subgraph-events:staging
     ports:
-      - "127.0.0.1:4002:4002"
+      - "127.0.0.1:5002:4002"
     environment:
       - NODE_ENV=production
       - PORT=4002
       - MONGO_URI=${MONGO_URI}
-      - MONGO_DB_SUFFIX=_prod
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
@@ -81,16 +83,16 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    mem_limit: 256m
 
   classifieds:
-    image: ghcr.io/techlumenyx/phoenix/subgraph-classifieds:latest
+    image: ghcr.io/techlumenyx/phoenix/subgraph-classifieds:staging
     ports:
-      - "127.0.0.1:4003:4003"
+      - "127.0.0.1:5003:4003"
     environment:
       - NODE_ENV=production
       - PORT=4003
       - MONGO_URI=${MONGO_URI}
-      - MONGO_DB_SUFFIX=_prod
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
@@ -107,16 +109,16 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    mem_limit: 256m
 
   admin:
-    image: ghcr.io/techlumenyx/phoenix/subgraph-admin:latest
+    image: ghcr.io/techlumenyx/phoenix/subgraph-admin:staging
     ports:
-      - "127.0.0.1:4004:4004"
+      - "127.0.0.1:5004:4004"
     environment:
       - NODE_ENV=production
       - PORT=4004
       - MONGO_URI=${MONGO_URI}
-      - MONGO_DB_SUFFIX=_prod
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
@@ -129,7 +131,7 @@ services:
       - CLASSIFIEDS_INTERNAL_URL=http://classifieds:4003
       - ADMIN_ALLOWED_ORIGINS=${ADMIN_ALLOWED_ORIGINS}
       - ADMIN_RATE_LIMIT_PER_MINUTE=${ADMIN_RATE_LIMIT_PER_MINUTE:-120}
-      - APP_VERSION=${APP_VERSION:-production}
+      - APP_VERSION=${APP_VERSION:-staging}
       - REDIS_URL=redis://redis:6379
       - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
       - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
@@ -147,10 +149,11 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    mem_limit: 256m
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
     volumes:
       - redis_data:/data
     healthcheck:
@@ -159,9 +162,10 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    mem_limit: 96m
 
   worker:
-    image: ghcr.io/techlumenyx/phoenix/worker:latest
+    image: ghcr.io/techlumenyx/phoenix/worker:staging
     environment:
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
@@ -171,7 +175,7 @@ services:
       - EMAIL_PROVIDER=${EMAIL_PROVIDER:-sendgrid}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
-      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME:-Christian Listings}
+      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME:-Christian Listings (Staging)}
       - SENDGRID_REPLY_TO=${SENDGRID_REPLY_TO}
       - EMAIL_WORKER_CONCURRENCY=${EMAIL_WORKER_CONCURRENCY:-5}
       - EMAIL_MAX_ATTEMPTS=${EMAIL_MAX_ATTEMPTS:-5}
@@ -191,13 +195,16 @@ services:
       admin:
         condition: service_healthy
     restart: unless-stopped
+    mem_limit: 192m
 
+  # Staging intentionally has no MONGO_DB_SUFFIX — it targets the same
+  # unsuffixed databases (cl_identity, etc.) that were already live in
+  # Cluster0 before the christianlistings.com cutover.
   seed:
     profiles: ["tools"]
-    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
+    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:staging
     environment:
       - MONGO_URI=${MONGO_URI}
-      - MONGO_DB_SUFFIX=_prod
       - SEED_ENVIRONMENT=${SEED_ENVIRONMENT:-}
       - SEED_REMOTE_CONFIRM=${SEED_REMOTE_CONFIRM:-}
     volumes:
@@ -207,12 +214,11 @@ services:
 
   seed-demo:
     profiles: ["tools"]
-    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:latest
+    image: ghcr.io/techlumenyx/phoenix/subgraph-identity:staging
     environment:
       - MONGO_URI=${MONGO_URI}
-      - MONGO_DB_SUFFIX=_prod
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON}
-      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://christian-listing.firebaseapp.com}
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL:-https://christian-listing-staging.web.app}
       - SEED_ENVIRONMENT=${SEED_ENVIRONMENT:-}
       - SEED_REMOTE_CONFIRM=${SEED_REMOTE_CONFIRM:-}
       - DEMO_ORG_EMAIL=${DEMO_ORG_EMAIL:-}

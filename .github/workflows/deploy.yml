@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
 
 env:
   NODE_VERSION: '22'
@@ -12,9 +12,14 @@ jobs:
     name: CI Gate
     uses: ./.github/workflows/ci.yml
 
+  # ============================================================
+  # PRODUCTION — triggered by pushes to main
+  # ============================================================
+
   deploy-christian-listing:
-    name: Build & Deploy christian-listing
+    name: Build & Deploy christian-listing (prod)
     needs: ci
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -65,8 +70,9 @@ jobs:
           exit $exit_code
 
   deploy-cl-admin:
-    name: Build & Deploy cl-admin
+    name: Build & Deploy cl-admin (prod)
     needs: ci
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -115,8 +121,9 @@ jobs:
           exit $exit_code
 
   build-and-push:
-    name: Build & Push Docker Images
+    name: Build & Push Docker Images (prod)
     needs: ci
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -176,8 +183,9 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
   deploy-backend:
-    name: Deploy Backend to Hetzner
+    name: Deploy Backend to Hetzner (prod)
     needs: build-and-push
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -208,6 +216,219 @@ jobs:
             --max-time 15)
           if [ "$status" != "200" ]; then
             echo "Smoke test FAILED — HTTP $status from https://christian-listings.duckdns.org/"
+            exit 1
+          fi
+          echo "Smoke test passed — HTTP 200"
+
+  # ============================================================
+  # STAGING — triggered by pushes to staging. Same shape as prod,
+  # pointed at the staging Firebase sites and the staging compose
+  # stack on the same Hetzner box (different ports, different DB,
+  # capped container memory — see docker-compose.staging.yml).
+  # ============================================================
+
+  deploy-christian-listing-staging:
+    name: Build & Deploy christian-listing (staging)
+    needs: ci
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Authenticate to Firebase
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > /tmp/sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json" >> $GITHUB_ENV
+
+      - name: Build christian-listing (staging)
+        run: npx nx build christian-listing --configuration=production
+        env:
+          CL_GRAPHQL_URL: https://christian-listings-staging.duckdns.org/
+          CL_IDENTITY_MEDIA_URL: https://christian-listings-staging.duckdns.org/media/identity/upload
+          CL_EVENTS_MEDIA_URL: https://christian-listings-staging.duckdns.org/media/events/upload
+          CL_CLASSIFIEDS_MEDIA_URL: https://christian-listings-staging.duckdns.org/media/classifieds/upload
+          CL_FIREBASE_API_KEY: ${{ secrets.CL_FIREBASE_API_KEY }}
+          CL_FIREBASE_AUTH_DOMAIN: ${{ secrets.CL_FIREBASE_AUTH_DOMAIN }}
+          CL_FIREBASE_PROJECT_ID: ${{ secrets.CL_FIREBASE_PROJECT_ID }}
+          CL_FIREBASE_STORAGE_BUCKET: ${{ secrets.CL_FIREBASE_STORAGE_BUCKET }}
+          CL_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.CL_FIREBASE_MESSAGING_SENDER_ID }}
+          CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_CL }}
+
+      - name: Deploy to Firebase Hosting (christian-listing-staging)
+        run: |
+          set +e
+          output=$(npx firebase deploy --only hosting:christian-listing-staging --project ${{ vars.FIREBASE_PROJECT_ID }} 2>&1)
+          exit_code=$?
+          set -e
+          echo "$output"
+          if [ $exit_code -ne 0 ] && echo "$output" | grep -q "current active version"; then
+            echo "Nothing to deploy — christian-listing-staging is already up-to-date"
+            exit 0
+          fi
+          exit $exit_code
+
+  deploy-cl-admin-staging:
+    name: Build & Deploy cl-admin (staging)
+    needs: ci
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Authenticate to Firebase
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > /tmp/sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json" >> $GITHUB_ENV
+
+      - name: Build cl-admin (staging)
+        run: npx nx build cl-admin --configuration=production
+        env:
+          CL_GRAPHQL_URL: https://christian-listings-staging.duckdns.org/
+          CL_ADMIN_MEDIA_URL: https://christian-listings-staging.duckdns.org/media/admin/upload
+          CL_FIREBASE_API_KEY: ${{ secrets.CL_FIREBASE_API_KEY }}
+          CL_FIREBASE_AUTH_DOMAIN: ${{ secrets.CL_FIREBASE_AUTH_DOMAIN }}
+          CL_FIREBASE_PROJECT_ID: ${{ secrets.CL_FIREBASE_PROJECT_ID }}
+          CL_FIREBASE_STORAGE_BUCKET: ${{ secrets.CL_FIREBASE_STORAGE_BUCKET }}
+          CL_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.CL_FIREBASE_MESSAGING_SENDER_ID }}
+          CL_FIREBASE_APP_ID: ${{ secrets.CL_FIREBASE_APP_ID_ADMIN }}
+
+      - name: Deploy to Firebase Hosting (cl-admin-staging)
+        run: |
+          set +e
+          output=$(npx firebase deploy --only hosting:christian-listings-admin-staging --project ${{ vars.FIREBASE_PROJECT_ID }} 2>&1)
+          exit_code=$?
+          set -e
+          echo "$output"
+          if [ $exit_code -ne 0 ] && echo "$output" | grep -q "current active version"; then
+            echo "Nothing to deploy — cl-admin-staging is already up-to-date"
+            exit 0
+          fi
+          exit $exit_code
+
+  build-and-push-staging:
+    name: Build & Push Docker Images (staging)
+    needs: ci
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - app: gateway
+            dockerfile: docker/Dockerfile.router
+          - app: subgraph-identity
+            dockerfile: docker/Dockerfile.node
+          - app: subgraph-events
+            dockerfile: docker/Dockerfile.node
+          - app: subgraph-classifieds
+            dockerfile: docker/Dockerfile.node
+          - app: subgraph-admin
+            dockerfile: docker/Dockerfile.node
+          - app: worker
+            dockerfile: docker/Dockerfile.node
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compose supergraph
+        if: matrix.app == 'gateway'
+        env:
+          APOLLO_ELV2_LICENSE: accept
+        run: |
+          npm install -g @apollo/rover
+          rover supergraph compose --config rover.yaml --output apps/gateway/supergraph.graphql
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.app }} (staging)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          build-args: APP_NAME=${{ matrix.app }}
+          push: true
+          tags: |
+            ghcr.io/techlumenyx/phoenix/${{ matrix.app }}:staging
+            ghcr.io/techlumenyx/phoenix/${{ matrix.app }}:staging-${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.app }}-staging
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}-staging
+
+  deploy-backend-staging:
+    name: Deploy Backend to Hetzner (staging)
+    needs: build-and-push-staging
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            cd /opt/christian-listings
+            git fetch origin staging
+            git reset --hard origin/staging
+            if [ ! -f .env.staging ]; then
+              echo "Missing /opt/christian-listings/.env.staging on the server — copy .env.staging.example, fill in the TODOs, and save it as .env.staging before the first staging deploy."
+              exit 1
+            fi
+            docker compose -f docker-compose.staging.yml --env-file .env.staging pull
+            docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
+            docker image prune -f
+
+      - name: Smoke test — verify GraphQL endpoint
+        run: |
+          echo "Waiting 20s for containers to stabilise..."
+          sleep 20
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://christian-listings-staging.duckdns.org/ \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{__typename}"}' \
+            --max-time 15)
+          if [ "$status" != "200" ]; then
+            echo "Smoke test FAILED — HTTP $status from https://christian-listings-staging.duckdns.org/"
             exit 1
           fi
           echo "Smoke test passed — HTTP 200"

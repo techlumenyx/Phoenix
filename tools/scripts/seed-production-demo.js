@@ -18,6 +18,7 @@ const orgPassword = process.env.DEMO_ORG_PASSWORD;
 const memberEmail = normaliseEmail(process.env.DEMO_MEMBER_EMAIL);
 const memberPassword = process.env.DEMO_MEMBER_PASSWORD;
 const publicAppUrl = (process.env.PUBLIC_APP_URL || 'https://christian-listing.firebaseapp.com').replace(/\/$/, '');
+const dbName = (base) => (process.env.MONGO_DB_SUFFIX ? `${base}${process.env.MONGO_DB_SUFFIX}` : base);
 
 guardExecution();
 
@@ -41,9 +42,9 @@ async function main() {
   await client.connect();
 
   try {
-    const identity = client.db('cl_identity');
-    const eventsDb = client.db('cl_events');
-    const classifieds = client.db('cl_classifieds');
+    const identity = client.db(dbName('cl_identity'));
+    const eventsDb = client.db(dbName('cl_events'));
+    const classifieds = client.db(dbName('cl_classifieds'));
 
     const ownerFirebase = await ensureFirebaseUser(firebaseAuth, {
       email: orgEmail, password: orgPassword, displayName: 'Grace Community Demo',

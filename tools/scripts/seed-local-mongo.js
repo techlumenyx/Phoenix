@@ -32,6 +32,8 @@ if (!isLocal) {
 }
 
 const targetLabel = isLocal ? 'local' : seedEnvironment;
+const dbSuffix = process.env.MONGO_DB_SUFFIX || envValue('MONGO_DB_SUFFIX');
+const dbName = (base) => (dbSuffix ? `${base}${dbSuffix}` : base);
 
 const id = (suffix) => new ObjectId(`7000000000000000000000${suffix}`);
 const now = new Date();
@@ -50,10 +52,10 @@ async function main() {
   const client = new MongoClient(uri);
   await client.connect();
 
-  const identity = client.db('cl_identity');
-  const events = client.db('cl_events');
-  const classifieds = client.db('cl_classifieds');
-  const admin = client.db('cl_admin');
+  const identity = client.db(dbName('cl_identity'));
+  const events = client.db(dbName('cl_events'));
+  const classifieds = client.db(dbName('cl_classifieds'));
+  const admin = client.db(dbName('cl_admin'));
 
   const users = [
     { _id: id('01'), firebaseUid: 'seed-member-lagos', email: 'ada.seed@example.test', name: 'Ada Okafor', avatarUrl: null, bio: 'Community volunteer and worship leader.', socialLinks: null, isVerified: true, region: 'Lagos, Nigeria', regionCode: 'NG-LA', preferences: ['Worship & Services', 'Career & Volunteering', 'Marketplace Deals'], onboardingCompleted: true, accountStatus: 'ACTIVE', warningCount: 0, suspensionReason: null, roles: [], orgId: null, orgInvitedBy: null, orgJoinedAt: null, ...timestamps },

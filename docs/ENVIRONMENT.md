@@ -7,6 +7,7 @@ Copy `.env.example` to `.env` and fill in all values before running any service.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `MONGO_URI` | Yes | Full MongoDB Atlas connection string, including credentials. Format: `mongodb+srv://<user>:<pass>@<cluster>.mongodb.net` |
+| `MONGO_DB_SUFFIX` | No | Appended to each subgraph's hardcoded db name (`cl_identity`, etc.) via `resolveDbName()` from `@christian-listings/db`. Lets multiple environments share one Atlas cluster without colliding — prod hardcodes `_prod` in `docker-compose.prod.yml`; staging and local dev leave it unset. |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Yes | Firebase Admin SDK service account JSON, **base64-encoded**. Get from Firebase Console → Project Settings → Service Accounts → Generate new private key. Encode: `base64 -i serviceAccount.json` (Mac/Linux) |
 | `PORT` | Yes | HTTP port the service listens on. Each service uses a different port (4001–4004). Set automatically by Docker Compose. |
 | `NODE_ENV` | No | `development` or `production`. Defaults to `development`. |

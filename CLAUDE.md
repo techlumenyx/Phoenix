@@ -43,7 +43,7 @@ Faith-community platform (Events, Jobs, Marketplace) for diaspora audiences. Nx 
 
 ### Database
 - **Always** use `createMongoConnection(uri, dbName)` from `@christian-listings/db`. Never call `mongoose.connect()` directly.
-- Each subgraph hardcodes its DB name: `cl_identity`, `cl_events`, `cl_classifieds`, `cl_admin`.
+- Each subgraph hardcodes its base DB name: `cl_identity`, `cl_events`, `cl_classifieds`, `cl_admin`. Always pass it through `resolveDbName()` (also from `@christian-listings/db`) rather than the literal — it appends `MONGO_DB_SUFFIX` when set, which is how prod and staging share one Atlas cluster (Cluster0) without colliding: prod hardcodes `MONGO_DB_SUFFIX=_prod` in `docker-compose.prod.yml`; staging and local dev leave it unset.
 
 ### Authentication
 - **Always** call `buildAuthContext(request)` from `@christian-listings/auth` in every subgraph's Apollo context function.

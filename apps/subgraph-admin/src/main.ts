@@ -7,7 +7,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { NoSchemaIntrospectionCustomRule, parse } from 'graphql';
 import { buildAuthPlugin } from '@christian-listings/auth';
-import { createMongoConnection } from '@christian-listings/db';
+import { createMongoConnection, resolveDbName } from '@christian-listings/db';
 import { registerMediaUploadRoutes } from '@christian-listings/utils';
 import { buildContext, type GraphQLContext } from './context';
 import { MediaAssetModel, setupModels } from './models';
@@ -37,7 +37,7 @@ const typeDefs = parse(
 async function bootstrap() {
   const mongoUri = process.env['MONGO_URI'];
   if (!mongoUri) throw new Error('MONGO_URI is required');
-  const connection = await createMongoConnection(mongoUri, 'cl_admin');
+  const connection = await createMongoConnection(mongoUri, resolveDbName('cl_admin'));
   setupModels(connection);
 
   const fastify = Fastify({
