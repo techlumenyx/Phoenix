@@ -21,7 +21,7 @@
     "gateway:compose": "tools\\scripts\\compose-supergraph.bat",
     "cl": "nx serve christian-listing",
     "cl-admin": "nx serve cl-admin",
-    "admin:provision": "tsx tools/scripts/provision-admin.ts",
+    "admin:provision": "tsx --tsconfig tsconfig.base.json tools/scripts/provision-admin.ts",
     "admin:backup": "powershell -ExecutionPolicy Bypass -File tools/scripts/backup-admin.ps1",
     "locations:import": "tsx tools/scripts/import-geonames.ts",
     "frontend": "concurrently -n cl,cl-admin -c blue,red npm:cl npm:cl-admin",

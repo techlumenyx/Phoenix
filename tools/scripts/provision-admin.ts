@@ -1,4 +1,4 @@
-import { createMongoConnection } from '@christian-listings/db';
+import { createMongoConnection, resolveDbName } from '@christian-listings/db';
 import { getFirebaseAdmin } from '@christian-listings/auth';
 import {
   ADMIN_ROLES,
@@ -49,7 +49,7 @@ async function main() {
   const mongoUri = process.env['MONGO_URI'];
   if (!mongoUri) throw new Error('MONGO_URI is required');
 
-  const connection = await createMongoConnection(mongoUri, 'cl_identity');
+  const connection = await createMongoConnection(mongoUri, resolveDbName('cl_identity'));
   const AdminModel = connection.model<IAdmin>('Admin', AdminSchema);
   const auth = getFirebaseAdmin().auth();
 
