@@ -67,7 +67,7 @@
       ]
     },
     {
-      "site": "christian-listing-staging",
+      "site": "christian-listing-stage",
       "public": "dist/apps/christian-listing",
       "ignore": [
         "firebase.json",
@@ -100,7 +100,7 @@
       ]
     },
     {
-      "site": "christian-listings-admin-staging",
+      "site": "christian-listings-admin-stage",
       "public": "dist/apps/cl-admin",
       "ignore": [
         "firebase.json",
