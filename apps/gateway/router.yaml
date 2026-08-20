@@ -26,7 +26,7 @@ cors:
         - https://christian-listing.firebaseapp.com
         - https://christian-listings-admin.web.app
         - https://christian-listings-admin.firebaseapp.com
-        - https://christian-listing-stage.web.app
+        - https://christian-listings-stage.web.app
         - https://christian-listings-admin-stage.web.app
       allow_credentials: true
       methods:

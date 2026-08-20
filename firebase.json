@@ -67,7 +67,7 @@
       ]
     },
     {
-      "site": "christian-listing-stage",
+      "site": "christian-listings-stage",
       "public": "dist/apps/christian-listing",
       "ignore": [
         "firebase.json",
