@@ -44,7 +44,7 @@ export default function ReportConversationsPage({ organisationMode = false }: { 
   const loading = organisationMode ? orgQuery.loading || (!orgData && !organisationId) : memberQuery.loading;
   const error = organisationMode ? orgQuery.error : memberQuery.error;
 
-  return <main className={organisationMode ? '' : 'mx-auto max-w-7xl px-6 pb-12 pt-28 md:px-10'}>
+  return <main className={organisationMode ? 'mx-auto w-full max-w-6xl p-6' : 'mx-auto max-w-7xl px-6 pb-12 pt-28 md:px-10'}>
     <header className="mb-7"><h1 className="font-serif text-4xl font-bold">{organisationMode ? 'Report communications' : 'My Reports'}</h1><p className="mt-2 text-sm text-gray-500">{organisationMode ? 'Private conversations with the Christian Listings safety team about your organisation or content.' : 'Track reports, answer clarification requests, and appeal decisions. Your identity remains private from the affected party.'}</p></header>
     {loading ? <State text="Loading report conversations…" /> : error ? <State text="Report conversations could not be loaded." /> : !conversations.length ? <State text={organisationMode ? 'The safety team has not contacted your organisation about any reports.' : 'You have not submitted any reports.'} /> :
     <div className="grid min-h-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white lg:grid-cols-[340px_minmax(0,1fr)]">
