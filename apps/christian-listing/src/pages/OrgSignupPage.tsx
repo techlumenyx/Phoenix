@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { firebaseAuth } from '../firebase';
 import { userSafeError } from '../lib/user-safe-error';
+import PasswordInput from '../components/ui/PasswordInput';
 
 export default function OrgSignupPage() {
   const navigate = useNavigate();
@@ -96,9 +97,8 @@ export default function OrgSignupPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700" htmlFor="org-password">Password</label>
-            <input
+            <PasswordInput
               id="org-password"
-              type="password"
               required
               minLength={6}
               value={password}

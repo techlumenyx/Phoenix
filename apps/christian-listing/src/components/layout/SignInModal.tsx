@@ -15,6 +15,7 @@ import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../../firebase';
 import { SIGN_UP, CREATE_USER } from '../../graphql/mutations';
 import ForgotPasswordAction from '../auth/ForgotPasswordAction';
+import PasswordInput from '../ui/PasswordInput';
 
 interface Props {
   onClose: () => void;
@@ -203,8 +204,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600">Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   value={signupPassword}
                   onChange={(e) => setSignupPassword(e.target.value)}
@@ -234,8 +234,7 @@ export default function SignInModal({ onClose, defaultTab = 'signup' }: Props) {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600">Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   value={signinPassword}
                   onChange={(e) => setSigninPassword(e.target.value)}

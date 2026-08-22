@@ -12,6 +12,7 @@ import SceneHeader from '../../components/layout/SceneHeader';
 import { userSafeError } from '../../lib/user-safe-error';
 import { organisationAuthRedirect } from '../../lib/organisation-auth';
 import ForgotPasswordAction from '../../components/auth/ForgotPasswordAction';
+import PasswordInput from '../../components/ui/PasswordInput';
 
 const INPUT =
   'w-full bg-[#ede9e4] rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#C9A96E] transition';
@@ -131,7 +132,7 @@ export default function OrgAuthPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600">Password</label>
-                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••••••" className={INPUT} />
+                <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••••••" className={INPUT} />
               </div>
               <button type="submit" disabled={loading} className={`${DARK_BTN} mt-1`}>
                 {loading ? 'Creating…' : 'Create Account'}
@@ -147,7 +148,7 @@ export default function OrgAuthPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-gray-600">Password</label>
-                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••••••" className={INPUT} />
+                <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••••••" className={INPUT} />
               </div>
               <ForgotPasswordAction email={email} className="text-right" />
               <button type="submit" disabled={loading} className={`${DARK_BTN} mt-1`}>

@@ -12,6 +12,7 @@ import { useAuthStore } from '../store/authStore';
 import SceneHeader from '../components/layout/SceneHeader';
 import ForgotPasswordAction from '../components/auth/ForgotPasswordAction';
 import { userSafeError } from '../lib/user-safe-error';
+import PasswordInput from '../components/ui/PasswordInput';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -130,8 +131,7 @@ export default function AuthPage() {
               placeholder="Email Address"
               className="w-full bg-[#F5F0EB] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[#C9A96E]"
             />
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={6}
               value={password}

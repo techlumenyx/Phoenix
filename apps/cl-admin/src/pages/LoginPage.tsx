@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../auth/authStore';
+import PasswordInput from '../components/PasswordInput';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -56,7 +57,7 @@ export default function LoginPage() {
               <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1.5 h-10 w-full rounded border border-[#B7BEC8] bg-white px-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
             </label>
             <label className="block text-sm font-medium text-[#172B4D]">Password
-              <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 h-10 w-full rounded border border-[#B7BEC8] bg-white px-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+              <PasswordInput autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 h-10 w-full rounded border border-[#B7BEC8] bg-white px-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
             </label>
             {error && <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">{error}</div>}
             <button type="submit" disabled={signingIn} className="h-10 w-full rounded bg-[#0C66E4] px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{signingIn ? 'Verifying access…' : 'Sign in'}</button>

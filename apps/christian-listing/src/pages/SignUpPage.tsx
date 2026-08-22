@@ -5,6 +5,7 @@ import { useMutation } from '@apollo/client';
 import { firebaseAuth } from '../firebase';
 import { CREATE_USER } from '../graphql/mutations';
 import { userSafeError } from '../lib/user-safe-error';
+import PasswordInput from '../components/ui/PasswordInput';
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -71,8 +72,8 @@ export default function SignUpPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700" htmlFor="password">Password</label>
-            <input
-              id="password" type="password" required minLength={6} value={password}
+            <PasswordInput
+              id="password" required minLength={6} value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#C9A96E] focus:border-transparent"
               placeholder="Min. 6 characters"

@@ -7,6 +7,7 @@ import {
 } from 'firebase/auth';
 import { firebaseAuth } from '../firebase';
 import { userSafeError } from '../lib/user-safe-error';
+import PasswordInput from '../components/ui/PasswordInput';
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -77,9 +78,8 @@ export default function SignInPage() {
             <label className="text-sm font-medium text-gray-700" htmlFor="password">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
