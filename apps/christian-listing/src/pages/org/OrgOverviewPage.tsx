@@ -88,7 +88,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
     : null;
 
   return (
-    <div className="flex min-w-0 items-start gap-8 bg-[#F2E4DD] px-6 py-12 font-sans md:px-10">
+    <div className="flex min-w-0 flex-col items-center gap-6 bg-[#F2E4DD] px-6 py-12 text-center font-sans md:flex-row md:items-start md:gap-8 md:px-10 md:text-left">
 
       {/* Left Column: Avatar */}
       <div className="relative shrink-0">
@@ -104,11 +104,11 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
       </div>
 
       {/* Right Column: Content */}
-      <div className="flex min-w-0 w-full max-w-4xl flex-col">
+      <div className="flex min-w-0 w-full max-w-4xl flex-col items-center md:items-stretch">
 
         {/* Title & Edit Action */}
         <div className="flex items-center gap-3 mb-4">
-          <h1 className="text-4xl font-serif font-bold text-[#1B1B1B] tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#1B1B1B] tracking-tight">
             {org.name ?? 'Your Organisation'}
           </h1>
           <button
@@ -131,7 +131,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
         )}
 
         {/* Stats & Links */}
-        <div className="flex items-center gap-6 text-sm text-gray-500 mb-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 mb-6 md:justify-start">
           <span><strong className="text-[#1B1B1B] font-semibold">{formatCount(org.followerCount)}</strong> Followers</span>
           {websiteHref && websiteDisplay && (
             <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#1B1B1B] hover:underline font-medium">
@@ -630,12 +630,12 @@ function ListingsManager() {
       {/* Header */}
       <div className="px-6 pt-6">
         <h2 className="text-3xl font-serif font-bold text-[#1B1B1B] mb-6">Listings Manager</h2>
-        <div className="flex items-center gap-8 border-b border-gray-200">
+        <div className="flex items-center gap-8 overflow-x-auto border-b border-gray-200">
           {LISTINGS_TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === tab ? 'text-[#1B1B1B]' : 'text-gray-500 hover:text-gray-800'}`}
+              className={`shrink-0 whitespace-nowrap pb-3 text-sm font-medium transition-colors relative ${activeTab === tab ? 'text-[#1B1B1B]' : 'text-gray-500 hover:text-gray-800'}`}
             >
               {tab}
               {activeTab === tab && <span className="absolute bottom-[-1px] left-0 w-full h-[2px] bg-[#1B1B1B]" />}
@@ -644,21 +644,24 @@ function ListingsManager() {
         </div>
       </div>
 
-      {/* Table Header */}
-      <div className="bg-[#F2E5DE] px-6 py-3 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 text-[11px] font-bold text-gray-600 tracking-wider uppercase">
-        <div>Listing Details</div>
-        <div>{TAB_HEADER_LABELS[activeTab]}</div>
-        <div>Metrics</div>
-        <div>Activity</div>
-        <div className="w-6" />
-      </div>
+      {/* Table Header + Body — horizontally scrollable so the fixed columns don't collapse on narrow screens */}
+      <div className="overflow-x-auto">
+        <div className="min-w-[760px]">
+          <div className="bg-[#F2E5DE] px-6 py-3 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 text-[11px] font-bold text-gray-600 tracking-wider uppercase">
+            <div>Listing Details</div>
+            <div>{TAB_HEADER_LABELS[activeTab]}</div>
+            <div>Metrics</div>
+            <div>Activity</div>
+            <div className="w-6" />
+          </div>
 
-      {/* Table Body */}
-      <div className="flex-1 flex flex-col">
-        {activeTab === 'All Listings'   && <AllListingsTab />}
-        {activeTab === 'Events (RSVPs)' && <EventsTab />}
-        {activeTab === 'Jobs (Apps)'    && <JobsTab />}
-        {activeTab === 'Marketplace'    && <MarketplaceTab />}
+          <div className="flex-1 flex flex-col">
+            {activeTab === 'All Listings'   && <AllListingsTab />}
+            {activeTab === 'Events (RSVPs)' && <EventsTab />}
+            {activeTab === 'Jobs (Apps)'    && <JobsTab />}
+            {activeTab === 'Marketplace'    && <MarketplaceTab />}
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
@@ -1838,12 +1841,12 @@ function CreationCentre({ orgId }: { orgId?: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100">
+      <div className="flex overflow-x-auto border-b border-gray-100">
         {CREATION_TABS.map(({ label, icon: Icon }, i) => (
           <button
             key={label}
             onClick={() => setActiveTab(i)}
-            className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-6 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
               activeTab === i
                 ? 'border-[#1B1B1B] text-[#1B1B1B]'
                 : 'border-transparent text-gray-400 hover:text-gray-600'
@@ -1891,9 +1894,9 @@ export default function OrgOverviewPage() {
 
       <ListingsManager />
 
-      <div className="px-8 py-6 space-y-6">
-        <div className="grid grid-cols-3 gap-6 items-start">
-          <div className="col-span-2">
+      <div className="px-4 py-6 sm:px-8 space-y-6">
+        <div className="grid grid-cols-1 gap-6 items-start lg:grid-cols-3">
+          <div className="lg:col-span-2">
             <MarketplaceMessagesPanel />
           </div>
           <NotificationCentre />

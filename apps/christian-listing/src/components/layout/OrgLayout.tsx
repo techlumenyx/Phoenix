@@ -100,9 +100,19 @@ function OrgUserMenu() {
   );
 }
 
-function OrgTopBar() {
+function OrgTopBar({ onMenuClick }: { onMenuClick: () => void }) {
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 z-50 flex items-center px-6 gap-8">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 z-50 flex items-center px-4 md:px-6 gap-4 md:gap-8">
+      <button
+        onClick={onMenuClick}
+        className="md:hidden shrink-0 p-2 -ml-2 text-gray-500 hover:text-gray-800"
+        aria-label="Toggle navigation menu"
+      >
+        <span className="block w-5 h-0.5 bg-current mb-1" />
+        <span className="block w-5 h-0.5 bg-current mb-1" />
+        <span className="block w-5 h-0.5 bg-current" />
+      </button>
+
       <a href="/" className="flex items-center shrink-0">
         <BrandLogo className="h-[34px] w-auto" />
       </a>
@@ -119,10 +129,10 @@ function OrgTopBar() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-3 ml-auto">
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:border-gray-400 transition-colors">
+      <div className="flex items-center gap-2 md:gap-3 ml-auto">
+        <button className="flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:border-gray-400 transition-colors">
           <MapPinIcon className="w-3.5 h-3.5 text-gray-400" />
-          United Kingdom
+          <span className="hidden sm:inline">United Kingdom</span>
         </button>
         <OrgUserMenu />
       </div>
@@ -134,6 +144,7 @@ export default function OrgLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { canManageSettings, loading: permissionsLoading } = useOrganisationPermissions();
 
   const { data: orgData } = useQuery<{ myOrganisations: { id: string; name: string | null }[] }>(MY_ORGANISATIONS);
@@ -144,16 +155,27 @@ export default function OrgLayout() {
   const unreadReportCommunications = notificationData?.organisationReportUnreadCount ?? 0;
   const orgInitials = orgName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
+  useEffect(() => { setMobileNavOpen(false); }, [pathname]);
+
   return (
     <div className="min-h-screen bg-[#FAF4F0]">
       <WhatsNewPopover />
-      <OrgTopBar />
+      <OrgTopBar onMenuClick={() => setMobileNavOpen((o) => !o)} />
 
-      {/* Light sidebar — starts below top bar */}
+      {/* Mobile nav backdrop */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 top-16 bg-black/40 z-30 md:hidden"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Light sidebar — starts below top bar. Off-canvas drawer on mobile, fixed rail from md+ */}
       <aside
-        className={`fixed top-16 left-0 bottom-0 flex flex-col bg-white border-r border-gray-100 transition-all duration-200 z-40 ${
-          collapsed ? 'w-[60px]' : 'w-56'
-        }`}
+        className={`fixed top-16 left-0 bottom-0 flex flex-col bg-white border-r border-gray-100 transition-transform md:transition-all duration-200 z-40 w-64 ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 ${collapsed ? 'md:w-[60px]' : 'md:w-56'}`}
       >
         {/* Org name + role */}
         <div className={`shrink-0 border-b border-gray-100 ${collapsed ? 'px-2 py-4' : 'px-4 py-4'}`}>
@@ -212,8 +234,8 @@ export default function OrgLayout() {
           })}
         </nav>
 
-        {/* Collapse toggle */}
-        <div className="px-3 py-4 border-t border-gray-100 shrink-0">
+        {/* Collapse toggle — desktop only; the mobile drawer is always full-width */}
+        <div className="hidden md:block px-3 py-4 border-t border-gray-100 shrink-0">
           <button
             onClick={() => setCollapsed((c) => !c)}
             className="w-full flex items-center gap-2 text-gray-400 hover:text-gray-600 text-xs transition-colors"
@@ -227,7 +249,7 @@ export default function OrgLayout() {
       </aside>
 
       {/* Main content */}
-      <div className={`transition-all duration-200 pt-16 ${collapsed ? 'ml-[60px]' : 'ml-56'}`}>
+      <div className={`transition-all duration-200 pt-16 ${collapsed ? 'md:ml-[60px]' : 'md:ml-56'}`}>
         <Outlet />
       </div>
     </div>

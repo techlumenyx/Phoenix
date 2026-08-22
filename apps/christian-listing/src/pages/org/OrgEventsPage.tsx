@@ -142,12 +142,12 @@ export default function OrgEventsPage() {
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-visible flex flex-col">
         {/* Tabs */}
-        <div className="px-6 pt-4 flex items-center gap-8 border-b border-gray-200">
+        <div className="px-6 pt-4 flex items-center gap-8 overflow-x-auto border-b border-gray-200">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`pb-4 text-sm font-medium transition-colors relative ${
+              className={`shrink-0 whitespace-nowrap pb-4 text-sm font-medium transition-colors relative ${
                 activeTab === tab ? 'text-[#1B1B1B]' : 'text-gray-500 hover:text-gray-800'
               }`}
             >
@@ -157,41 +157,29 @@ export default function OrgEventsPage() {
           ))}
         </div>
 
-        {/* Table Header */}
-        <div className="bg-[#F2E5DE] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
-          <ColHeader label="Listing Details" sortable="title" />
-          <ColHeader label="Category"        sortable="category" />
-          <ColHeader label="Frequency" />
-          <ColHeader label="Date"            sortable="date" />
-          <ColHeader label="Capacity"        sortable="capacityLimit" />
-          <ColHeader label="RSVPs"           sortable="rsvpCount" />
-          <div className="w-6" />
-        </div>
+        {/* Table Header + Rows — horizontally scrollable so the fixed columns don't collapse on narrow screens */}
+        <div className="overflow-x-auto">
+          <div className="min-w-[880px]">
+            <div className="bg-[#F2E5DE] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+              <ColHeader label="Listing Details" sortable="title" />
+              <ColHeader label="Category"        sortable="category" />
+              <ColHeader label="Frequency" />
+              <ColHeader label="Date"            sortable="date" />
+              <ColHeader label="Capacity"        sortable="capacityLimit" />
+              <ColHeader label="RSVPs"           sortable="rsvpCount" />
+              <div className="w-6" />
+            </div>
 
-        {/* States */}
-        {loading && (
-          <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading events...</div>
-        )}
-        {error && (
-          <div className="flex items-center justify-center py-16 text-sm text-red-500">We couldn’t load your events. Please try again.</div>
-        )}
-        {!loading && !error && sorted.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-2">
-            <p className="text-sm font-semibold text-gray-600">No events here</p>
-            <p className="text-xs text-gray-400">Use the form below to create your first event.</p>
-          </div>
-        )}
-
-        {/* Rows */}
-        {!loading && !error && paginated.length > 0 && (
-          <div className="flex flex-col">
-            {paginated.map((item, index) => (
-              <div
-                key={item.id}
-                className={`px-6 py-4 grid grid-cols-[2.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center ${
-                  index !== paginated.length - 1 ? 'border-b border-gray-100' : ''
-                }`}
-              >
+            {/* Rows */}
+            {!loading && !error && paginated.length > 0 && (
+              <div className="flex flex-col">
+                {paginated.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`px-6 py-4 grid grid-cols-[2.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center ${
+                      index !== paginated.length - 1 ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded bg-[#EAEAF5] flex items-center justify-center shrink-0">
                     <svg className="w-5 h-5 text-[#1B1B1B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -217,6 +205,22 @@ export default function OrgEventsPage() {
                 </button>{menuId === item.id && <div className={`absolute right-0 z-20 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg ${index === paginated.length - 1 ? 'bottom-9' : 'top-9'}`}><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View event</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit event or series</button><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_OCCURRENCE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this occurrence</button>{item.isRecurring && <><button onClick={() => { setCancelTarget({ event: item, scope: 'THIS_AND_FUTURE' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">Cancel this and future</button><button onClick={() => { setCancelTarget({ event: item, scope: 'ENTIRE_SERIES' }); setMenuId(null); }} className="block w-full px-4 py-2.5 text-left text-xs text-red-700 hover:bg-red-50">Cancel entire series</button></>}</div>}</div>
               </div>
             ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* States */}
+        {loading && (
+          <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading events...</div>
+        )}
+        {error && (
+          <div className="flex items-center justify-center py-16 text-sm text-red-500">We couldn’t load your events. Please try again.</div>
+        )}
+        {!loading && !error && sorted.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 gap-2">
+            <p className="text-sm font-semibold text-gray-600">No events here</p>
+            <p className="text-xs text-gray-400">Use the form below to create your first event.</p>
           </div>
         )}
 

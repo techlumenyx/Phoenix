@@ -161,12 +161,12 @@ export default function OrgJobsPage() {
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
         {/* Tabs */}
-        <div className="px-6 pt-4 flex items-center gap-8 border-b border-gray-200">
+        <div className="px-6 pt-4 flex items-center gap-8 overflow-x-auto border-b border-gray-200">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`pb-4 text-[14px] font-medium transition-colors relative ${
+              className={`shrink-0 whitespace-nowrap pb-4 text-[14px] font-medium transition-colors relative ${
                 activeTab === tab ? 'text-[#1B1B1B]' : 'text-gray-500 hover:text-gray-800'
               }`}
             >
@@ -179,28 +179,23 @@ export default function OrgJobsPage() {
         {activeTab === 'Applications' && (
           <div>
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3"><p className="text-sm text-gray-500">{applications.length} application{applications.length === 1 ? '' : 's'}</p><button type="button" disabled={applications.length === 0} onClick={downloadApplicationsCsv} className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold hover:bg-gray-50 disabled:opacity-40">Download CSV</button></div>
-            <div className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-gray-200 bg-[#F2E5DE] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500"><span>Candidate</span><span>Job</span><span>Email</span><span>Applied</span><span>Status</span><span>Details</span></div>
             {applicationsLoading && <div className="py-16 text-center text-sm text-gray-400">Loading applications…</div>}
             {applicationsError && <div className="py-16 text-center text-sm text-red-500">We couldn’t load job applications. Please try again.</div>}
             {!applicationsLoading && !applicationsError && applications.length === 0 && <div className="py-16 text-center"><p className="text-sm font-semibold text-gray-600">No applications yet</p><p className="mt-1 text-xs text-gray-400">New candidate applications will appear here.</p></div>}
-            {applications.map((application) => <div key={application.id} className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] items-center gap-4 border-b border-gray-100 px-6 py-4 text-[13px]"><strong>{application.fullName}</strong><span className="truncate text-gray-600">{application.listing.title}</span><a href={`mailto:${application.email}`} className="truncate text-gray-500 hover:underline">{application.email}</a><span className="text-gray-500">{formatDate(application.createdAt)}</span><span className="rounded-full bg-blue-50 px-2 py-1 text-center text-[11px] font-semibold text-blue-700">{application.status.replaceAll('_', ' ')}</span><button onClick={() => setSelectedApplication(application)} className="rounded-lg border px-3 py-1.5 text-xs hover:bg-gray-50">View</button></div>)}
+            {!applicationsLoading && !applicationsError && applications.length > 0 && (
+              <div className="overflow-x-auto">
+                <div className="min-w-[760px]">
+                  <div className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-gray-200 bg-[#F2E5DE] px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-500"><span>Candidate</span><span>Job</span><span>Email</span><span>Applied</span><span>Status</span><span>Details</span></div>
+                  {applications.map((application) => <div key={application.id} className="grid grid-cols-[1.2fr_1.4fr_1.4fr_1fr_1fr_auto] items-center gap-4 border-b border-gray-100 px-6 py-4 text-[13px]"><strong>{application.fullName}</strong><span className="truncate text-gray-600">{application.listing.title}</span><a href={`mailto:${application.email}`} className="truncate text-gray-500 hover:underline">{application.email}</a><span className="text-gray-500">{formatDate(application.createdAt)}</span><span className="rounded-full bg-blue-50 px-2 py-1 text-center text-[11px] font-semibold text-blue-700">{application.status.replaceAll('_', ' ')}</span><button onClick={() => setSelectedApplication(application)} className="rounded-lg border px-3 py-1.5 text-xs hover:bg-gray-50">View</button></div>)}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Listings */}
         {activeTab !== 'Applications' && (
           <>
-            {/* Table Header */}
-            <div className="bg-[#F2E5DE] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
-              <ColHeader label="Job Title"   sortable="title" />
-              <ColHeader label="Role Type"   sortable="roleType" />
-              <ColHeader label="Location"    sortable="workLocation" />
-              <ColHeader label="Region"      sortable="region" />
-              <ColHeader label="Deadline"    sortable="applicationDeadline" />
-              <ColHeader label="Status"      sortable="status" />
-              <div className="w-6" />
-            </div>
-
             {loading && <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading jobs...</div>}
             {error   && <div className="flex items-center justify-center py-16 text-sm text-red-500">We couldn’t load your jobs. Please try again.</div>}
             {!loading && !error && sorted.length === 0 && (
@@ -211,41 +206,55 @@ export default function OrgJobsPage() {
             )}
 
             {!loading && !error && paginated.length > 0 && (
-              <div className="flex flex-col">
-                {paginated.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className={`px-6 py-4 grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center ${
-                      index !== paginated.length - 1 ? 'border-b border-gray-100' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded bg-[#EAEAF5] flex items-center justify-center shrink-0">
-                        <svg className="w-5 h-5 text-[#1B1B1B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-[#1B1B1B] text-[14px] leading-snug">{item.title}</h4>
-                        {item.isPromoted && <span className="text-[11px] text-[#A65F4D] font-medium">Promoted</span>}
-                      </div>
-                    </div>
-                    <div className="text-[13px] text-gray-500">{ROLE_LABEL[item.roleType] ?? item.roleType}</div>
-                    <div className="text-[13px] text-gray-500">{LOCATION_LABEL[item.workLocation] ?? item.workLocation}</div>
-                    <div className="text-[13px] text-gray-500">{item.region}</div>
-                    <div className="text-[13px] text-gray-500">{formatDate(item.applicationDeadline)}</div>
-                    <div>
-                      <span className={`px-2 py-1 rounded-full text-[11px] font-semibold ${STATUS_STYLE[item.status] ?? 'bg-gray-100 text-gray-500'}`}>
-                        {item.status}
-                      </span>
-                    </div>
-                    <div className="relative"><button onClick={() => setMenuId((current) => current === item.id ? null : item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100" aria-label={`Manage ${item.title}`}>
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                      </svg>
-                    </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View job</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit job</button></div>}</div>
+              <div className="overflow-x-auto">
+                <div className="min-w-[880px]">
+                  {/* Table Header */}
+                  <div className="bg-[#F2E5DE] px-6 py-4 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
+                    <ColHeader label="Job Title"   sortable="title" />
+                    <ColHeader label="Role Type"   sortable="roleType" />
+                    <ColHeader label="Location"    sortable="workLocation" />
+                    <ColHeader label="Region"      sortable="region" />
+                    <ColHeader label="Deadline"    sortable="applicationDeadline" />
+                    <ColHeader label="Status"      sortable="status" />
+                    <div className="w-6" />
                   </div>
-                ))}
+                  <div className="flex flex-col">
+                    {paginated.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className={`px-6 py-4 grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center ${
+                          index !== paginated.length - 1 ? 'border-b border-gray-100' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded bg-[#EAEAF5] flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-[#1B1B1B]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-[#1B1B1B] text-[14px] leading-snug">{item.title}</h4>
+                            {item.isPromoted && <span className="text-[11px] text-[#A65F4D] font-medium">Promoted</span>}
+                          </div>
+                        </div>
+                        <div className="text-[13px] text-gray-500">{ROLE_LABEL[item.roleType] ?? item.roleType}</div>
+                        <div className="text-[13px] text-gray-500">{LOCATION_LABEL[item.workLocation] ?? item.workLocation}</div>
+                        <div className="text-[13px] text-gray-500">{item.region}</div>
+                        <div className="text-[13px] text-gray-500">{formatDate(item.applicationDeadline)}</div>
+                        <div>
+                          <span className={`px-2 py-1 rounded-full text-[11px] font-semibold ${STATUS_STYLE[item.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                            {item.status}
+                          </span>
+                        </div>
+                        <div className="relative"><button onClick={() => setMenuId((current) => current === item.id ? null : item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100" aria-label={`Manage ${item.title}`}>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                          </svg>
+                        </button>{menuId === item.id && <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg"><button onClick={() => openForm(item, 'view')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">View job</button><button onClick={() => openForm(item, 'edit')} className="block w-full px-4 py-2.5 text-left text-xs hover:bg-gray-50">Edit job</button></div>}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
