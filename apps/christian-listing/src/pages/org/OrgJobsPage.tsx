@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { gql, useMutation, useQuery } from '@apollo/client';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MY_ORG_JOB_LISTINGS } from '../../graphql/mutations';
 import { CreateJobsForm, type ManagedFormMode, type ManagedJobFormItem } from './OrgOverviewPage';
 
@@ -82,6 +83,21 @@ export default function OrgJobsPage() {
   const allJobs: JobListing[] = (data?.myOrganisations ?? []).flatMap(
     (org: { jobListings: JobListing[] }) => org.jobListings ?? [],
   );
+
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const handledDeepLink = useRef(false);
+  useEffect(() => {
+    if (handledDeepLink.current || !data) return;
+    handledDeepLink.current = true;
+    const itemId = searchParams.get('item');
+    const mode = searchParams.get('mode');
+    if (itemId && (mode === 'edit' || mode === 'view')) {
+      const match = allJobs.find((job) => job.id === itemId);
+      if (match) openForm(match, mode);
+      navigate('/org/jobs', { replace: true });
+    }
+  }, [data]);
 
   const filtered = allJobs.filter((j) => {
     if (activeTab === 'Active Listings') return j.status === 'ACTIVE';

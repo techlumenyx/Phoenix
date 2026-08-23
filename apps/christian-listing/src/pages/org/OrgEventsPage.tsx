@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CANCEL_EVENT, MY_ORG_EVENTS } from '../../graphql/mutations';
 import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
 import { useToast } from '../../components/ui/ToastProvider';
@@ -89,6 +90,21 @@ export default function OrgEventsPage() {
   const allEvents: OrgEvent[] = (data?.myOrganisations ?? []).flatMap(
     (org: { events: { edges: OrgEvent[] } }) => org.events?.edges ?? [],
   );
+
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const handledDeepLink = useRef(false);
+  useEffect(() => {
+    if (handledDeepLink.current || !data) return;
+    handledDeepLink.current = true;
+    const itemId = searchParams.get('item');
+    const mode = searchParams.get('mode');
+    if (itemId && (mode === 'edit' || mode === 'view')) {
+      const match = allEvents.find((event) => event.id === itemId);
+      if (match) openForm(match, mode);
+      navigate('/org/events', { replace: true });
+    }
+  }, [data]);
 
   const filtered = allEvents.filter((e) => {
     if (activeTab === 'Active Events')    return e.status === 'PUBLISHED';

@@ -1,6 +1,6 @@
-import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   DELETE_MARKETPLACE_ITEM,
   MY_MARKETPLACE_LISTINGS,
@@ -208,6 +208,22 @@ export default function OrgListingsPage() {
   const [deleteItem, deleteState] = useMutation(DELETE_MARKETPLACE_ITEM);
 
   const allListings: MarketplaceListing[] = data?.myOrganisations?.[0]?.marketplaceListings ?? [];
+
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const handledDeepLink = useRef(false);
+  useEffect(() => {
+    if (handledDeepLink.current || !data) return;
+    handledDeepLink.current = true;
+    const itemId = searchParams.get('item');
+    const mode = searchParams.get('mode');
+    if (itemId && (mode === 'edit' || mode === 'view')) {
+      const match = allListings.find((listing) => listing.id === itemId);
+      if (match) openForm(match, mode);
+      navigate('/org/listings', { replace: true });
+    }
+  }, [data]);
+
   const filtered = useMemo(() => allListings.filter((listing) => {
     if (activeTab === 'Active') return listing.status === 'AVAILABLE' || listing.status === 'RESERVED';
     if (activeTab === 'Review') return listing.status === 'PENDING_REVIEW';

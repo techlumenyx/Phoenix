@@ -1,8 +1,8 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, useMemo, useRef, FormEvent } from 'react';
 import { gql, useQuery, useMutation } from '@apollo/client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
-import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING, UPDATE_JOB_LISTING, UPDATE_MANAGED_EVENT, UPDATE_MARKETPLACE_ITEM } from '../../graphql/mutations';
+import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING, UPDATE_JOB_LISTING, UPDATE_MANAGED_EVENT, UPDATE_MARKETPLACE_ITEM, MY_ORG_EVENTS, MY_ORG_JOB_LISTINGS, MY_MARKETPLACE_LISTINGS } from '../../graphql/mutations';
 import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
 import { deleteUploadedMedia, uploadMedia, type UploadedMedia } from '../../lib/mediaUpload';
 import { AnalyticsSummaryCards } from '../../components/analytics/OrganisationAnalytics';
@@ -429,189 +429,89 @@ function MarketplaceMessagesPanel() {
   );
 }
 
-// ── Shared 3-dot action button ────────────────────────────────────────────────
-function RowActions() {
-  return (
-    <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100">
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-      </svg>
-    </button>
-  );
-}
+// ── Shared 3-dot action menu ──────────────────────────────────────────────────
+function ManagerRowActions({ onView, onEdit }: { onView: () => void; onEdit: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-function ViewsCell({ views }: { views: string }) {
+  useEffect(() => {
+    if (!open) return;
+    function close(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
   return (
-    <div className="flex items-center gap-1.5 text-gray-500 text-[13px]">
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-      </svg>
-      {views}
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-label="Row actions"
+      >
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-9 z-20 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+          <button onClick={() => { setOpen(false); onView(); }} className="block w-full px-4 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50">View</button>
+          <button onClick={() => { setOpen(false); onEdit(); }} className="block w-full px-4 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50">Edit</button>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Tab: All Listings ─────────────────────────────────────────────────────────
-const ALL_LISTINGS_DATA = [
-  { id: 1, title: 'Community Prayer Night', sub: '14 Jul 2025 · In Person', badge: 'EVENT',       badgeCls: 'bg-[#9C5177] text-white',  views: '3.1k views', count: '87',  label: 'RSVPs' },
-  { id: 2, title: 'Project Coordinator (Teaching Aid)', sub: 'Lagos (Hybrid)',  badge: 'JOB',         badgeCls: 'bg-[#121958] text-white',  views: '1.2k views', count: '24',  label: 'Applications' },
-  { id: 3, title: 'Study Bible — Good Condition',       sub: 'Marketplace · Good', badge: 'LISTING', badgeCls: 'bg-[#0F6D1A] text-white',  views: '540 views',  count: '6',   label: 'Enquiries' },
-];
+// ── ListingsManager — a live preview of the organisation's events, jobs, and marketplace listings ──
+type PreviewKind = 'EVENT' | 'JOB' | 'LISTING';
+interface PreviewRow { kind: PreviewKind; id: string; title: string; sub: string; badge: string; status: string; detail: string; }
 
-function AllListingsTab() {
-  const iconMap: Record<string, JSX.Element> = {
-    EVENT: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-    JOB: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-    LISTING: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-      </svg>
-    ),
-  };
+const KIND_ROUTE: Record<PreviewKind, string> = { EVENT: '/org/events', JOB: '/org/jobs', LISTING: '/org/listings' };
+const KIND_BADGE_CLASS: Record<PreviewKind, string> = {
+  EVENT: 'bg-[#9C5177] text-white', JOB: 'bg-[#121958] text-white', LISTING: 'bg-[#0F6D1A] text-white',
+};
+const KIND_ICON_CLASS: Record<PreviewKind, string> = {
+  EVENT: 'bg-[#F3E8FF] text-[#6B21A8]', JOB: 'bg-[#EEF2FF] text-[#121958]', LISTING: 'bg-[#F0FDF4] text-[#0F6D1A]',
+};
+const KIND_ICON_PATH: Record<PreviewKind, string> = {
+  EVENT: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+  JOB: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  LISTING: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z',
+};
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  PUBLISHED: 'bg-green-50 text-green-700', DRAFT: 'bg-gray-100 text-gray-600', CANCELLED: 'bg-red-50 text-red-600',
+  ACTIVE: 'bg-green-50 text-green-700', ARCHIVED: 'bg-gray-100 text-gray-600', CLOSED: 'bg-red-50 text-red-600',
+  AVAILABLE: 'bg-green-50 text-green-700', RESERVED: 'bg-amber-50 text-amber-700', SOLD: 'bg-gray-100 text-gray-600', PENDING_REVIEW: 'bg-blue-50 text-blue-700',
+};
+const JOB_ROLE_LABEL: Record<string, string> = { PAID: 'Paid', VOLUNTEER: 'Volunteer', INTERNSHIP: 'Internship' };
+const JOB_LOCATION_LABEL: Record<string, string> = { PHYSICAL: 'In-Person', REMOTE: 'Remote', HYBRID: 'Hybrid' };
+const LISTING_CONDITION_LABEL: Record<string, string> = { NEW: 'New', LIKE_NEW: 'Like New', GOOD: 'Good', FAIR: 'Fair' };
 
-  return (
-    <>
-      {ALL_LISTINGS_DATA.map((item, index) => (
-        <div key={item.id} className={`px-6 py-5 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 items-center ${index !== ALL_LISTINGS_DATA.length - 1 ? 'border-b border-gray-100' : ''}`}>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-[#EAEAF5] flex items-center justify-center shrink-0 text-[#1B1B1B]">
-              {iconMap[item.badge]}
-            </div>
-            <div>
-              <h4 className="font-bold text-[#1B1B1B] text-[15px] leading-snug">{item.title}</h4>
-              <p className="text-[13px] text-gray-500 mt-0.5">{item.sub}</p>
-            </div>
-          </div>
-          <div><span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wide ${item.badgeCls}`}>{item.badge}</span></div>
-          <ViewsCell views={item.views} />
-          <div className="text-[13px] text-gray-500"><strong className="text-[#1B1B1B] font-bold">{item.count}</strong> {item.label}</div>
-          <RowActions />
-        </div>
-      ))}
-    </>
-  );
+function previewDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function previewLocation(loc: { type: string; city?: string | null; country?: string | null }) {
+  const place = loc.city ?? loc.country ?? '';
+  const type = loc.type === 'PHYSICAL' ? 'In-Person' : loc.type === 'VIRTUAL' ? 'Online' : 'Hybrid';
+  return place ? `${place} (${type})` : type;
+}
+function previewPrice(item: { price: number; currency: string; isDonation: boolean }) {
+  if (item.isDonation) return 'Free';
+  try {
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: item.currency }).format(item.price);
+  } catch {
+    return `${item.currency} ${item.price.toLocaleString()}`;
+  }
 }
 
-// ── Tab: Events (RSVPs) ───────────────────────────────────────────────────────
-const EVENTS_DATA = [
-  { id: 1, title: 'Community Prayer Night',        date: '14 Jul 2025', venue: 'In Person · Lagos',   category: 'Worship & Prayer',       catCls: 'bg-[#6B21A8] text-white',  views: '3.1k views', rsvpTotal: '87',  confirmed: '42' },
-  { id: 2, title: 'Youth Leadership Conference',   date: '22 Aug 2025', venue: 'Hybrid · Abuja',      category: 'Youth & Young Adults',   catCls: 'bg-[#0369A1] text-white',  views: '2.4k views', rsvpTotal: '134', confirmed: '89' },
-  { id: 3, title: 'Monthly Bible Study',           date: '05 Jul 2025', venue: 'Online',               category: 'Bible Study & Theology', catCls: 'bg-[#065F46] text-white',  views: '980 views',  rsvpTotal: '56',  confirmed: '31' },
-];
+interface PreviewEventSource { id: string; title: string; category: string; date: string; location: { type: string; city?: string | null; country?: string | null }; rsvpCount: number; status: string; }
+interface PreviewJobSource { id: string; title: string; roleType: string; workLocation: string; region: string; applicationDeadline: string; status: string; createdAt: string; }
+interface PreviewListingSource { id: string; title: string; condition: string; price: number; currency: string; isDonation: boolean; region: string; status: string; createdAt: string; }
 
-function EventsTab() {
-  return (
-    <>
-      {EVENTS_DATA.map((item, index) => (
-        <div key={item.id} className={`px-6 py-5 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 items-center ${index !== EVENTS_DATA.length - 1 ? 'border-b border-gray-100' : ''}`}>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-[#F3E8FF] flex items-center justify-center shrink-0 text-[#6B21A8]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-bold text-[#1B1B1B] text-[15px] leading-snug">{item.title}</h4>
-              <p className="text-[13px] text-gray-500 mt-0.5">{item.date} · {item.venue}</p>
-            </div>
-          </div>
-          <div><span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide whitespace-nowrap ${item.catCls}`}>{item.category}</span></div>
-          <ViewsCell views={item.views} />
-          <div className="text-[13px] text-gray-500">
-            <strong className="text-[#1B1B1B] font-bold">{item.rsvpTotal}</strong> RSVPs
-            <span className="text-[11px] text-[#0F6D1A] font-medium ml-1.5">({item.confirmed} confirmed)</span>
-          </div>
-          <RowActions />
-        </div>
-      ))}
-    </>
-  );
-}
-
-// ── Tab: Jobs (Apps) ──────────────────────────────────────────────────────────
-const JOBS_DATA = [
-  { id: 1, title: 'Project Coordinator (Teaching Aid)', location: 'Lagos (Hybrid)',  roleType: 'PAID',        roleCls: 'bg-[#121958] text-white',  views: '1.2k views', apps: '24', deadline: '31 Jul 2025' },
-  { id: 2, title: 'Community Outreach Volunteer',       location: 'Remote',          roleType: 'VOLUNTEER',   roleCls: 'bg-[#065F46] text-white',  views: '870 views',  apps: '11', deadline: '15 Aug 2025' },
-  { id: 3, title: 'Communications Intern',              location: 'London (On-site)',  roleType: 'INTERNSHIP',  roleCls: 'bg-[#92400E] text-white',  views: '640 views',  apps: '7',  deadline: '20 Jul 2025' },
-];
-
-function JobsTab() {
-  return (
-    <>
-      {JOBS_DATA.map((item, index) => (
-        <div key={item.id} className={`px-6 py-5 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 items-center ${index !== JOBS_DATA.length - 1 ? 'border-b border-gray-100' : ''}`}>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-[#EEF2FF] flex items-center justify-center shrink-0 text-[#121958]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-bold text-[#1B1B1B] text-[15px] leading-snug">{item.title}</h4>
-              <p className="text-[13px] text-gray-500 mt-0.5">{item.location} · Deadline {item.deadline}</p>
-            </div>
-          </div>
-          <div><span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wide ${item.roleCls}`}>{item.roleType}</span></div>
-          <ViewsCell views={item.views} />
-          <div className="text-[13px] text-gray-500"><strong className="text-[#1B1B1B] font-bold">{item.apps}</strong> Applications</div>
-          <RowActions />
-        </div>
-      ))}
-    </>
-  );
-}
-
-// ── Tab: Marketplace ──────────────────────────────────────────────────────────
-const MARKETPLACE_DATA = [
-  { id: 1, title: 'Study Bible — ESV (Like New)',    location: 'London, UK',   condition: 'Like New', condCls: 'bg-[#ECFDE8] text-[#0F6D1A]', price: '£12',  views: '540 views', enquiries: '6' },
-  { id: 2, title: 'Church Projector Screen 120"',    location: 'Lagos, NG',    condition: 'Good',     condCls: 'bg-[#FEF9C3] text-[#854D0E]', price: '₦45k', views: '1.1k views', enquiries: '14' },
-  { id: 3, title: 'Children\'s Ministry Craft Kit',  location: 'Manchester, UK', condition: 'New',    condCls: 'bg-[#DBEAFE] text-[#1E40AF]', price: 'Free', views: '320 views', enquiries: '3', isDonation: true },
-];
-
-function MarketplaceTab() {
-  return (
-    <>
-      {MARKETPLACE_DATA.map((item, index) => (
-        <div key={item.id} className={`px-6 py-5 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 items-center ${index !== MARKETPLACE_DATA.length - 1 ? 'border-b border-gray-100' : ''}`}>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-[#F0FDF4] flex items-center justify-center shrink-0 text-[#0F6D1A]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-bold text-[#1B1B1B] text-[15px] leading-snug">
-                {item.title}
-                {item.isDonation && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#A65F4D]/20 text-[#934F3E] uppercase tracking-wide">Donation</span>
-                )}
-              </h4>
-              <p className="text-[13px] text-gray-500 mt-0.5">{item.location}</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide w-fit ${item.condCls}`}>{item.condition}</span>
-            <span className="text-[13px] font-bold text-[#1B1B1B]">{item.price}</span>
-          </div>
-          <ViewsCell views={item.views} />
-          <div className="text-[13px] text-gray-500"><strong className="text-[#1B1B1B] font-bold">{item.enquiries}</strong> Enquiries</div>
-          <RowActions />
-        </div>
-      ))}
-    </>
-  );
-}
-
-// ── ListingsManager ───────────────────────────────────────────────────────────
 const LISTINGS_TABS = ['All Listings', 'Events (RSVPs)', 'Jobs (Apps)', 'Marketplace'] as const;
 type ListingsTab = typeof LISTINGS_TABS[number];
 
@@ -621,9 +521,113 @@ const TAB_HEADER_LABELS: Record<ListingsTab, string> = {
   'Jobs (Apps)':    'Role Type',
   'Marketplace':    'Condition',
 };
+const TAB_SECONDARY_LABELS: Record<ListingsTab, string> = {
+  'All Listings':   'Details',
+  'Events (RSVPs)': 'RSVPs',
+  'Jobs (Apps)':    'Deadline',
+  'Marketplace':    'Price',
+};
+const VIEW_ALL_PATH: Partial<Record<ListingsTab, string>> = {
+  'Events (RSVPs)': '/org/events',
+  'Jobs (Apps)':    '/org/jobs',
+  'Marketplace':    '/org/listings',
+};
+
+function ManagerRow({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
+  const navigate = useNavigate();
+  return (
+    <div className={`px-6 py-5 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 items-center ${isLast ? '' : 'border-b border-gray-100'}`}>
+      <div className="flex min-w-0 items-center gap-4">
+        <div className={`w-10 h-10 rounded flex items-center justify-center shrink-0 ${KIND_ICON_CLASS[row.kind]}`}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d={KIND_ICON_PATH[row.kind]} />
+          </svg>
+        </div>
+        <div className="min-w-0">
+          <h4 className="font-bold text-[#1B1B1B] text-[15px] leading-snug truncate">{row.title}</h4>
+          <p className="text-[13px] text-gray-500 mt-0.5 truncate">{row.sub}</p>
+        </div>
+      </div>
+      <div><span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wide whitespace-nowrap ${KIND_BADGE_CLASS[row.kind]}`}>{row.badge}</span></div>
+      <div><span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${STATUS_BADGE_CLASS[row.status] ?? 'bg-gray-100 text-gray-600'}`}>{row.status.replaceAll('_', ' ')}</span></div>
+      <div className="text-[13px] text-gray-500">{row.detail}</div>
+      <ManagerRowActions
+        onView={() => navigate(`${KIND_ROUTE[row.kind]}?item=${row.id}&mode=view`)}
+        onEdit={() => navigate(`${KIND_ROUTE[row.kind]}?item=${row.id}&mode=edit`)}
+      />
+    </div>
+  );
+}
 
 function ListingsManager() {
   const [activeTab, setActiveTab] = useState<ListingsTab>('All Listings');
+  const navigate = useNavigate();
+
+  const { data: eventsData, loading: eventsLoading } = useQuery(MY_ORG_EVENTS);
+  const { data: jobsData, loading: jobsLoading } = useQuery(MY_ORG_JOB_LISTINGS);
+  const { data: listingsData, loading: listingsLoading } = useQuery(MY_MARKETPLACE_LISTINGS);
+
+  const events: PreviewEventSource[] = (eventsData?.myOrganisations ?? []).flatMap(
+    (org: { events?: { edges: PreviewEventSource[] } }) => org.events?.edges ?? [],
+  );
+  const jobs: PreviewJobSource[] = (jobsData?.myOrganisations ?? []).flatMap(
+    (org: { jobListings?: PreviewJobSource[] }) => org.jobListings ?? [],
+  );
+  const listings: PreviewListingSource[] = (listingsData?.myOrganisations ?? []).flatMap(
+    (org: { marketplaceListings?: PreviewListingSource[] }) => org.marketplaceListings ?? [],
+  );
+
+  const eventRows: PreviewRow[] = useMemo(() => [...events]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
+    .map((e) => ({
+      kind: 'EVENT' as const, id: e.id, title: e.title,
+      sub: `${previewDate(e.date)} · ${previewLocation(e.location)}`,
+      badge: enumLabel(PILL_TO_ENUM, e.category, e.category),
+      status: e.status, detail: `${e.rsvpCount} RSVPs`,
+    })), [events]);
+
+  const jobRows: PreviewRow[] = useMemo(() => [...jobs]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5)
+    .map((j) => ({
+      kind: 'JOB' as const, id: j.id, title: j.title,
+      sub: `${JOB_LOCATION_LABEL[j.workLocation] ?? j.workLocation} · ${j.region}`,
+      badge: JOB_ROLE_LABEL[j.roleType] ?? j.roleType,
+      status: j.status, detail: `Deadline ${previewDate(j.applicationDeadline)}`,
+    })), [jobs]);
+
+  const listingRows: PreviewRow[] = useMemo(() => [...listings]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5)
+    .map((l) => ({
+      kind: 'LISTING' as const, id: l.id, title: l.title, sub: l.region,
+      badge: LISTING_CONDITION_LABEL[l.condition] ?? l.condition,
+      status: l.status, detail: previewPrice(l),
+    })), [listings]);
+
+  const allRows: PreviewRow[] = useMemo(
+    () => [...eventRows.slice(0, 2), ...jobRows.slice(0, 2), ...listingRows.slice(0, 2)],
+    [eventRows, jobRows, listingRows],
+  );
+
+  const rowsByTab: Record<ListingsTab, PreviewRow[]> = {
+    'All Listings': allRows, 'Events (RSVPs)': eventRows, 'Jobs (Apps)': jobRows, 'Marketplace': listingRows,
+  };
+  const loadingByTab: Record<ListingsTab, boolean> = {
+    'All Listings': eventsLoading || jobsLoading || listingsLoading,
+    'Events (RSVPs)': eventsLoading, 'Jobs (Apps)': jobsLoading, 'Marketplace': listingsLoading,
+  };
+  const emptyMessage: Record<ListingsTab, string> = {
+    'All Listings': 'Nothing published yet. Use the Creation Centre below to add your first event, job, or listing.',
+    'Events (RSVPs)': 'No events yet.',
+    'Jobs (Apps)': 'No job listings yet.',
+    'Marketplace': 'No marketplace listings yet.',
+  };
+
+  const rows = rowsByTab[activeTab];
+  const loading = loadingByTab[activeTab];
+  const viewAllPath = VIEW_ALL_PATH[activeTab];
 
   return (
     <div className="font-sans max-w-5xl mx-auto bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
@@ -650,29 +654,30 @@ function ListingsManager() {
           <div className="bg-[#F2E5DE] px-6 py-3 border-b border-gray-200 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 text-[11px] font-bold text-gray-600 tracking-wider uppercase">
             <div>Listing Details</div>
             <div>{TAB_HEADER_LABELS[activeTab]}</div>
-            <div>Metrics</div>
-            <div>Activity</div>
+            <div>Status</div>
+            <div>{TAB_SECONDARY_LABELS[activeTab]}</div>
             <div className="w-6" />
           </div>
 
           <div className="flex-1 flex flex-col">
-            {activeTab === 'All Listings'   && <AllListingsTab />}
-            {activeTab === 'Events (RSVPs)' && <EventsTab />}
-            {activeTab === 'Jobs (Apps)'    && <JobsTab />}
-            {activeTab === 'Marketplace'    && <MarketplaceTab />}
+            {loading && rows.length === 0 && <div className="px-6 py-10 text-center text-sm text-gray-400">Loading…</div>}
+            {!loading && rows.length === 0 && <div className="px-6 py-10 text-center text-sm text-gray-400">{emptyMessage[activeTab]}</div>}
+            {rows.map((row, index) => <ManagerRow key={`${row.kind}:${row.id}`} row={row} isLast={index === rows.length - 1} />)}
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50/50">
-        <button className="text-[13px] font-semibold text-[#1B1B1B] hover:text-[#A65F4D] transition-colors flex items-center gap-1">
-          View all
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+      {/* Footer — no "view all" for the mixed preview tab; the other three link to their dedicated manager pages */}
+      {viewAllPath && (
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end bg-gray-50/50">
+          <button onClick={() => navigate(viewAllPath)} className="text-[13px] font-semibold text-[#1B1B1B] hover:text-[#A65F4D] transition-colors flex items-center gap-1">
+            View all
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
