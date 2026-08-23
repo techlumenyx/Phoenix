@@ -97,7 +97,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
           <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#F2E4DD]">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l2.4 2.4 3.2-.8.8 3.2 2.4 2.4-2.4 2.4-.8 3.2-3.2-.8L12 22l-2.4-2.4-3.2.8-.8-3.2-2.4-2.4 2.4-2.4.8-3.2 3.2.8L12 2z" />
-              <path fill="#F2E4DD" d="M10.5 15.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
+              <path fill="#1B1B1B" d="M10.5 15.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
             </svg>
           </div>
         )}
