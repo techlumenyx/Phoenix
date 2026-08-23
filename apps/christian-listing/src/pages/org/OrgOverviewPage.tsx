@@ -2,11 +2,13 @@ import { useState, useEffect, useMemo, useRef, FormEvent } from 'react';
 import { gql, useQuery, useMutation } from '@apollo/client';
 import { Link, useNavigate } from 'react-router-dom';
 import { CalendarIcon, BriefcaseIcon, ListBulletIcon } from '../../components/layout/icons';
-import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING, UPDATE_JOB_LISTING, UPDATE_MANAGED_EVENT, UPDATE_MARKETPLACE_ITEM, MY_ORG_EVENTS, MY_ORG_JOB_LISTINGS, MY_MARKETPLACE_LISTINGS } from '../../graphql/mutations';
+import { MY_ORGANISATIONS, CREATE_EVENT, CREATE_MARKETPLACE_ITEM, CREATE_JOB_LISTING, UPDATE_JOB_LISTING, UPDATE_MANAGED_EVENT, UPDATE_MARKETPLACE_ITEM, MY_ORG_EVENTS, MY_ORG_JOB_LISTINGS, MY_MARKETPLACE_LISTINGS, CANCEL_EVENT, DELETE_MARKETPLACE_ITEM } from '../../graphql/mutations';
 import { calendarWeekday, firstWeeklyDateOnOrAfter } from '../../lib/recurrence-form';
 import { deleteUploadedMedia, uploadMedia, type UploadedMedia } from '../../lib/mediaUpload';
 import { AnalyticsSummaryCards } from '../../components/analytics/OrganisationAnalytics';
 import NameAvatar from '../../components/media/NameAvatar';
+import ConfirmationDialog from '../../components/ui/ConfirmationDialog';
+import { useToast } from '../../components/ui/ToastProvider';
 
 interface OrgSocialLinks {
   whatsapp:  string | null;
@@ -430,7 +432,9 @@ function MarketplaceMessagesPanel() {
 }
 
 // ── Shared 3-dot action menu ──────────────────────────────────────────────────
-function ManagerRowActions({ onView, onEdit }: { onView: () => void; onEdit: () => void }) {
+function ManagerRowActions({
+  onView, onEdit, onDelete, deleteLabel,
+}: { onView: () => void; onEdit: () => void; onDelete?: () => void; deleteLabel?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -460,6 +464,9 @@ function ManagerRowActions({ onView, onEdit }: { onView: () => void; onEdit: () 
         <div className="absolute right-0 top-9 z-20 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
           <button onClick={() => { setOpen(false); onView(); }} className="block w-full px-4 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50">View</button>
           <button onClick={() => { setOpen(false); onEdit(); }} className="block w-full px-4 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50">Edit</button>
+          {onDelete && (
+            <button onClick={() => { setOpen(false); onDelete(); }} className="block w-full border-t border-gray-100 px-4 py-2.5 text-left text-xs text-red-600 hover:bg-red-50">{deleteLabel}</button>
+          )}
         </div>
       )}
     </div>
@@ -474,6 +481,7 @@ const KIND_ROUTE: Record<PreviewKind, string> = { EVENT: '/org/events', JOB: '/o
 const KIND_BADGE_CLASS: Record<PreviewKind, string> = {
   EVENT: 'bg-[#9C5177] text-white', JOB: 'bg-[#121958] text-white', LISTING: 'bg-[#0F6D1A] text-white',
 };
+const KIND_LABEL: Record<PreviewKind, string> = { EVENT: 'Event', JOB: 'Job', LISTING: 'Listing' };
 const KIND_ICON_CLASS: Record<PreviewKind, string> = {
   EVENT: 'bg-[#F3E8FF] text-[#6B21A8]', JOB: 'bg-[#EEF2FF] text-[#121958]', LISTING: 'bg-[#F0FDF4] text-[#0F6D1A]',
 };
@@ -533,8 +541,14 @@ const VIEW_ALL_PATH: Partial<Record<ListingsTab, string>> = {
   'Marketplace':    '/org/listings',
 };
 
-function ManagerRow({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
+// Jobs have no delete/archive action on their own dedicated page, so none is offered here either.
+const KIND_DELETE_LABEL: Partial<Record<PreviewKind, string>> = { EVENT: 'Cancel event', LISTING: 'Delete listing' };
+
+function ManagerRow({
+  row, isLast, showKind, onRequestDelete,
+}: { row: PreviewRow; isLast: boolean; showKind: boolean; onRequestDelete: (row: PreviewRow) => void }) {
   const navigate = useNavigate();
+  const deleteLabel = KIND_DELETE_LABEL[row.kind];
   return (
     <div className={`px-6 py-5 grid grid-cols-[2.5fr_1fr_1fr_1fr_auto] gap-4 items-center ${isLast ? '' : 'border-b border-gray-100'}`}>
       <div className="flex min-w-0 items-center gap-4">
@@ -548,12 +562,14 @@ function ManagerRow({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
           <p className="text-[13px] text-gray-500 mt-0.5 truncate">{row.sub}</p>
         </div>
       </div>
-      <div><span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wide whitespace-nowrap ${KIND_BADGE_CLASS[row.kind]}`}>{row.badge}</span></div>
+      <div><span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wide whitespace-nowrap ${KIND_BADGE_CLASS[row.kind]}`}>{showKind ? KIND_LABEL[row.kind] : row.badge}</span></div>
       <div><span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${STATUS_BADGE_CLASS[row.status] ?? 'bg-gray-100 text-gray-600'}`}>{row.status.replaceAll('_', ' ')}</span></div>
       <div className="text-[13px] text-gray-500">{row.detail}</div>
       <ManagerRowActions
         onView={() => navigate(`${KIND_ROUTE[row.kind]}?item=${row.id}&mode=view`)}
         onEdit={() => navigate(`${KIND_ROUTE[row.kind]}?item=${row.id}&mode=edit`)}
+        onDelete={deleteLabel ? () => onRequestDelete(row) : undefined}
+        deleteLabel={deleteLabel}
       />
     </div>
   );
@@ -562,10 +578,32 @@ function ManagerRow({ row, isLast }: { row: PreviewRow; isLast: boolean }) {
 function ListingsManager() {
   const [activeTab, setActiveTab] = useState<ListingsTab>('All Listings');
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
-  const { data: eventsData, loading: eventsLoading } = useQuery(MY_ORG_EVENTS);
+  const { data: eventsData, loading: eventsLoading, refetch: refetchEvents } = useQuery(MY_ORG_EVENTS);
   const { data: jobsData, loading: jobsLoading } = useQuery(MY_ORG_JOB_LISTINGS);
-  const { data: listingsData, loading: listingsLoading } = useQuery(MY_MARKETPLACE_LISTINGS);
+  const { data: listingsData, loading: listingsLoading, refetch: refetchListings } = useQuery(MY_MARKETPLACE_LISTINGS);
+  const [cancelEvent, { loading: cancelling }] = useMutation(CANCEL_EVENT);
+  const [deleteMarketplaceItem, { loading: deletingListing }] = useMutation(DELETE_MARKETPLACE_ITEM);
+  const [deleteTarget, setDeleteTarget] = useState<PreviewRow | null>(null);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.kind === 'EVENT') {
+        await cancelEvent({ variables: { id: deleteTarget.id, scope: 'THIS_OCCURRENCE' } });
+        await refetchEvents();
+        showToast('Event cancelled.', 'success');
+      } else if (deleteTarget.kind === 'LISTING') {
+        await deleteMarketplaceItem({ variables: { id: deleteTarget.id } });
+        await refetchListings();
+        showToast('Listing deleted.', 'success');
+      }
+      setDeleteTarget(null);
+    } catch {
+      showToast(deleteTarget.kind === 'EVENT' ? 'Could not cancel the event. Please try again.' : 'Could not delete the listing. Please try again.', 'error');
+    }
+  }
 
   const events: PreviewEventSource[] = (eventsData?.myOrganisations ?? []).flatMap(
     (org: { events?: { edges: PreviewEventSource[] } }) => org.events?.edges ?? [],
@@ -662,7 +700,7 @@ function ListingsManager() {
           <div className="flex-1 flex flex-col">
             {loading && rows.length === 0 && <div className="px-6 py-10 text-center text-sm text-gray-400">Loading…</div>}
             {!loading && rows.length === 0 && <div className="px-6 py-10 text-center text-sm text-gray-400">{emptyMessage[activeTab]}</div>}
-            {rows.map((row, index) => <ManagerRow key={`${row.kind}:${row.id}`} row={row} isLast={index === rows.length - 1} />)}
+            {rows.map((row, index) => <ManagerRow key={`${row.kind}:${row.id}`} row={row} isLast={index === rows.length - 1} showKind={activeTab === 'All Listings'} onRequestDelete={setDeleteTarget} />)}
           </div>
         </div>
       </div>
@@ -678,6 +716,19 @@ function ListingsManager() {
           </button>
         </div>
       )}
+
+      <ConfirmationDialog
+        open={Boolean(deleteTarget)}
+        title={deleteTarget?.kind === 'EVENT' ? 'Cancel this event?' : 'Delete listing?'}
+        description={deleteTarget?.kind === 'EVENT'
+          ? 'Cancelled occurrences remain in the event history and existing RSVP records are retained.'
+          : 'This permanently removes the listing and cannot be undone.'}
+        confirmLabel={deleteTarget?.kind === 'EVENT' ? 'Cancel event' : 'Delete listing'}
+        tone="danger"
+        busy={cancelling || deletingListing}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
