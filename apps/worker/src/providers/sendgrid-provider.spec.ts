@@ -6,7 +6,7 @@ jest.mock('@sendgrid/mail', () => ({
   default: { send: mockSend, setApiKey: mockSetApiKey },
 }));
 
-import { configureEmailProvider, deliverEmail } from './email-provider';
+import { sendgridProvider } from './sendgrid-provider';
 
 const job = {
   deliveryId: '507f1f77bcf86cd799439011',
@@ -31,7 +31,14 @@ describe('SendGrid email provider', () => {
   afterAll(() => { process.env = originalEnv; });
 
   it('suppresses delivery without contacting SendGrid when email is disabled', async () => {
-    await expect(deliverEmail(job)).resolves.toEqual({ status: 'SUPPRESSED' });
+    await expect(sendgridProvider.deliver(job)).resolves.toEqual({ status: 'SUPPRESSED' });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it('suppresses delivery when a different provider is selected', async () => {
+    process.env['EMAIL_ENABLED'] = 'true';
+    process.env['EMAIL_PROVIDER'] = 'ses';
+    await expect(sendgridProvider.deliver(job)).resolves.toEqual({ status: 'SUPPRESSED' });
     expect(mockSend).not.toHaveBeenCalled();
   });
 
@@ -42,17 +49,16 @@ describe('SendGrid email provider', () => {
     process.env['SENDGRID_FROM_EMAIL'] = 'notifications@example.test';
     mockSend.mockResolvedValue([{ headers: { 'x-message-id': 'provider-message-id' } }]);
 
-    configureEmailProvider();
-    await expect(deliverEmail(job)).resolves.toEqual({ status: 'ACCEPTED', providerMessageId: 'provider-message-id' });
+    sendgridProvider.configure();
+    await expect(sendgridProvider.deliver(job)).resolves.toEqual({ status: 'ACCEPTED', providerMessageId: 'provider-message-id' });
     expect(mockSetApiKey).toHaveBeenCalledWith('test-api-key');
     expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
       customArgs: { cl_delivery_id: job.deliveryId },
     }));
   });
 
-  it('rejects an unsupported enabled provider at startup', () => {
+  it('requires SENDGRID_API_KEY at configure time when enabled', () => {
     process.env['EMAIL_ENABLED'] = 'true';
-    process.env['EMAIL_PROVIDER'] = 'smtp';
-    expect(() => configureEmailProvider()).toThrow('EMAIL_PROVIDER must be sendgrid');
+    expect(() => sendgridProvider.configure()).toThrow('SENDGRID_API_KEY is required');
   });
 });

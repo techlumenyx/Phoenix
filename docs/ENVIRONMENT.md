@@ -22,18 +22,30 @@ Copy `.env.example` to `.env` and fill in all values before running any service.
 
 ## Transactional email (admin + worker)
 
-Email intents are stored in `cl_admin`, queued with BullMQ, and delivered by `apps/worker`. The public web apps never receive SendGrid credentials.
+Email intents are stored in `cl_admin`, queued with BullMQ, and delivered by `apps/worker` through whichever provider `EMAIL_PROVIDER` selects. The public web apps never receive provider credentials.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `EMAIL_ENABLED` | No | Set to `true` only after SendGrid sender/domain authentication is complete. Defaults to `false`; intents are recorded as suppressed and no message is sent. |
-| `EMAIL_PROVIDER` | No | Delivery provider. Currently `sendgrid`. |
+| `EMAIL_ENABLED` | No | Set to `true` only after the selected provider's sender/domain authentication is complete. Defaults to `false`; intents are recorded as suppressed and no message is sent. |
+| `EMAIL_PROVIDER` | No | Delivery provider: `sendgrid`, `brevo`, or `ses`. Selects which block below `apps/worker`'s provider factory actually reads. |
 | `REDIS_URL` | Yes for admin/worker when enabled | BullMQ Redis connection. Docker value: `redis://redis:6379`. |
-| `SENDGRID_API_KEY` | Yes for worker when enabled | Restricted SendGrid API key with Mail Send permission. Never expose this as a `CL_*` variable. |
-| `SENDGRID_FROM_EMAIL` | Yes for worker when enabled | Address under the authenticated sending domain. |
+| `SENDGRID_API_KEY` | Yes for worker when `EMAIL_PROVIDER=sendgrid` | Restricted SendGrid API key with Mail Send permission. Never expose this as a `CL_*` variable. |
+| `SENDGRID_FROM_EMAIL` | Yes for worker when `EMAIL_PROVIDER=sendgrid` | Address under the authenticated sending domain. |
 | `SENDGRID_FROM_NAME` | No | Display name; defaults to `Christian Listings`. |
 | `SENDGRID_REPLY_TO` | No | Reply-to mailbox for transactional mail. |
-| `SENDGRID_WEBHOOK_PUBLIC_KEY` | Yes in production | ECDSA public key from SendGrid Event Webhook settings. The admin service rejects unsigned or invalid webhook requests. |
+| `SENDGRID_WEBHOOK_PUBLIC_KEY` | Yes in production when `EMAIL_PROVIDER=sendgrid` | ECDSA public key from SendGrid Event Webhook settings. The admin service rejects unsigned or invalid webhook requests. |
+| `BREVO_API_KEY` | Yes for worker when `EMAIL_PROVIDER=brevo` | Brevo API key (**SMTP & API → API Keys**). Never expose this as a `CL_*` variable. |
+| `BREVO_FROM_EMAIL` | Yes for worker when `EMAIL_PROVIDER=brevo` | Address on the Brevo-verified sending domain/identity. |
+| `BREVO_FROM_NAME` | No | Display name; defaults to `Christian Listings`. |
+| `BREVO_REPLY_TO` | No | Reply-to mailbox for transactional mail. |
+| `BREVO_WEBHOOK_TOKEN` | Yes in production when `EMAIL_PROVIDER=brevo` | High-entropy secret you generate yourself (Brevo doesn't sign webhook payloads). Configured as the webhook's Bearer-token auth when creating it in Brevo; the admin service rejects any `/webhooks/brevo` call whose `Authorization` header doesn't match. |
+| `AWS_REGION` | Yes for worker when `EMAIL_PROVIDER=ses` | Region the SES identity, SNS topic, and SQS queue live in. |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Yes for worker when `EMAIL_PROVIDER=ses` | Dedicated least-privilege IAM user — `ses:SendEmail` on the verified identity, `sqs:ReceiveMessage`/`sqs:DeleteMessage`/`sqs:GetQueueAttributes` on the event queue. Never the account root or an admin user. |
+| `SES_FROM_EMAIL` | Yes for worker when `EMAIL_PROVIDER=ses` | Must be on the SES-verified (DKIM'd) sending domain. |
+| `SES_FROM_NAME` | No | Display name; defaults to `Christian Listings`. |
+| `SES_REPLY_TO` | No | Reply-to mailbox for transactional mail. |
+| `SES_CONFIGURATION_SET` | Yes for worker when `EMAIL_PROVIDER=ses` | SES configuration set with an event destination publishing Send/Delivery/Bounce/Complaint/Reject to the SNS topic — without this, sends succeed but delivery status never updates. |
+| `SQS_EVENT_QUEUE_URL` | Yes for worker and admin when `EMAIL_PROVIDER=ses` | Full queue URL for the SQS subscription on that SNS topic. `apps/worker` long-polls this queue and forwards events to the admin service's `/internal/emails/ses-events` route; `apps/subgraph-admin` only checks that this is set to report `webhookConfigured` in `emailDeliveryConfiguration`. |
 | `PUBLIC_APP_URL` | Yes | Public Christian Listings URL used in email links. Local value: `http://localhost:3000`. |
 | `EMAIL_WORKER_CONCURRENCY` | No | Concurrent delivery jobs; defaults to 5. |
 | `EMAIL_MAX_ATTEMPTS` | No | Exponential retry attempts; defaults to 5. |

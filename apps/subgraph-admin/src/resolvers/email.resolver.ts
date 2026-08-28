@@ -31,10 +31,15 @@ export const emailResolvers = {
     },
     emailDeliveryConfiguration: (_: unknown, __: unknown, ctx: GraphQLContext) => {
       requirePlatformAdmin(ctx.auth, [...EMAIL_ROLES]);
+      const provider = process.env['EMAIL_PROVIDER'] ?? 'sendgrid';
       return {
         enabled: emailDeliveryEnabled(),
-        provider: process.env['EMAIL_PROVIDER'] ?? 'sendgrid',
-        webhookConfigured: Boolean(process.env['SENDGRID_WEBHOOK_PUBLIC_KEY']),
+        provider,
+        webhookConfigured: provider === 'ses'
+          ? Boolean(process.env['SQS_EVENT_QUEUE_URL'])
+          : provider === 'brevo'
+            ? Boolean(process.env['BREVO_WEBHOOK_TOKEN'])
+            : Boolean(process.env['SENDGRID_WEBHOOK_PUBLIC_KEY']),
       };
     },
   },
@@ -55,7 +60,7 @@ export const emailResolvers = {
         throw new GraphQLError('Enter a valid test recipient email address', { extensions: { code: 'BAD_USER_INPUT' } });
       }
       if (!emailDeliveryEnabled()) {
-        throw new GraphQLError('Email delivery is disabled. Configure SendGrid and enable delivery before sending a test.', { extensions: { code: 'SERVICE_UNAVAILABLE' } });
+        throw new GraphQLError('Email delivery is disabled. Configure the email provider and enable delivery before sending a test.', { extensions: { code: 'SERVICE_UNAVAILABLE' } });
       }
       const requestedAt = new Date();
       const doc = await acceptEmailIntent({
@@ -65,7 +70,7 @@ export const emailResolvers = {
         idempotencyKey: `sendgrid-test:${admin.firebaseUid}:${requestedAt.getTime()}`,
         source: { service: 'admin', entityType: 'EMAIL_DELIVERY', entityId: admin.firebaseUid },
       });
-      await audit(ctx, admin.firebaseUid, 'EMAIL_TEST', doc._id.toString(), 'EMAIL_DELIVERY', `Queued controlled SendGrid test to ${recipient}`, null, doc.status);
+      await audit(ctx, admin.firebaseUid, 'EMAIL_TEST', doc._id.toString(), 'EMAIL_DELIVERY', `Queued controlled test email to ${recipient}`, null, doc.status);
       return mapEmail(doc as InstanceType<typeof EmailDeliveryModel>);
     },
   },
@@ -73,4 +78,4 @@ export const emailResolvers = {
 
 function mapEmail(doc: InstanceType<typeof EmailDeliveryModel>) { return { ...doc.toObject(), id: doc._id.toString(), events: doc.events ?? [] }; }
 function escapeRegex(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function emailDeliveryEnabled() { return process.env['EMAIL_ENABLED'] === 'true' && (process.env['EMAIL_PROVIDER'] ?? 'sendgrid') === 'sendgrid'; }
+function emailDeliveryEnabled() { return process.env['EMAIL_ENABLED'] === 'true' && ['sendgrid', 'ses', 'brevo'].includes(process.env['EMAIL_PROVIDER'] ?? 'sendgrid'); }

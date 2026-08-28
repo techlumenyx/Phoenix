@@ -21,6 +21,8 @@ import { acceptEmailIntent, cancelScheduledEmail, claimDueEmails, isEmailIntent,
 import type { EmailDeliveryResult } from '@christian-listings/email';
 import rawBody from 'fastify-raw-body';
 import { ingestSendGridEvents, verifySendGridWebhook, type SendGridEvent } from './services/sendgrid-webhook.service';
+import { ingestSesEvents, type SesEventEnvelope } from './services/ses-event.service';
+import { ingestBrevoEvents, verifyBrevoWebhook, type BrevoEvent } from './services/brevo-webhook.service';
 import {
   acceptRiskAnalysisIntent,
   isRiskAnalysisIntent,
@@ -63,7 +65,7 @@ async function bootstrap() {
   registerAdminLaunchHardening(fastify);
   await fastify.register(buildAuthPlugin({
     optional: false,
-    publicPaths: ['/webhooks/sendgrid'],
+    publicPaths: ['/webhooks/sendgrid', '/webhooks/brevo'],
     internalPaths: [
       '/internal/reports/marketplace', '/internal/verifications', '/internal/emails',
       '/internal/emails/*',
@@ -84,6 +86,20 @@ async function bootstrap() {
     }
     if (!Array.isArray(request.body)) return reply.code(400).send({ error: 'Invalid SendGrid event payload' });
     return { accepted: request.body.length, matched: await ingestSendGridEvents(request.body as SendGridEvent[]) };
+  });
+
+  fastify.post('/webhooks/brevo', async (request, reply) => {
+    try {
+      if (!verifyBrevoWebhook(request.headers.authorization)) return reply.code(401).send({ error: 'Invalid webhook token' });
+    } catch (error) {
+      request.log.error(error, 'Brevo webhook verification is unavailable');
+      return reply.code(503).send({ error: 'Webhook verification unavailable' });
+    }
+    // Brevo posts one event object per call by default, but supports an
+    // account-level "batched" delivery mode that sends an array instead.
+    const events = Array.isArray(request.body) ? request.body : [request.body];
+    if (!events.every((item) => item && typeof item === 'object')) return reply.code(400).send({ error: 'Invalid Brevo event payload' });
+    return { accepted: events.length, matched: await ingestBrevoEvents(events as BrevoEvent[]) };
   });
 
   registerMediaUploadRoutes(fastify, {
@@ -137,6 +153,11 @@ async function bootstrap() {
     const doc = await recordEmailResult(request.params.id, request.body);
     if (!doc) return reply.code(404).send({ error: 'Email delivery not found' });
     return { id: doc._id.toString(), status: doc.status };
+  });
+
+  fastify.post('/internal/emails/ses-events', async (request, reply) => {
+    if (!isSesEventBatch(request.body)) return reply.code(400).send({ error: 'Invalid SES event batch payload' });
+    return { accepted: request.body.events.length, matched: await ingestSesEvents(request.body.events) };
   });
 
   fastify.post('/internal/risk-analyses', async (request, reply) => {
@@ -204,6 +225,14 @@ function isEmailResult(value: unknown): value is EmailDeliveryResult {
   return ['ACCEPTED', 'SENT', 'FAILED', 'SUPPRESSED'].includes(result.status ?? '') &&
     (result.providerMessageId == null || typeof result.providerMessageId === 'string') &&
     (result.error == null || typeof result.error === 'string');
+}
+
+function isSesEventBatch(value: unknown): value is { events: SesEventEnvelope[] } {
+  if (!value || typeof value !== 'object') return false;
+  const body = value as { events?: unknown };
+  return Array.isArray(body.events) && body.events.every((item) =>
+    item && typeof item === 'object' && typeof (item as { sesEvent?: unknown }).sesEvent === 'object',
+  );
 }
 
 bootstrap().catch((err) => {

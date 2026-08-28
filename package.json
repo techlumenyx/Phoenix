@@ -34,6 +34,8 @@
     "@apollo/server": "^4.11.0",
     "@apollo/subgraph": "^2.8.0",
     "@as-integrations/fastify": "^2.1.1",
+    "@aws-sdk/client-sesv2": "^3.1112.0",
+    "@aws-sdk/client-sqs": "^3.1112.0",
     "@sendgrid/eventwebhook": "^8.0.0",
     "@sendgrid/mail": "^8.1.6",
     "bullmq": "^5.80.9",
