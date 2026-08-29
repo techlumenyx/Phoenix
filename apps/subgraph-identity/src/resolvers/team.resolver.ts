@@ -52,11 +52,20 @@ function userShape(doc: any) {
     updatedAt: doc.updatedAt,
   };
 }
-function inviteShape(doc: any) {
+// `organisation` can't be left as a bare `{ id }` stub: Organisation.name is
+// non-null, and since subgraph-identity resolves every requested field of
+// Organisation itself (no other subgraph is consulted), the router never
+// issues a federation entity-reference call to fill the stub in — it just
+// forwards the selection straight to us, and an under-populated stub blows up
+// with "Cannot return null for non-nullable field Organisation.name."
+async function inviteShape(doc: any, organisation?: { name?: string | null; logoUrl?: string | null } | null) {
+  const org = organisation !== undefined
+    ? organisation
+    : await OrganisationModel.findById(doc.organisationId).select('name logoUrl');
   return {
     id: doc._id.toString(),
     email: doc.email,
-    organisation: { id: doc.organisationId.toString() },
+    organisation: { id: doc.organisationId.toString(), name: org?.name ?? '', logoUrl: org?.logoUrl ?? null },
     roles: doc.roles,
     status: doc.status,
     token: doc.token,
@@ -98,9 +107,11 @@ export const teamResolvers = {
         { organisationId, status: 'PENDING', expiresAt: { $lte: new Date() } },
         { $set: { status: 'EXPIRED' } },
       );
-      return (await OrgInviteModel.find({ organisationId }).sort({ createdAt: -1 })).map(
-        inviteShape,
-      );
+      const [docs, organisation] = await Promise.all([
+        OrgInviteModel.find({ organisationId }).sort({ createdAt: -1 }),
+        OrganisationModel.findById(organisationId).select('name logoUrl'),
+      ]);
+      return Promise.all(docs.map((doc) => inviteShape(doc, organisation)));
     },
     organisationInvite: async (_: unknown, { token }: { token: string }) => {
       const doc = await OrgInviteModel.findOne({ token });
@@ -142,9 +153,9 @@ export const teamResolvers = {
             status: 'PENDING',
             expiresAt: new Date(Date.now() + 7 * 86400000),
           });
-        const organisation = await OrganisationModel.findById(organisationId).select('name');
+        const organisation = await OrganisationModel.findById(organisationId).select('name logoUrl');
         queueInvitationEmail(invite, organisation?.name ?? 'an organisation');
-        return inviteShape(invite);
+        return inviteShape(invite, organisation);
       } catch (error: any) {
         if (error?.code === 11000)
           throw new GraphQLError('A pending invitation already exists for this email', {
@@ -223,9 +234,9 @@ export const teamResolvers = {
       invite.token = randomUUID();
       invite.expiresAt = new Date(Date.now() + 7 * 86400000);
       await invite.save();
-      const organisation = await OrganisationModel.findById(invite.organisationId).select('name');
+      const organisation = await OrganisationModel.findById(invite.organisationId).select('name logoUrl');
       queueInvitationEmail(invite, organisation?.name ?? 'an organisation');
-      return inviteShape(invite);
+      return inviteShape(invite, organisation);
     },
     updateOrganisationMemberRoles: async (
       _: unknown,
