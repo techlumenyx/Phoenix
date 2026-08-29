@@ -11,6 +11,7 @@ import {
 import { OrganisationModel, OrgInviteModel, UserModel } from '../models';
 import type { GraphQLContext } from '../context';
 import { requestEmailSafely } from '@christian-listings/email';
+import { mapOrg } from './organisation.resolver';
 
 const MANAGERS: OrganisationRole[] = ['master_admin', 'site_admin'];
 function access(ctx: GraphQLContext, orgId: string) {
@@ -212,7 +213,7 @@ export const teamResolvers = {
       await invite.save();
       const org = await OrganisationModel.findById(invite.organisationId);
       if (!org) throw new GraphQLError('Organisation not found');
-      return { id: org._id.toString(), name: org.name ?? '' };
+      return mapOrg(org);
     },
     revokeOrganisationInvite: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       const invite = await getInvite(id, ctx);

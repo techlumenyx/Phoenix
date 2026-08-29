@@ -9,7 +9,7 @@ import { sendVerificationSubmission } from '../services/admin-verification.clien
 
 function OrganisationModel() { return _OrgModel; }
 
-function mapOrg(doc: HydratedDocument<IOrganisation>) {
+export function mapOrg(doc: HydratedDocument<IOrganisation>) {
   return {
     id: doc._id.toString(),
     name: doc.name ?? '',
