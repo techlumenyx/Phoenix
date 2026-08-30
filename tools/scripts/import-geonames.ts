@@ -1,6 +1,6 @@
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { createMongoConnection } from '../../libs/db/src';
+import { createMongoConnection, resolveDbName } from '../../libs/db/src';
 import { LocationSchema } from '../../apps/subgraph-identity/src/models/location.model';
 import {
   normalizeLocationSearch,
@@ -40,8 +40,26 @@ async function main() {
   if (!Number.isFinite(minPopulation) || minPopulation < 0) {
     throw new Error('--min-population must be a non-negative number');
   }
-  const mongoUri = argument('mongo-uri', false) ?? process.env['MONGODB_URI'];
-  if (!mongoUri) throw new Error('Set MONGODB_URI or pass --mongo-uri');
+  const mongoUri = argument('mongo-uri', false) ?? process.env['MONGO_URI'];
+  if (!mongoUri) throw new Error('Set MONGO_URI or pass --mongo-uri');
+
+  const isLocal = /^mongodb:\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(mongoUri);
+  const remoteRequested = process.argv.includes('--remote');
+  const seedEnvironment = process.env['SEED_ENVIRONMENT'];
+  if (!isLocal) {
+    if (!remoteRequested) {
+      throw new Error('Refusing to import into a remote database without the --remote flag');
+    }
+    if (!seedEnvironment || !['staging', 'production'].includes(seedEnvironment)) {
+      throw new Error('Refusing to import: SEED_ENVIRONMENT must be staging or production');
+    }
+    const expectedConfirmation = seedEnvironment === 'production'
+      ? 'SEED_CHRISTIAN_LISTINGS_PRODUCTION'
+      : 'SEED_CHRISTIAN_LISTINGS_STAGING';
+    if (process.env['SEED_REMOTE_CONFIRM'] !== expectedConfirmation) {
+      throw new Error(`Refusing to import into ${seedEnvironment}: set SEED_REMOTE_CONFIRM=${expectedConfirmation}`);
+    }
+  }
 
   const [countries, admin1Names, admin2Names] = await Promise.all([
     readCodeNames(countryFile, 0, 4),
@@ -49,7 +67,7 @@ async function main() {
     readCodeNames(admin2File, 0, 1),
   ]);
 
-  const connection = await createMongoConnection(mongoUri, 'cl_identity');
+  const connection = await createMongoConnection(mongoUri, resolveDbName('cl_identity'));
   const Location = connection.model('Location', LocationSchema);
   const lines = createInterface({ input: createReadStream(citiesFile, 'utf8'), crlfDelay: Infinity });
   let operations: Array<Record<string, unknown>> = [];
