@@ -144,7 +144,7 @@ function toJob(doc: { _id: { toString(): string }; to: string; subject: string; 
 function sourceFields(intent: EmailIntent) { return { sourceService: intent.source?.service ?? null, sourceEntityType: intent.source?.entityType ?? null, sourceEntityId: intent.source?.entityId ?? null }; }
 function scheduleSourceFields(schedule: { sourceService: string | null; sourceEntityType: string | null; sourceEntityId: string | null }) { return { sourceService: schedule.sourceService, sourceEntityType: schedule.sourceEntityType, sourceEntityId: schedule.sourceEntityId }; }
 function normaliseEmail(value: string) { return value.trim().toLowerCase(); }
-function emailEnabled() { return process.env['EMAIL_ENABLED'] === 'true' && (process.env['EMAIL_PROVIDER'] ?? 'sendgrid') === 'sendgrid'; }
+function emailEnabled() { return process.env['EMAIL_ENABLED'] === 'true' && ['sendgrid', 'ses', 'brevo'].includes(process.env['EMAIL_PROVIDER'] ?? 'sendgrid'); }
 function numberEnv(name: string, fallback: number) { const value = Number(process.env[name] ?? fallback); return Number.isInteger(value) && value > 0 ? value : fallback; }
 function isDuplicateKeyError(error: unknown) { return error instanceof mongoose.mongo.MongoServerError && error.code === 11000; }
 

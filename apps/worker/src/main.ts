@@ -2,7 +2,8 @@ import { Queue, Worker, type Job } from 'bullmq';
 import IORedis from 'ioredis';
 import { EMAIL_DELIVERY_QUEUE, EMAIL_SCHEDULER_QUEUE, type EmailDeliveryJob, type EmailDeliveryResult } from '@christian-listings/email';
 import { CONTENT_RISK_QUEUE, type ContentRiskAnalysisResult, type MarketplaceRiskAnalysisJob } from '@christian-listings/types';
-import { configureEmailProvider, deliverEmail } from './email-provider';
+import { getEmailProvider } from './providers';
+import { startSesEventPoller } from './ses-event-poller';
 import { analyseMarketplaceRisk } from './risk-provider';
 
 async function bootstrap() {
@@ -17,11 +18,12 @@ async function bootstrap() {
   const resources: Array<{ close(): Promise<void> }> = [];
 
   if (emailEnabled) {
-    configureEmailProvider();
+    const provider = getEmailProvider();
+    provider.configure();
     const deliveryQueue = new Queue<EmailDeliveryJob>(EMAIL_DELIVERY_QUEUE, { connection: new IORedis(redisUrl, { maxRetriesPerRequest: 2 }) });
     const schedulerQueue = new Queue(EMAIL_SCHEDULER_QUEUE, { connection: new IORedis(redisUrl, { maxRetriesPerRequest: 2 }) });
     const deliveryWorker = new Worker<EmailDeliveryJob>(EMAIL_DELIVERY_QUEUE, async (job) => {
-      const result = await deliverEmail(job.data);
+      const result = await provider.deliver(job.data);
       const recorded = await reportResult(job.data.deliveryId, result)
         .then(() => true)
         .catch((error) => { console.error('[worker] email was accepted but its result could not be recorded', error); return false; });
@@ -43,7 +45,12 @@ async function bootstrap() {
     }, { connection: new IORedis(redisUrl, { maxRetriesPerRequest: null }), concurrency: 1 });
     await schedulerQueue.upsertJobScheduler('email-schedule-scan', { every: positiveInt('EMAIL_SCHEDULE_SCAN_MS', 60_000) }, { name: 'scan-due-emails', data: {} });
     resources.push(deliveryWorker, schedulerWorker, deliveryQueue, schedulerQueue);
-    console.log('[worker] email queues ready; provider=sendgrid');
+
+    const emailProviderName = process.env['EMAIL_PROVIDER'] ?? 'sendgrid';
+    if (emailProviderName === 'ses') {
+      resources.push(startSesEventPoller());
+    }
+    console.log(`[worker] email queues ready; provider=${emailProviderName}`);
   }
 
   if (riskEnabled) {
