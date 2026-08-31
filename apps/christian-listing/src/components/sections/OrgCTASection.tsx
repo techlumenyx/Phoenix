@@ -34,10 +34,10 @@ export default function OrgCTASection() {
             List Now
           </Link>
           <Link
-            to="/org/signup"
+            to="/signup"
             className="px-6 py-2.5 rounded-full border border-[#030813] bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-colors"
           >
-            Sign Up as an Organization
+            Sign Up
           </Link>
         </div>
       </div>

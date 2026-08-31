@@ -260,6 +260,15 @@ export default function Navbar() {
                 {label}
               </a>
             ))}
+            {user && (
+              <a
+                href="/dashboard/messages"
+                onClick={() => setMenuOpen(false)}
+                className={`text-sm font-medium ${isActive('/dashboard/messages') ? 'text-white' : 'text-white/70'}`}
+              >
+                Messages
+              </a>
+            )}
             <div className="flex flex-col gap-3 pt-2 border-t border-white/10">
               <RegionSelector />
               {user ? (

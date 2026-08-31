@@ -23,13 +23,13 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
+          { label: 'Messages', href: '/dashboard/messages' },
           { label: 'My Applications', href: '/dashboard/applications' },
           { label: 'Saved Items', href: '/dashboard/saved' },
           { label: 'Following', href: '/dashboard/following' },
-          { label: 'Messages', href: '/dashboard/messages' },
-          { label: `My Reports${data?.myReportUnreadCount ? ` (${data.myReportUnreadCount})` : ''}`, href: '/dashboard/reports' },
           { label: 'Browse Opportunities', href: '/jobs/all' },
           { label: 'My Profile', href: '/profile' },
+          { label: `My Reports${data?.myReportUnreadCount ? ` (${data.myReportUnreadCount})` : ''}`, href: '/dashboard/reports' },
         ].map(({ label, href }) => (
           <Link
             key={label}
