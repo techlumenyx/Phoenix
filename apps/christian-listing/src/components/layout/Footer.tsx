@@ -54,6 +54,13 @@ export default function Footer() {
           ))}
         </div>
 
+        {/* Disclaimer */}
+        <div className="border-t border-white/10 pt-6 pb-6">
+          <p className="text-[11px] text-white/30 leading-relaxed">
+            Disclaimer: Christian Listings is a platform that connects individuals and organizations and does not independently verify the identity, credentials, or claims of any user or organization listed on the site. We are not responsible or liable for any loss, damage, dispute, or claim arising from fraudulent activity, misrepresentation, or misconduct by any user or organization. Users are encouraged to exercise their own discretion and due diligence before engaging with any listing, event, job, or opportunity on this platform.
+          </p>
+        </div>
+
         {/* Divider */}
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/30">

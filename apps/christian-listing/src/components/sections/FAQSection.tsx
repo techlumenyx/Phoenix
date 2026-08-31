@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 const FAQS = [
   {
-    q: 'How do I list my organization?',
-    a: 'Sign up as an organization, complete your profile verification, and you can start listing your ministry, events, and opportunities immediately from your dashboard.',
+    q: 'How do I list my Listings / posts?',
+    a: 'Sign up as an individual user or organization, complete your profile verification, and you can start listing your ministry and Christian events, and as an individual user, marketplace and job opportunities, immediately from your dashboard.',
   },
   {
     q: 'Is there a fee for listings?',
@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: 'Can I promote an account globally?',
-    a: 'Organization accounts on the Standard and Premium tiers gain global visibility in search results and can appear in the curated Spotlight section on the homepage.',
+    a: 'Accounts on the Standard and Premium tiers gain global visibility in search results and can appear in the curated Spotlight section on the homepage.',
   },
 ] as const;
 
