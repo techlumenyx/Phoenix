@@ -200,3 +200,11 @@ export function BriefcaseIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function BookOpenIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06V4.06a.75.75 0 00-.954-.722A7.5 7.5 0 0015 3c-1.678 0-3.208.577-4.25 1.443v12.377zM9.25 4.443C8.208 3.577 6.678 3 5 3c-.686 0-1.34.098-1.954.282a.75.75 0 00-.796-.001.75.75 0 00-.5.719V15.06a.75.75 0 00.954.722A7.506 7.506 0 015 15.5c1.669 0 3.218.51 4.25 1.32V4.443z" />
+    </svg>
+  );
+}

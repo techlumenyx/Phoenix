@@ -30,6 +30,7 @@ export default function DashboardPage() {
           { label: 'Browse Opportunities', href: '/jobs/all' },
           { label: 'My Profile', href: '/profile' },
           { label: `My Reports${data?.myReportUnreadCount ? ` (${data.myReportUnreadCount})` : ''}`, href: '/dashboard/reports' },
+          { label: 'User Guide', href: '/guide' },
         ].map(({ label, href }) => (
           <Link
             key={label}

@@ -7,6 +7,7 @@ import { useOrganisationPermissions } from '../../hooks/useOrganisationPermissio
 import WhatsNewPopover from '../announcements/WhatsNewPopover';
 import {
   BellIcon,
+  BookOpenIcon,
   BriefcaseIcon,
   CalendarIcon,
   ChartBarIcon,
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { label: 'Notifications',    icon: BellIcon,       path: '/org/notifications' },
   { label: 'Report Communications', icon: ChatBubbleIcon, path: '/org/report-communications' },
   { label: 'Team & Roles',     icon: UsersIcon,      path: '/org/team' },
+  { label: 'Help & Guide',     icon: BookOpenIcon,   path: '/org/guide' },
   { label: 'Settings',         icon: CogIcon,        path: '/org/settings' },
 ] as const;
 

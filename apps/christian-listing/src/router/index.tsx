@@ -42,6 +42,7 @@ import OrgAnalyticsPage from '../pages/org/OrgAnalyticsPage';
 import OrgSettingsAccess from '../components/routing/OrgSettingsAccess';
 import ReportConversationsPage from '../pages/ReportConversationsPage';
 import WhatsNewPage from '../pages/WhatsNewPage';
+import GuidePage from '../pages/GuidePage';
 
 const router = createBrowserRouter([
   {
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
       { path: 'org/onboarding/verification',  element: <OrgVerificationPage /> },
       { path: 'org/onboarding/success',       element: <OrgSuccessPage /> },
       { path: 'org/invite/:token',            element: <OrganisationInvitePage /> },
+      { path: 'guide',         element: <GuidePage defaultTab="user" /> },
 
       {
         element: <ProtectedRoute />,
@@ -107,6 +109,7 @@ const router = createBrowserRouter([
       { path: 'settings',   element: <OrgSettingsAccess><OrgSettingsPage /></OrgSettingsAccess> },
       { path: 'team',       element: <OrgTeamPage /> },
       { path: 'analytics',  element: <OrgAnalyticsPage /> },
+      { path: 'guide',      element: <GuidePage defaultTab="organization" embedded /> },
     ],
   },
 ]);
