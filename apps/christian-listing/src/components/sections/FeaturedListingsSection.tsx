@@ -15,7 +15,7 @@ export default function FeaturedListingsSection() {
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-dark">Featured Listings</h2>
           {region && <p className="mt-1 text-xs text-gray-400">Personalised for {region}</p>}
         </div>
-        <Link to="/marketplace" className="font-display text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark flex items-center gap-1 mb-1">
+        <Link to="/marketplace" className="font-display text-xs font-semibold uppercase tracking-wider text-dark/50 hover:text-dark transition-colors flex items-center gap-1 shrink-0 mb-1">
           VIEW ALL <ArrowRightIcon className="w-3.5 h-3.5 -rotate-45" />
         </Link>
       </div>
