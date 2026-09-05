@@ -184,8 +184,8 @@ export default function AuthPage() {
           {tab === 'signup' && (
             <p className="mt-3 text-center text-[10px] text-gray-400">
               By joining, you agree to our{' '}
-              <span className="underline cursor-pointer">Terms Of Service</span> and{' '}
-              <span className="underline cursor-pointer">Privacy Policy</span>
+              <Link to="/terms" className="underline">Terms Of Service</Link> and{' '}
+              <Link to="/privacy" className="underline">Privacy Policy</Link>
             </p>
           )}
         </div>

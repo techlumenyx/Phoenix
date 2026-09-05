@@ -43,6 +43,13 @@ import OrgSettingsAccess from '../components/routing/OrgSettingsAccess';
 import ReportConversationsPage from '../pages/ReportConversationsPage';
 import WhatsNewPage from '../pages/WhatsNewPage';
 import GuidePage from '../pages/GuidePage';
+import AboutUsPage from '../pages/AboutUsPage';
+import BlogPage from '../pages/BlogPage';
+import CareersPage from '../pages/CareersPage';
+import ContactPage from '../pages/ContactPage';
+import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
+import TermsOfServicePage from '../pages/TermsOfServicePage';
+import CookiePolicyPage from '../pages/CookiePolicyPage';
 
 const router = createBrowserRouter([
   {
@@ -72,6 +79,13 @@ const router = createBrowserRouter([
       { path: 'org/onboarding/success',       element: <OrgSuccessPage /> },
       { path: 'org/invite/:token',            element: <OrganisationInvitePage /> },
       { path: 'guide',         element: <GuidePage defaultTab="user" /> },
+      { path: 'about',         element: <AboutUsPage /> },
+      { path: 'blog',          element: <BlogPage /> },
+      { path: 'careers',       element: <CareersPage /> },
+      { path: 'contact',       element: <ContactPage /> },
+      { path: 'privacy',       element: <PrivacyPolicyPage /> },
+      { path: 'terms',         element: <TermsOfServicePage /> },
+      { path: 'cookie-policy', element: <CookiePolicyPage /> },
 
       {
         element: <ProtectedRoute />,

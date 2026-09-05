@@ -9,15 +9,15 @@ const LINKS = {
     { label: 'Organizations', to: '/org/signup' },
   ],
   Company: [
-    { label: 'About Us',  to: '/' },
-    { label: 'Blog',      to: '/' },
-    { label: 'Careers',   to: '/' },
-    { label: 'Contact',   to: '/' },
+    { label: 'About Us',  to: '/about' },
+    { label: 'Blog',      to: '/blog' },
+    { label: 'Careers',   to: '/careers' },
+    { label: 'Contact',   to: '/contact' },
   ],
   Legal: [
-    { label: 'Privacy Policy',    to: '/' },
-    { label: 'Terms of Service',  to: '/' },
-    { label: 'Cookie Policy',     to: '/' },
+    { label: 'Privacy Policy',    to: '/privacy' },
+    { label: 'Terms of Service',  to: '/terms' },
+    { label: 'Cookie Policy',     to: '/cookie-policy' },
   ],
 } as const;
 
