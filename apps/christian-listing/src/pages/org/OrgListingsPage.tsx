@@ -289,25 +289,11 @@ export default function OrgListingsPage() {
     <div className="mx-auto w-full max-w-7xl">
       {notice && <div className={`fixed right-5 top-5 z-[60] rounded-xl px-4 py-3 text-sm font-semibold shadow-lg ${notice.tone === 'success' ? 'bg-[#163D2E] text-white' : 'bg-red-600 text-white'}`}>{notice.text}</div>}
 
-      <div className="overflow-visible rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-col gap-5 px-5 pt-6 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="font-serif text-3xl font-bold text-[#1B1B1B]">Listings Manager</h1>
-            <p className="mt-1 text-sm text-gray-500">Edit inventory and keep availability up to date.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setFormState(null);
-              window.requestAnimationFrame(() => document.getElementById('create-listing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-            }}
-            className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]"
-          >
-            Create new listing +
-          </button>
-        </div>
+      <h1 className="text-3xl font-serif font-bold text-[#1B1B1B]">Listings Manager</h1>
+      <p className="mt-1 mb-6 text-sm text-gray-500">Edit inventory and keep availability up to date.</p>
 
-        <div className="mt-6 flex gap-7 overflow-x-auto border-b border-gray-200 px-5 sm:px-6">
+      <div className="overflow-visible rounded-xl border border-gray-200 bg-white">
+        <div className="flex gap-7 overflow-x-auto border-b border-gray-200 px-5 pt-4 sm:px-6">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); setPage(0); }} className={`relative whitespace-nowrap pb-3 text-sm font-medium ${activeTab === tab.id ? 'text-[#1B1B1B]' : 'text-gray-500 hover:text-gray-800'}`}>
               {tab.label} <span className="ml-1 text-xs text-gray-400">{tab.count}</span>
