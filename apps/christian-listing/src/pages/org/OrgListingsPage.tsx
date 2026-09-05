@@ -295,7 +295,16 @@ export default function OrgListingsPage() {
             <h1 className="font-serif text-3xl font-bold text-[#1B1B1B]">Listings Manager</h1>
             <p className="mt-1 text-sm text-gray-500">Edit inventory and keep availability up to date.</p>
           </div>
-          <a href="#create-listing" onClick={() => setFormState(null)} className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]">Create new listing +</a>
+          <button
+            type="button"
+            onClick={() => {
+              setFormState(null);
+              window.requestAnimationFrame(() => document.getElementById('create-listing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+            }}
+            className="inline-flex items-center justify-center rounded-lg bg-[#1B1B1B] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#333]"
+          >
+            Create new listing +
+          </button>
         </div>
 
         <div className="mt-6 flex gap-7 overflow-x-auto border-b border-gray-200 px-5 sm:px-6">
