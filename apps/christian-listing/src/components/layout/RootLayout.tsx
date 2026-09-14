@@ -1,12 +1,14 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import ScrollToTop from './ScrollToTop';
 import RouteAnalytics from '../analytics/RouteAnalytics';
 import WhatsNewPopover from '../announcements/WhatsNewPopover';
 
 export default function RootLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <ScrollToTop />
       <RouteAnalytics />
       <WhatsNewPopover />
       <Navbar />
