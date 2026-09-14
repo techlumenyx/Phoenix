@@ -14,10 +14,16 @@ export default function TermsOfServicePage() {
         </p>
       </Section>
 
-      <Section title="Your Account">
+      <Section title="Account Rules">
         <p>
-          You're responsible for keeping your account details accurate and your login credentials secure, and for any activity that happens
-          under your account.
+          To create an account, you must provide accurate, current information; if you're signing up on behalf of an organization, you must
+          be authorized to act for it. You're responsible for keeping your account details up to date and your login credentials secure, and
+          for any activity that happens under your account.
+        </p>
+        <p>
+          We may suspend an account temporarily while we investigate a suspected violation of these terms, and we may close an account
+          permanently for repeated or serious violations. You can stop using the platform and request account deletion at any time by
+          contacting us.
         </p>
       </Section>
 
@@ -27,6 +33,19 @@ export default function TermsOfServicePage() {
           display it on the platform to other users. You're responsible for making sure your content is accurate and doesn't violate any
           law or infringe anyone else's rights.
         </p>
+      </Section>
+
+      <Section title="User Conduct">
+        <p>You agree not to, and not to help anyone else:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Post false, misleading, or fraudulent listings, events, job postings, or credentials</li>
+          <li>Harass, threaten, or discriminate against other users or organizations</li>
+          <li>Impersonate another person or organization, or misrepresent your affiliation with one</li>
+          <li>Post content that is unlawful, obscene, defamatory, or infringes someone else's intellectual property or privacy rights</li>
+          <li>Use the platform to spam, scam, or solicit payments outside of legitimate listings, events, or job opportunities</li>
+          <li>Attempt to interfere with, disrupt, or gain unauthorized access to the platform, other accounts, or our systems</li>
+          <li>Scrape, harvest, or misuse other users' data beyond what's needed to engage with a listing, event, or job posting</li>
+        </ul>
       </Section>
 
       <Section title="Community Standards">
@@ -39,10 +58,16 @@ export default function TermsOfServicePage() {
         </p>
       </Section>
 
-      <Section title="Suspension & Termination">
+      <Section title="Termination">
         <p>
-          We may suspend or remove content or accounts that violate these terms or that we reasonably believe put the community at risk. You
-          can stop using the platform and request account deletion at any time.
+          We may suspend or terminate your account, remove your content, or restrict your access to the platform, with or without notice, if
+          we reasonably believe you've violated these terms, broken the law, or put the community or the platform at risk. We may also stop
+          providing all or part of the service at any time.
+        </p>
+        <p>
+          If your account is terminated for a violation, you may not create a new account without our permission. Sections of these terms
+          that by their nature should survive termination — including Your Content, Disclaimer of Warranties, and Limitation of Liability —
+          will continue to apply.
         </p>
       </Section>
 
