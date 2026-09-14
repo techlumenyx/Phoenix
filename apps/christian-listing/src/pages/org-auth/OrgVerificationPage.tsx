@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, gql } from '@apollo/client';
 import SceneHeader from '../../components/layout/SceneHeader';
@@ -52,6 +52,13 @@ export default function OrgVerificationPage() {
   const [createOrg]          = useMutation(CREATE_ORGANISATION);
   const [submitVerification] = useMutation(SUBMIT_VERIFICATION);
 
+  useEffect(() => {
+    if (!identity.orgName?.trim()) {
+      navigate('/org/onboarding/identity', { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function submit(skip = false) {
     setError('');
     if (!skip) {
@@ -73,7 +80,7 @@ export default function OrgVerificationPage() {
       const { data } = await createOrg({
         variables: {
           input: {
-            name: identity.orgName || 'My Organisation',
+            name: identity.orgName?.trim() ?? '',
             description: identity.missionStatement || '',
             region: 'GLOBAL',
           },

@@ -13,10 +13,18 @@ export default function OrgIdentityPage() {
   const [orgName, setOrgName]           = useState('');
   const [orgType, setOrgType]           = useState('');
   const [missionStatement, setMission]  = useState('');
+  const [error, setError]               = useState('');
 
-  function goToVerification(skip = false) {
+  function goToVerification(skipOptional = false) {
+    if (!orgName.trim()) {
+      setError('Enter your organization name to continue.');
+      return;
+    }
+    setError('');
     navigate('/org/onboarding/verification', {
-      state: skip ? {} : { orgName, orgType, missionStatement },
+      state: skipOptional
+        ? { orgName: orgName.trim() }
+        : { orgName: orgName.trim(), orgType, missionStatement },
     });
   }
 
@@ -34,9 +42,17 @@ export default function OrgIdentityPage() {
             Define the essence of your organization to begin your journey in our community
           </p>
 
+          {error && (
+            <p className="mb-4 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600">Organization Name</label>
+              <label className="text-xs font-medium text-gray-600">
+                Organization Name <span className="text-[#C9A96E]">◆</span>
+              </label>
               <input
                 type="text"
                 value={orgName}
@@ -83,7 +99,7 @@ export default function OrgIdentityPage() {
               onClick={() => goToVerification(true)}
               className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-colors"
             >
-              Skip
+              Skip details
             </button>
             <button
               onClick={() => goToVerification(false)}
