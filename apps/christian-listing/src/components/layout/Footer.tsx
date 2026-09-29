@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom';
-import { BrandLogo } from './icons';
+import { BrandLogo, FacebookIcon, InstagramIcon } from './icons';
+
+const SOCIAL_LINKS = [
+  { label: 'Instagram', href: 'https://www.instagram.com/christianlistingscom?stkn=Z3g3cXIybzlyaW1w', icon: InstagramIcon },
+  { label: 'Facebook', href: 'https://share.google/MoJWuDZ1L7MWEVT2o', icon: FacebookIcon },
+] as const;
 
 const LINKS = {
   Platform: [
@@ -35,6 +40,20 @@ export default function Footer() {
             <p className="text-xs text-white/40 leading-relaxed max-w-[200px]">
               A curated ecosystem of faith-led ministries, community events, and grace-centered marketplaces.
             </p>
+            <div className="flex items-center gap-2.5">
+              {SOCIAL_LINKS.map(({ label, href, icon: Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/60 transition-colors hover:border-white/40 hover:text-white"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Link columns */}
