@@ -1,6 +1,13 @@
 import StaticPageLayout, { Section } from '../components/layout/StaticPageLayout';
+import { usePageSeo } from '../lib/seo';
 
 export default function AboutUsPage() {
+  usePageSeo({
+    title: 'About Christian Listings',
+    description: 'Christian Listings is one place for the Christian community to discover real events, jobs, and marketplace listings — and for churches to list free.',
+    path: '/about',
+  });
+
   return (
     <StaticPageLayout
       eyebrow="Our Story"

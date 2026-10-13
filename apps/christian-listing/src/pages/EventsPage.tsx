@@ -7,6 +7,7 @@ import ContentPlaceholder from '../components/media/ContentPlaceholder';
 import ResilientImage from '../components/media/ResilientImage';
 import { usePreferredRegion } from '../lib/discovery';
 import { mergeUniqueById } from '../lib/homepage-selection';
+import { usePageSeo } from '../lib/seo';
 import { useAuthStore } from '../store/authStore';
 
 const EVENTS_HOME = gql`
@@ -39,6 +40,12 @@ const CATEGORIES = [
 const EMPTY_PREFERENCES: string[] = [];
 
 export default function EventsPage() {
+  usePageSeo({
+    title: 'Christian Events Near You | Christian Listings',
+    description: "Find christian events UK-wide — worship nights, conferences and festivals near you. Browse this week's events or list your own, free.",
+    path: '/events',
+  });
+
   const { region } = usePreferredRegion();
   const preferences = useAuthStore((state) => state.dbUser?.preferences ?? EMPTY_PREFERENCES);
   const [input, setInput] = useState('');
@@ -61,7 +68,7 @@ export default function EventsPage() {
 
   return <>
     <section className="relative flex min-h-[440px] items-center justify-center overflow-hidden bg-[#28241e] px-6 text-center">
-      <img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+      <img src="/assets/org-cta.png" alt="Run a church or charity? List your events, jobs, or items on Christian Listings, free." className="absolute inset-0 h-full w-full object-cover opacity-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-white/15" />
       <div className="relative z-10 w-full max-w-2xl"><h1 className="font-serif text-4xl font-bold text-white md:text-5xl">Find Events that<br />you&apos;re looking for</h1><form onSubmit={submit} className="mx-auto mt-7 flex max-w-xl items-center overflow-hidden rounded-full bg-white shadow-lg"><SearchIcon className="ml-4 h-5 w-5 text-gray-400" /><input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search events, ministries or locations…" className="min-w-0 flex-1 px-3 py-3 text-sm outline-none" /><button className="m-1 rounded-full bg-[#1b1b1b] px-6 py-2.5 text-sm font-semibold text-white">Search</button></form>{region && <p className="mt-3 text-xs text-white/70">Showing events near {region}</p>}</div>
     </section>
@@ -82,8 +89,7 @@ export default function EventsPage() {
           >
             <ResilientImage
               src={image}
-              alt=""
-              aria-hidden="true"
+              alt={`${label} — Christian Listings Marketplace category`}
               loading="lazy"
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
@@ -97,7 +103,7 @@ export default function EventsPage() {
     </section>
 
     <EventSection title="Religion & Theology" events={upcoming.filter((event) => ['WORSHIP', 'BIBLE_STUDY', 'CONFERENCE'].includes(event.category)).slice(0, 4)} loading={loading} />
-    <section className="relative overflow-hidden bg-[#272018] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“Let us be grateful for a space and hands to the Lord.<br />And He will repay him for his good deed.”</p><Link to="/events/all" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">View all events</Link></div></section>
+    <section className="relative overflow-hidden bg-[#272018] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="Run a church or charity? List your events, jobs, or items on Christian Listings, free." className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“Let us be grateful for a space and hands to the Lord.<br />And He will repay him for his good deed.”</p><Link to="/events/all" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">View all events</Link></div></section>
     <EventSection title="Community & Fellowship" events={upcoming.filter((event) => ['COMMUNITY', 'YOUTH', 'CULTURAL'].includes(event.category)).slice(0, 4)} loading={loading} />
     <EventSection title="All Events" events={upcoming.slice(0, 12)} loading={loading} viewAll />
   </>;

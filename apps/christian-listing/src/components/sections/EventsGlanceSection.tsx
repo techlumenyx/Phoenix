@@ -15,7 +15,7 @@ function eventTime(event: HomepageEvent) {
 }
 
 function EventArtwork({ event, className }: { event: HomepageEvent; className: string }) {
-  return <ResilientImage src={event.imageUrls[0]} alt="" aria-hidden="true" className={className} fallback={<ContentPlaceholder variant="event" title={event.title} />} />;
+  return <ResilientImage src={event.imageUrls[0]} alt={event.title || 'Christian event listing photo'} className={className} fallback={<ContentPlaceholder variant="event" title={event.title} />} />;
 }
 
 function LightEventCard({ event }: { event: HomepageEvent }) {

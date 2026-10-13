@@ -6,8 +6,7 @@ export default function OrgCTASection() {
       {/* Background painting */}
       <img
         src="/assets/org-cta.png"
-        alt=""
-        aria-hidden="true"
+        alt="Run a church or charity? List your events, jobs, or items on Christian Listings, free."
         className="absolute inset-0 w-full h-full object-cover object-center"
       />
       {/* Pure black overlay */}

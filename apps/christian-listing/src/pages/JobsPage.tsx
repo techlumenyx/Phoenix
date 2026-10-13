@@ -6,6 +6,7 @@ import SectorIllustration from '../components/jobs/SectorIllustration';
 import { ArrowRightIcon, SearchIcon } from '../components/layout/icons';
 import { formatPrice, usePreferredRegion } from '../lib/discovery';
 import { mergeUniqueById } from '../lib/homepage-selection';
+import { usePageSeo } from '../lib/seo';
 import { useAuthStore } from '../store/authStore';
 
 const JOBS_HOME = gql`
@@ -31,6 +32,12 @@ const SECTORS = [
 const EMPTY_PREFERENCES: string[] = [];
 
 export default function JobsPage() {
+  usePageSeo({
+    title: 'Christian Jobs & Ministry Careers | Christian Listings',
+    description: 'Search christian jobs UK-wide across 12 sectors, from ministry to counselling. Churches and charities can post open roles free.',
+    path: '/jobs',
+  });
+
   const { region } = usePreferredRegion();
   const preferences = useAuthStore((state) => state.dbUser?.preferences ?? EMPTY_PREFERENCES);
   const [input, setInput] = useState('');
@@ -47,14 +54,14 @@ export default function JobsPage() {
   const interests = useMemo(() => preferences.includes('Career & Volunteering') ? newest : newest.filter((job) => job.roleType === 'VOLUNTEER'), [newest, preferences]);
 
   return <>
-    <section className="relative flex min-h-[440px] items-center justify-center overflow-hidden bg-[#2d302d] px-6 text-center"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20" /><div className="relative w-full max-w-2xl"><h1 className="font-serif text-4xl font-bold text-white md:text-5xl">Find Opportunities<br />that grow your Career</h1><form onSubmit={submit} className="mx-auto mt-7 flex max-w-xl items-center overflow-hidden rounded-full bg-white shadow-lg"><SearchIcon className="ml-4 h-5 w-5 text-gray-400" /><input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search jobs, skills or organisations…" className="min-w-0 flex-1 px-3 py-3 text-sm outline-none" /><button className="m-1 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white">Explore</button></form>{region && <p className="mt-3 text-xs text-white/70">Showing opportunities near {region}</p>}</div></section>
+    <section className="relative flex min-h-[440px] items-center justify-center overflow-hidden bg-[#2d302d] px-6 text-center"><img src="/assets/org-cta.png" alt="Run a church or charity? List your events, jobs, or items on Christian Listings, free." className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20" /><div className="relative w-full max-w-2xl"><h1 className="font-serif text-4xl font-bold text-white md:text-5xl">Find Opportunities<br />that grow your Career</h1><form onSubmit={submit} className="mx-auto mt-7 flex max-w-xl items-center overflow-hidden rounded-full bg-white shadow-lg"><SearchIcon className="ml-4 h-5 w-5 text-gray-400" /><input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search jobs, skills or organisations…" className="min-w-0 flex-1 px-3 py-3 text-sm outline-none" /><button className="m-1 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white">Explore</button></form>{region && <p className="mt-3 text-xs text-white/70">Showing opportunities near {region}</p>}</div></section>
     {error && <p className="py-10 text-center text-red-700">Jobs are temporarily unavailable.</p>}
     {isShowingGlobalFallback && <p className="bg-amber-50 px-6 py-3 text-center text-sm text-amber-900">No current jobs near {region}. Showing opportunities from across Christian Listings.</p>}
     <section className="px-6 py-12 md:px-10 lg:px-16"><h2 className="mb-6 font-serif text-3xl font-bold">Search by Sector</h2><div className="grid grid-cols-2 gap-4 md:grid-cols-4">{SECTORS.map(({ skill, label, illustration, gradient }) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className={`group relative flex h-44 items-end overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 text-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f5548]`}><div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-white/5" /><SectorIllustration sector={illustration} className="absolute -right-5 -top-1 h-[150px] w-[190px] text-white/80 transition duration-500 group-hover:scale-105 group-hover:text-white" /><strong className="relative z-10 max-w-[9rem] font-serif text-xl leading-tight">{label}</strong><ArrowRightIcon className="relative z-10 mb-0.5 ml-auto h-4 w-4 -rotate-45 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" /></Link>)}</div><div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">{['Accounting', 'Delivery Driver', 'Community Outreach', 'Social Media', 'Counselling', 'Project Management', 'Administration', 'Event Planning'].map((skill) => <Link key={skill} to={`/jobs/all?skill=${encodeURIComponent(skill)}`} className="rounded-lg bg-[#b9b8ff] px-4 py-2 text-xs">{skill} Jobs →</Link>)}</div></section>
     <JobSection title="Based on your Interests" jobs={(interests.length ? interests : newest).slice(0, 4)} loading={loading} />
     <JobSection title="Volunteer Opportunities" jobs={volunteering} loading={loading} />
     <JobSection title="Trending Opportunities" jobs={trending} loading={loading} />
-    <section className="relative overflow-hidden bg-[#26221e] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“Use your gifts to serve one another as faithful stewards.”</p><Link to="/jobs/all" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">Browse all jobs</Link></div></section>
+    <section className="relative overflow-hidden bg-[#26221e] px-6 py-14 text-center text-white"><img src="/assets/org-cta.png" alt="Run a church or charity? List your events, jobs, or items on Christian Listings, free." className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="relative"><p className="font-serif text-xl italic">“Use your gifts to serve one another as faithful stewards.”</p><Link to="/jobs/all" className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-xs font-semibold text-black">Browse all jobs</Link></div></section>
     <JobSection title="All Available Jobs" jobs={newest.slice(0, 12)} loading={loading} viewAll />
   </>;
 }

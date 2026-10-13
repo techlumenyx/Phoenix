@@ -41,8 +41,7 @@ export default function EventCard({
       <div className="absolute inset-0">
         <ResilientImage
           src={imageSrc}
-          alt=""
-          aria-hidden="true"
+          alt={title || 'Christian event listing photo'}
           className="h-full w-full object-cover object-center opacity-60"
           fallback={<ContentPlaceholder variant="event" title={title} />}
         />

@@ -1,6 +1,13 @@
 import StaticPageLayout, { Section } from '../components/layout/StaticPageLayout';
+import { usePageSeo } from '../lib/seo';
 
 export default function BlogPage() {
+  usePageSeo({
+    title: 'Blog | Christian Listings',
+    description: 'Stories, guides and encouragement from Christian Listings for the Christian community.',
+    path: '/blog',
+  });
+
   return (
     <StaticPageLayout eyebrow="Journal" title="Blog" intro="Stories, updates, and resources from the Christian Listings community.">
       <Section title="Coming soon">
