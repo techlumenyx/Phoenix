@@ -94,7 +94,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
 
       {/* Left Column: Avatar */}
       <div className="relative shrink-0">
-        <NameAvatar name={org.name ?? 'Organisation'} src={org.logoUrl} className="h-40 w-40 rounded-full text-4xl" />
+        <NameAvatar name={org.name ?? 'My Profile'} src={org.logoUrl} className="h-40 w-40 rounded-full text-4xl" />
         {org.isVerified && (
           <div className="absolute bottom-2 right-2 bg-[#1B1B1B] text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-[#F2E4DD]">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -111,7 +111,7 @@ function OrgProfileHeader({ org }: { org: OrgData }) {
         {/* Title & Edit Action */}
         <div className="flex items-center gap-3 mb-4">
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#1B1B1B] tracking-tight">
-            {org.name ?? 'Your Organisation'}
+            {org.name ?? 'My Profile'}
           </h1>
           <button
             className="text-gray-500 hover:text-gray-800 transition-colors"

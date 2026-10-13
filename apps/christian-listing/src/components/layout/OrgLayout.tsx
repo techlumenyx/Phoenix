@@ -150,7 +150,7 @@ export default function OrgLayout() {
   const { canManageSettings, loading: permissionsLoading } = useOrganisationPermissions();
 
   const { data: orgData } = useQuery<{ myOrganisations: { id: string; name: string | null }[] }>(MY_ORGANISATIONS);
-  const orgName = orgData?.myOrganisations?.[0]?.name ?? 'Organisation';
+  const orgName = orgData?.myOrganisations?.[0]?.name ?? 'My Profile';
   const organisationId = orgData?.myOrganisations?.[0]?.id;
   const { data: notificationData } = useQuery<{ identityOrganisationUnreadCount: number; eventOrganisationUnreadCount: number; classifiedOrganisationUnreadCount: number; organisationReportUnreadCount: number }>(ORG_NOTIFICATION_COUNTS, { variables: { organisationId }, skip: !organisationId, pollInterval: 30000 });
   const unreadNotifications = (notificationData?.identityOrganisationUnreadCount ?? 0) + (notificationData?.eventOrganisationUnreadCount ?? 0) + (notificationData?.classifiedOrganisationUnreadCount ?? 0);
